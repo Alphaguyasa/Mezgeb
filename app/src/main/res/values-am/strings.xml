@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">መዝገብ</string>
+
+    <!-- Destinations -->
+    <string name="destination_today">ዛሬ</string>
+    <string name="destination_ledger">መዝገብ</string>
+    <string name="destination_review">ግምገማ</string>
+    <string name="destination_customers">ደንበኞች</string>
+    <string name="destination_reconcile">ማስታረቅ</string>
+    <string name="destination_reports">ሪፖርቶች</string>
+    <string name="destination_settings">ቅንብሮች</string>
+
+    <!-- Channels -->
+    <string name="channel_telebirr">ቴሌብር</string>
+    <string name="channel_cbe_birr">ሲቢኢ ብር</string>
+    <string name="channel_bank">ባንክ</string>
+    <string name="channel_cash">ጥሬ ገንዘብ</string>
+    <string name="channel_other">ሌላ</string>
+
+    <!-- Money -->
+    <string name="direction_in">ገቢ</string>
+    <string name="direction_out">ወጪ</string>
+    <string name="money_content_description">%1$s %2$s %3$s</string>
+
+    <!-- Placeholder screens -->
+    <string name="placeholder_today_title">ዛሬ እስካሁን ክፍያ የለም</string>
+    <string name="placeholder_today_body">የማስታወቂያ ፈቃድ ከተሰጠ በኋላ ክፍያዎች እንደደረሱ እዚህ ይታያሉ።</string>
+    <string name="placeholder_ledger_title">መዝገብዎ ባዶ ነው</string>
+    <string name="placeholder_ledger_body">የተያዘ ክፍያና የጥሬ ገንዘብ ሽያጭ ሁሉ በቀን ተከፋፍሎ እዚህ ይዘረዘራል።</string>
+    <string name="placeholder_review_title">ግምገማ የሚያስፈልገው ነገር የለም</string>
+    <string name="placeholder_review_body">ማንኛውም ሕግ ማንበብ ያልቻለው መልእክት ሕግ እንዲያስተምሩት እዚህ ይጠብቃል።</string>
+    <string name="placeholder_customers_title">እስካሁን ደንበኛ የለም</string>
+    <string name="placeholder_customers_body">የሰጡትን ዱቤ መከታተል ለመጀመር ደንበኛ ይጨምሩ።</string>
+    <string name="placeholder_reconcile_title">ክፍት ጊዜ የለም</string>
+    <string name="placeholder_reconcile_body">የጠበቁትንና የተያዘውን ለማነጻጸር አንድ ጊዜ ይክፈቱ።</string>
+    <string name="placeholder_reports_title">በቂ መረጃ የለም</string>
+    <string name="placeholder_reports_body">ጥቂት ግብይቶች ከተመዘገቡ በኋላ ማጠቃለያና ገበታ ይታያል።</string>
+    <string name="placeholder_settings_title">ቅንብሮች</string>
+    <string name="placeholder_settings_body">ቋንቋ፣ ማስታወሻ፣ ደኅንነትና ምትኬ እዚህ ይገኛሉ።</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_open_review">የግምገማ ወረፋን ክፈት</string>
+    <string name="cd_open_reconcile">ማስታረቅን ክፈት</string>
+    <string name="cd_open_settings">ቅንብሮችን ክፈት</string>
+    <string name="cd_navigate_back">ተመለስ</string>
+</resources>

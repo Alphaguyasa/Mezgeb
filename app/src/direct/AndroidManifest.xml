@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    `direct` flavor manifest — sideloaded distribution only. Never shipped to Play.
+
+    This is the one and only file in the project permitted to declare the restricted
+    SMS read/receive permissions. They are added in Session 4, alongside
+    SmsImportWorker, so a shop can backfill its existing inbox history. Until then
+    this manifest is intentionally empty.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+</manifest>

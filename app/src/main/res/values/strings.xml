@@ -1,3 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Mezgeb</string>
+
+    <!-- Destinations -->
+    <string name="destination_today">Today</string>
+    <string name="destination_ledger">Ledger</string>
+    <string name="destination_review">Review</string>
+    <string name="destination_customers">Customers</string>
+    <string name="destination_reconcile">Reconcile</string>
+    <string name="destination_reports">Reports</string>
+    <string name="destination_settings">Settings</string>
+
+    <!-- Channels -->
+    <string name="channel_telebirr">telebirr</string>
+    <string name="channel_cbe_birr">CBE Birr</string>
+    <string name="channel_bank">Bank</string>
+    <string name="channel_cash">Cash</string>
+    <string name="channel_other">Other</string>
+
+    <!-- Money -->
+    <string name="direction_in">Received</string>
+    <string name="direction_out">Paid out</string>
+    <!-- 1: direction, 2: amount, 3: currency code -->
+    <string name="money_content_description">%1$s %2$s %3$s</string>
+
+    <!-- Placeholder screens (replaced from Session 5 onward) -->
+    <string name="placeholder_today_title">No payments yet today</string>
+    <string name="placeholder_today_body">Once notification access is granted, payments will appear here as they arrive.</string>
+    <string name="placeholder_ledger_title">Your ledger is empty</string>
+    <string name="placeholder_ledger_body">Every captured payment and cash sale will be listed here, grouped by day.</string>
+    <string name="placeholder_review_title">Nothing needs review</string>
+    <string name="placeholder_review_body">Messages that no rule could read will wait here for you to teach a rule.</string>
+    <string name="placeholder_customers_title">No customers yet</string>
+    <string name="placeholder_customers_body">Add a customer to start tracking credit you have given.</string>
+    <string name="placeholder_reconcile_title">No open period</string>
+    <string name="placeholder_reconcile_body">Open a period to compare what you expected against what was captured.</string>
+    <string name="placeholder_reports_title">Not enough data yet</string>
+    <string name="placeholder_reports_body">Summaries and charts appear once there are a few transactions to summarise.</string>
+    <string name="placeholder_settings_title">Settings</string>
+    <string name="placeholder_settings_body">Language, reminders, security and backup live here.</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_open_review">Open review queue</string>
+    <string name="cd_open_reconcile">Open reconciliation</string>
+    <string name="cd_open_settings">Open settings</string>
+    <string name="cd_navigate_back">Go back</string>
 </resources>

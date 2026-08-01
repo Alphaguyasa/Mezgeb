@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches MezgebTheme's dark `surface` (NightSurface). -->
+    <color name="launch_background">#14130E</color>
+</resources>

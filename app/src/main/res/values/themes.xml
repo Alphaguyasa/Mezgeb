@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    This theme only styles the pre-Compose launch window: the background the system
+    draws between tapping the icon and the first frame. Everything after that is
+    MezgebTheme in Compose. Keeping the launch background in step with the Compose
+    surface colour avoids a white flash on cold start.
+-->
 <resources>
-
-    <style name="Theme.Mezgeb" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Mezgeb" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/launch_background</item>
+    </style>
 </resources>

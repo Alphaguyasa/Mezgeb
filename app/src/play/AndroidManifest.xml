@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    `play` flavor manifest — Google Play distribution.
+
+    Capture in this flavor is notification-listener only. Nothing from the restricted
+    messaging-read permission class may ever be added here, in any form. This file
+    exists so the play flavor has an explicit, greppable home rather than silently
+    inheriting whatever lands in src/main.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+</manifest>

@@ -1,11 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<!--
+    Mezgeb main manifest — shared by both distribution flavors.
+
+    Two permission classes must never appear in this file, in any form including
+    commented-out text: the restricted messaging-read permissions, and INTERNET.
+    Restricted-permission policy covers placeholder and commented declarations, so
+    even naming them here would be a violation; the restricted pair is declared
+    only in app/src/direct/AndroidManifest.xml. The offline guarantee is likewise a
+    product feature, not an oversight. See .md hard constraints #1 and #2.
+
+    allowBackup is false and there are no dataExtractionRules: a shop's ledger
+    must not be auto-backed-up off device. See 03-ARCHITECTURE.md section 8.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
-        android:allowBackup="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
+        android:name=".MezgebApplication"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"

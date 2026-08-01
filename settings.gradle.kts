@@ -24,4 +24,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Mezgeb"
 include(":app")
+include(":parser")
  
