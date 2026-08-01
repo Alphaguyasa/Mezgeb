@@ -213,3 +213,51 @@ a network error unrelated to the code. Targeted verification works:
 
 Network to Google and Maven Central has been intermittent throughout this session —
 worth remembering before diagnosing a slow build as a hang.
+
+---
+
+## Corpus, first pass (2026-08-01)
+
+Extracted from the developer's own device over adb: 760 inbox messages, filtered to
+financial and promotional shortcodes before any body text was read. 15 messages from
+personal phone numbers were discarded unread. Result: **84 financial samples across 3
+senders, 34 noise samples**, 61/23 train/holdout.
+
+Full detail in `CORPUS.md`. The important points:
+
+- **CBE, EBIRR and shortcode 127 are the real transaction senders.** The `telebirr`
+  alpha sender turned out to be pure marketing; actual telebirr transactions arrive
+  from `127`. Worth knowing before writing the sender allowlist.
+- **Three noise samples come from financial senders** — a CBE fraud-awareness notice,
+  an EBIRR welcome message, a telebirr service activation. These are the ones that
+  matter: a sender allowlist alone would admit them, so the parser has to decline them
+  on content.
+- **19 messages were dropped, not redacted**, because they carried one-time codes or
+  PINs — including bank SMS stating a freshly reset mobile-banking PIN in cleartext.
+  A redacted credential is still a credential in git history.
+- **59 personal names and 36 phone numbers** were tokenised. Two leaks survived the
+  first redaction pass and were caught only because the scan was rewritten to look for
+  *any* capitalised phrase outside the template vocabulary rather than a list of names
+  already known. A leak scan that depends on knowing what to look for is not a scan.
+
+### Gaps that matter
+
+- **Every transaction sample is in English.** There is Amharic noise and one Amharic
+  CBE notice, but no Amharic transaction template — which `docs/04` calls out as
+  exactly the case that breaks naive parsers. Session 2 will tune without them.
+- No Geez numerals appeared, so `GeezNumeralNormalizer` will be written without fixture
+  coverage.
+- One person's account, so the data skews to small personal transfers rather than shop
+  takings. An accuracy figure against this corpus is a weaker claim than the same
+  figure against several real shops.
+
+### Validator change
+
+`CorpusValidationTest` originally required every 10+ digit run to be all zeros, per the
+account-number rule. EBIRR's transaction references are bare 12-digit numbers, which is
+indistinguishable from an account number by shape. The rule now permits a digit run
+when the sample declares it as `providerTxnId`, and requires zeros otherwise — 13
+non-reference runs were zeroed in the corpus to satisfy it.
+
+PowerShell 5.1's `Set-Content -Encoding UTF8` writes a BOM, which kotlinx.serialization
+rejects. Corpus files are written with `UTF8Encoding($false)`.

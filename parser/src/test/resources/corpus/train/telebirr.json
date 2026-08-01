@@ -1,0 +1,53 @@
+{
+    "sender":  "telebirr",
+    "channel":  "TELEBIRR",
+    "collectedAt":  "2026-08-01",
+    "samples":  [
+                    {
+                        "id":  "telebirr_001",
+                        "body":  "Dear NAME_128 You have paid ETB 2,000.00 for package Monthly Unlimited Premium: Unlimited Internet purchase made for 900000003 on 30/07/2026 16:50:54. Your transaction number is TQY4RS33NO. Your current balance is ETB 1.70.To download your payment information please click this link: https://transactioninfo.ethiotelecom.et/xxxx127/xxxxxxx128 Thank you for using telebirr Ethio telecom",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  200000,
+                                         "counterpartyPhone":  "+251900000003",
+                                         "providerTxnId":  "TQY4RS33NO",
+                                         "balanceAfterMinor":  170,
+                                         "occurredAt":  "2026-07-30T16:50:54+03:00"
+                                     }
+                    },
+                    {
+                        "id":  "telebirr_003",
+                        "body":  "Dear NAME_128, You have received ETB 2,000.00 by transaction number YYN1VGGY2D on 2026-07-30 16:49:24 from Commercial Bank of Ethiopia to your telebirr Account 000000000000 - NAME_14. Your current balance is ETB 2,001.70. Thank you for using telebirr Ethio telecom",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  200000,
+                                         "counterpartyName":  "Commercial Bank of Ethiopia",
+                                         "providerTxnId":  "YYN1VGGY2D",
+                                         "balanceAfterMinor":  200170,
+                                         "occurredAt":  "2026-07-30T16:49:24+03:00"
+                                     }
+                    },
+                    {
+                        "id":  "telebirr_004",
+                        "body":  "Dear NAME_128, You have received ETB 1,000.00 by transaction number KAM4U02XFF on 2026-06-29 19:19:15 from Commercial Bank of Ethiopia to your telebirr Account 000000000000 - NAME_14. Your current balance is ETB 2,001.70. Thank you for using telebirr Ethio telecom",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  100000,
+                                         "counterpartyName":  "Commercial Bank of Ethiopia",
+                                         "providerTxnId":  "KAM4U02XFF",
+                                         "balanceAfterMinor":  200170,
+                                         "occurredAt":  "2026-06-29T19:19:15+03:00"
+                                     }
+                    },
+                    {
+                        "id":  "telebirr_006",
+                        "body":  "Dear Customer You have received airtime top up recharge ETB 1.00 from Bonus Account Usage for Airtime Recharge 009751 on 25/06/2026 00:34:29 .Your transaction number is BQB598VRIX. Thank you for using telebirr Ethio telecom",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  100,
+                                         "providerTxnId":  "BQB598VRIX",
+                                         "occurredAt":  "2026-06-25T00:34:29+03:00"
+                                     }
+                    }
+                ]
+}

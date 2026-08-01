@@ -2,9 +2,10 @@
 
 How the message corpus behind Mezgeb's parser was collected, redacted and split.
 
-> **Status: not yet collected.** This file is a template. Fill the tables in as
-> collection proceeds; the accuracy figures land at the end of Session 2 and again in
-> Session 12.
+> **Status: first pass collected, incomplete.** 84 financial samples across 3 senders
+> plus 34 noise samples, all from the developer's own device. Short of the targets in
+> `docs/04-SMS-SAMPLE-COLLECTION.md` (150 samples, 4 senders) — see "What is still
+> missing". Accuracy figures land at the end of Session 2.
 
 ## What it is
 
@@ -17,26 +18,58 @@ measured against.
 
 | Sender | Channel | Train | Holdout | Total |
 |---|---|---:|---:|---:|
-| telebirr | TELEBIRR | — | — | — |
-| CBE / CBE Birr | CBE_BIRR | — | — | — |
-| _(other banks)_ | BANK | — | — | — |
-| **Noise** (non-financial) | — | — | — | — |
-| **Total** | | | | |
+| CBE (Commercial Bank of Ethiopia) | BANK | 47 | 16 | 63 |
+| EBIRR (Kaafi Microfinance wallet) | OTHER | 10 | 5 | 15 |
+| telebirr (shortcode 127) | TELEBIRR | 4 | 2 | 6 |
+| **Financial total** | | **61** | **23** | **84** |
+| Noise (non-financial) | — | — | — | 34 |
 
 Targets from `docs/04-SMS-SAMPLE-COLLECTION.md`: at least 150 financial samples across
 at least 4 senders, plus at least 30 noise samples, including Amharic-language
 variants. Run `./gradlew :parser:test --tests '*CorpusValidationTest*'` for a live
 inventory against those targets.
 
-## Sources
+### Message templates covered
 
-Collected with spoken consent, with the purpose explained before anything was taken.
+| Sender | Templates |
+|---|---|
+| CBE | debit transaction with fee breakdown; transfer out to a named account; receipt from a named account; account credited, with and without a named party; account debited with inline fees; credit carrying an in-body timestamp and reference |
+| EBIRR | wallet send with charges, counterparty name and phone; wallet receipt from a bank; transfer out to a bank account with an empty counterparty; airtime top-up received |
+| telebirr | package purchase; receipt from a bank with reference and timestamp; airtime top-up recharge |
+
+Amount formats present include `7.0`, `27.0`, `200`, `35.00`, `1,000`, `2,500.00` and
+`1004.21`, with and without a space after `ETB`, plus totals that differ from the
+transaction amount because fees are added — the case where naive extraction picks the
+wrong number.
+
+## Sources
 
 | Source | Samples | Notes |
 |---|---:|---|
-| _(own device)_ | — | |
-| _(family and friends)_ | — | consent obtained verbally |
-| _(shop counter phone)_ | — | consent obtained verbally |
+| Developer's own device (Samsung SM-G965U1) | 118 | Own data, extracted over adb from the SMS inbox |
+| Family and friends | 0 | **Not yet collected** — needs spoken consent |
+| Shop counter phone | 0 | **Not yet collected** — needs spoken consent |
+
+Everything so far is the developer's own inbox, so no third party's consent was
+required to read it. The message *contents* do, however, name other people: 59
+distinct personal names and 36 phone numbers appeared in the raw text. All were
+tokenised before anything was written into this repository — see below.
+
+## What is still missing
+
+- **66 more financial samples** to reach the 150 target.
+- **A fourth sender.** Awash, Dashen or Abyssinia, per `docs/04`. The inbox used here
+  had no other bank.
+- **Amharic-language transaction templates.** The corpus has plenty of Amharic *noise*,
+  and one Amharic CBE security notice, but every transaction message in it is in
+  English. This is the most significant gap: `docs/04` calls Amharic variants "the ones
+  that break naive parsers", and the parser will currently be tuned without them.
+- **Geez numerals.** None appeared. `GeezNumeralNormalizer` will be built without
+  fixture coverage until a sample turns up.
+
+Because the corpus is one person's account, it also skews toward small personal
+transfers rather than shop takings. A 95% figure against it is a weaker claim than the
+same figure against a corpus drawn from several real shops.
 
 ## Redaction method
 
@@ -60,6 +93,17 @@ those are precisely the properties the parser learns to read. A redaction that t
 
 Stable tokens matter: the same real phone number always redacts to the same fake one,
 so "this customer appears twice" survives while identity does not.
+
+Two categories were **excluded entirely rather than redacted**, because a redacted
+credential is still a credential in the git history and neither is training data:
+
+- 19 messages containing one-time codes, verification codes or PINs — including bank
+  SMS that stated a newly reset mobile-banking PIN in cleartext;
+- every OTP sender (TikTok, Instagram, Binance, National ID, verification services).
+
+Personal conversations were never extracted: the inbox was filtered to financial and
+promotional shortcodes before any body text was read, and the 15 messages from
+personal phone numbers were discarded unread.
 
 Unredacted originals are kept outside the repository and deleted once redaction is
 verified. `.gitignore` blocks `**/corpus/raw/`, `**/*.unredacted.json` and `*.sms.txt`

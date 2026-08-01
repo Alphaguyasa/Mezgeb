@@ -1,0 +1,31 @@
+{
+    "sender":  "telebirr",
+    "channel":  "TELEBIRR",
+    "collectedAt":  "2026-08-01",
+    "samples":  [
+                    {
+                        "id":  "telebirr_002",
+                        "body":  "Dear NAME_128 You have paid ETB 2,000.00 for package Monthly Unlimited Premium: Unlimited Internet purchase made for 900000003 on 29/06/2026 19:20:29. Your transaction number is EMN3F62TWK. Your current balance is ETB 1.70.To download your payment information please click this link: https://transactioninfo.ethiotelecom.et/xxxx033/xxxxxxx034 Thank you for using telebirr Ethio telecom",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  200000,
+                                         "counterpartyPhone":  "+251900000003",
+                                         "providerTxnId":  "EMN3F62TWK",
+                                         "balanceAfterMinor":  170,
+                                         "occurredAt":  "2026-06-29T19:20:29+03:00"
+                                     }
+                    },
+                    {
+                        "id":  "telebirr_005",
+                        "body":  "Dear NAME_128, You have received ETB 1,000.00 by transaction number XWD2P6DLGP on 2026-06-29 19:14:26 from Commercial Bank of Ethiopia to your telebirr Account 000000000000 - NAME_14. Your current balance is ETB 1,001.70. Thank you for using telebirr Ethio telecom",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  100000,
+                                         "counterpartyName":  "Commercial Bank of Ethiopia",
+                                         "providerTxnId":  "XWD2P6DLGP",
+                                         "balanceAfterMinor":  100170,
+                                         "occurredAt":  "2026-06-29T19:14:26+03:00"
+                                     }
+                    }
+                ]
+}

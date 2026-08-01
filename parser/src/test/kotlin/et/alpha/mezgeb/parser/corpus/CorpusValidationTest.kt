@@ -76,10 +76,17 @@ class CorpusValidationTest {
         val leaks = mutableListOf<String>()
 
         forEachSample { path, sample ->
+            // Some providers use a purely numeric transaction reference, which is
+            // indistinguishable from an account number by shape alone. A run is
+            // therefore allowed only when the sample declares it as the reference the
+            // parser is expected to extract; everything else must be zeroed.
+            val declaredReference = sample.expected?.providerTxnId
             longDigitRun.findAll(sample.body).forEach { match ->
                 val digits = match.value
-                val looksRedacted = digits.all { it == '0' } || redactedPhone.matches("+$digits")
-                if (!looksRedacted) {
+                val allowed = digits.all { it == '0' } ||
+                    redactedPhone.matches("+$digits") ||
+                    digits == declaredReference
+                if (!allowed) {
                     leaks += "$path/${sample.id}: '$digits' (${digits.length} digits)"
                 }
             }
@@ -89,7 +96,9 @@ class CorpusValidationTest {
             fail(
                 buildString {
                     appendLine("Possible unredacted account numbers in the corpus.")
-                    appendLine("Account numbers redact to same-length zeros; amounts keep separators.")
+                    appendLine("Account numbers redact to same-length zeros; amounts keep their")
+                    appendLine("separators; a numeric reference is allowed only when the sample")
+                    appendLine("declares it as providerTxnId.")
                     leaks.forEach { appendLine("  - $it") }
                 },
             )

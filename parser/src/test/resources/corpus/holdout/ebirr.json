@@ -1,0 +1,68 @@
+{
+    "sender":  "EBIRR",
+    "channel":  "OTHER",
+    "collectedAt":  "2026-08-01",
+    "samples":  [
+                    {
+                        "id":  "ebirr_006",
+                        "body":  "EBIRR-KAAFI-\u003e Id: 000000000012, You sent ETB100, Charges:ETB1 with VAT:ETB0.20 to NAME_56(900000008) at 30/07/26 10:25:01, Your Balance is ETB32.28. https://receipt.ebirr.com/xxxx022/xxxxxxxxxxxxxxxxxxx023",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  10000,
+                                         "counterpartyName":  "NAME_56",
+                                         "counterpartyPhone":  "+251900000008",
+                                         "providerTxnId":  "000000000012",
+                                         "balanceAfterMinor":  3228,
+                                         "occurredAt":  "2026-07-30T10:25:01+03:00"
+                                     }
+                    },
+                    {
+                        "id":  "ebirr_009",
+                        "body":  "[-EBIRR-KAAFI-] Transfer ID: 000000000013, ETB300 received from CBE(CBE) via CBE, your balance is ETB334.48 https://receipt.ebirr.com/xxxx024/xxxxxxxxxxxxxxxxxxx025",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  30000,
+                                         "counterpartyName":  "CBE",
+                                         "providerTxnId":  "000000000013",
+                                         "balanceAfterMinor":  33448
+                                     }
+                    },
+                    {
+                        "id":  "ebirr_012",
+                        "body":  "EBIRR-KAAFI-\u003e Id: 000000000011, You sent ETB80, Charges:ETB0.80 with VAT:ETB0.16 to NAME_60(900000012) at 29/07/26 16:14:16, Your Balance is ETB115.6. https://receipt.ebirr.com/xxxx026/xxxxxxx027/xxxxxxxx028==",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  8000,
+                                         "counterpartyName":  "NAME_60",
+                                         "counterpartyPhone":  "+251900000012",
+                                         "providerTxnId":  "000000000011",
+                                         "balanceAfterMinor":  11560,
+                                         "occurredAt":  "2026-07-29T16:14:16+03:00"
+                                     }
+                    },
+                    {
+                        "id":  "ebirr_013",
+                        "body":  "EBIRR-KAAFI-\u003e Id: 000000000014, You sent ETB100, Charges:ETB1 with VAT:ETB0.20 to NAME_32(900000015) at 29/07/26 14:34:14, Your Balance is ETB299. https://receipt.ebirr.com/xxxx029/xxxxxxxxxxxxxxxxxxx030",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  10000,
+                                         "counterpartyName":  "NAME_32",
+                                         "counterpartyPhone":  "+251900000015",
+                                         "providerTxnId":  "000000000014",
+                                         "balanceAfterMinor":  29900,
+                                         "occurredAt":  "2026-07-29T14:34:14+03:00"
+                                     }
+                    },
+                    {
+                        "id":  "ebirr_014",
+                        "body":  "[-EBIRR-KAAFI-] Transfer ID: 000000000015, ETB400 received from CBE(CBE) via CBE, your balance is ETB400 https://receipt.ebirr.com/xxxx031/xxxxxxxxxxxxxxxxxxx032",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  40000,
+                                         "counterpartyName":  "CBE",
+                                         "providerTxnId":  "000000000015",
+                                         "balanceAfterMinor":  40000
+                                     }
+                    }
+                ]
+}

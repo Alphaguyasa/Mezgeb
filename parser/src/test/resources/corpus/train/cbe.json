@@ -1,0 +1,459 @@
+{
+    "sender":  "CBE",
+    "channel":  "BANK",
+    "collectedAt":  "2026-08-01",
+    "samples":  [
+                    {
+                        "id":  "cbe_001",
+                        "body":  "Dear NAME_36 A debit transaction of ETB 2000.0. has occurred on your account 1********0001. Service charge of ETB 10.00 and VAT(15%) of ETB1.50 and Disaster Recovery(5%) of 0.50 with total of ETB2012.00 .Your current balance is ETB22.92. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/i0-xxxxxxxxxxxxxxxxx052 for feedback: https://forms.gle/xxxxxxxxxxxxxx002",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  200000,
+                                         "balanceAfterMinor":  2292
+                                     }
+                    },
+                    {
+                        "id":  "cbe_002",
+                        "body":  "Dear NAME_36 A debit transaction of ETB 3500.0. has occurred on your account 1********0001. Service charge of ETB 63.30 and VAT(15%) of ETB9.60 and Disaster Recovery(5%) of 3.20 with total of ETB3576.10 .Your current balance is ETB220.92. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/t2-xxxxxxxxxxxxxxxxx053 for feedback: https://forms.gle/xxxxxxxxxxxxxx002",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  350000,
+                                         "balanceAfterMinor":  22092
+                                     }
+                    },
+                    {
+                        "id":  "cbe_003",
+                        "body":  "Dear NAME_36 A debit transaction of ETB 27.0. has occurred on your account 1********0001. Service charge of ETB 0.00 and VAT(15%) of 0.0 and Disaster Recovery(5%) of 0.00 with total of ETB27.00 .Your current balance is ETB54.17. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/o2-xxxxxxxxxxxxxxxxx054 for feedback: https://forms.gle/xxxxxxxxxxxxxx002",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  2700,
+                                         "balanceAfterMinor":  5417
+                                     }
+                    },
+                    {
+                        "id":  "cbe_005",
+                        "body":  "Dear NAME_64 your Account 1********0001 has been credited with ETB 300.00. Your Current Balance is ETB 2034.92. Thank you for Banking with CBE! for Reciept https://apps.cbe.com.et:100/xxxxxxxxxx055/xxxxxxxxx056\u0026xxxxx005",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  30000,
+                                         "balanceAfterMinor":  203492
+                                     }
+                    },
+                    {
+                        "id":  "cbe_006",
+                        "body":  "Dear NAME_64 your Account 1********0001 has been credited with ETB 3000.00. Your Current Balance is ETB 3220.92. Thank you for Banking with CBE! for Reciept https://apps.cbe.com.et:100/xxxxxxxxxx057/xxxxxxxxx058\u0026xxxxx005",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  300000,
+                                         "balanceAfterMinor":  322092
+                                     }
+                    },
+                    {
+                        "id":  "cbe_007",
+                        "body":  "Dear NAME_64 your Account 1********0001 has been credited with ETB 500.00. Your Current Balance is ETB 3254.64. Thank you for Banking with CBE! for Reciept https://apps.cbe.com.et:100/xxxxxxxxxx059/xxxxxxxxx060\u0026xxxxx005",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  50000,
+                                         "balanceAfterMinor":  325464
+                                     }
+                    },
+                    {
+                        "id":  "cbe_009",
+                        "body":  "Dear NAME_64 your Account 1********0001 has been credited by NAME_03 with ETB 200. Your Current Balance is ETB 1734.92. Thank you for Banking with CBE! for Reciept https://apps.cbe.com.et:100/xxxxxxxxxx061/xxxxxxxxx062\u0026xxxxx005",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  20000,
+                                         "counterpartyName":  "NAME_03",
+                                         "balanceAfterMinor":  173492
+                                     }
+                    },
+                    {
+                        "id":  "cbe_010",
+                        "body":  "Dear NAME_36 A debit transaction of ETB 7.0. has occurred on your account 1********0001. Service charge of ETB 0.00 and VAT(15%) of 0.0 and Disaster Recovery(5%) of 0.00 with total of ETB7.00 .Your current balance is ETB1,534.92. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/j9-xxxxxxxxxxxxxxxxx063 for feedback: https://forms.gle/xxxxxxxxxxxxxx002",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  700,
+                                         "balanceAfterMinor":  153492
+                                     }
+                    },
+                    {
+                        "id":  "cbe_011",
+                        "body":  "Dear NAME_36 A debit transaction of ETB 1100.0. has occurred on your account 1********0001. Service charge of ETB 10.00 and VAT(15%) of ETB1.50 and Disaster Recovery(5%) of 0.50 with total of ETB1112.00 .Your current balance is ETB1,541.92. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/x8-xxxxxxxxxxxxxxxxx064 for feedback: https://forms.gle/xxxxxxxxxxxxxx002",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  110000,
+                                         "balanceAfterMinor":  154192
+                                     }
+                    },
+                    {
+                        "id":  "cbe_012",
+                        "body":  "Dear NAME_36 A debit transaction of ETB 250.0. has occurred on your account 1********0001. Service charge of ETB 10.00 and VAT(15%) of ETB1.50 and Disaster Recovery(5%) of 0.50 with total of ETB262.00 .Your current balance is ETB2,653.92. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/z5-xxxxxxxxxxxxxxxxx065 for feedback: https://forms.gle/xxxxxxxxxxxxxx002",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  25000,
+                                         "balanceAfterMinor":  265392
+                                     }
+                    },
+                    {
+                        "id":  "cbe_013",
+                        "body":  "Dear NAME_36 A debit transaction of ETB 150.0. has occurred on your account 1********0001. Service charge of ETB 10.00 and VAT(15%) of ETB1.50 and Disaster Recovery(5%) of 0.50 with total of ETB162.00 .Your current balance is ETB2,915.92. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/m5-xxxxxxxxxxxxxxxxx066 for feedback: https://forms.gle/xxxxxxxxxxxxxx002",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  15000,
+                                         "balanceAfterMinor":  291592
+                                     }
+                    },
+                    {
+                        "id":  "cbe_014",
+                        "body":  "Dear NAME_36 You have received ETB 800.00 from account 1********0002 (NAME_06) to your account 1********0001. Your current balance is ETB3,608.92. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/w4-xxxxxxxxxxxxxxxxx067 for feedback: https://forms.gle/xxxxxxxxxxxxxx002",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  80000,
+                                         "counterpartyName":  "NAME_06",
+                                         "balanceAfterMinor":  360892
+                                     }
+                    },
+                    {
+                        "id":  "cbe_015",
+                        "body":  "Dear NAME_64 your Account 1********0001 has been credited by NAME_17 with ETB 4000.00. Your Current Balance is ETB 4054.17. Thank you for Banking with CBE! for Reciept https://apps.cbe.com.et:100/xxxxxxxxxx068/xxxxxxxxx069\u0026xxxxx005",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  400000,
+                                         "counterpartyName":  "NAME_17",
+                                         "balanceAfterMinor":  405417
+                                     }
+                    },
+                    {
+                        "id":  "cbe_016",
+                        "body":  "Dear NAME_64 your Account 1********0001 has been credited by NAME_11 with ETB 600.00. Your Current Balance is ETB 2398.2. Thank you for Banking with CBE! for Reciept https://apps.cbe.com.et:100/xxxxxxxxxx070/xxxxxxxxx071\u0026xxxxx005",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  60000,
+                                         "counterpartyName":  "NAME_11",
+                                         "balanceAfterMinor":  239820
+                                     }
+                    },
+                    {
+                        "id":  "cbe_019",
+                        "body":  "Dear NAME_36 You have successfully transferred ETB30.00 from account 1********0001 to account 1********0003 (NAME_35). Service charge of ETB 0.50 and VAT(15%) of ETB0.08 and Disaster Recovery(5%) of 0.03 with total of ETB30.61 .Your current balance is ETB81.17. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/c3-xxxxxxxxxxxxxxxxx072 for feedback: https://forms.gle/xxxxxxxxxxxxxx002",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  3000,
+                                         "counterpartyName":  "NAME_35",
+                                         "balanceAfterMinor":  8117
+                                     }
+                    },
+                    {
+                        "id":  "cbe_020",
+                        "body":  "Dear NAME_36 You have successfully transferred ETB2000.00 from account 1********0001 to account 1********0004 (NAME_51). Service charge of ETB 1.00 and VAT(15%) of ETB0.15 and Disaster Recovery(5%) of 0.05 with total of ETB2001.20 .Your current balance is ETB138.78. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/j9-xxxxxxxxxxxxxxxxx073 for feedback: https://forms.gle/xxxxxxxxxxxxxx002",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  200000,
+                                         "counterpartyName":  "NAME_51",
+                                         "balanceAfterMinor":  13878
+                                     }
+                    },
+                    {
+                        "id":  "cbe_021",
+                        "body":  "Dear NAME_36 You have successfully transferred ETB100.00 from account 1********0001 to account 1********0005 (NAME_21). Service charge of ETB 0.50 and VAT(15%) of ETB0.08 and Disaster Recovery(5%) of 0.03 with total of ETB100.61 .Your current balance is ETB2,169.98. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/r7-xxxxxxxxxxxxxxxxx074 for feedback: https://forms.gle/xxxxxxxxxxxxxx002",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  10000,
+                                         "counterpartyName":  "NAME_21",
+                                         "balanceAfterMinor":  216998
+                                     }
+                    },
+                    {
+                        "id":  "cbe_022",
+                        "body":  "Dear NAME_36 You have successfully transferred ETB100.00 from account 1********0001 to account 1********0006 (NAME_53). Service charge of ETB 0.50 and VAT(15%) of ETB0.08 and Disaster Recovery(5%) of 0.03 with total of ETB100.61 .Your current balance is ETB2,270.59. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/o5-xxxxxxxxxxxxxxxxx075 for feedback: https://forms.gle/xxxxxxxxxxxxxx002",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  10000,
+                                         "counterpartyName":  "NAME_53",
+                                         "balanceAfterMinor":  227059
+                                     }
+                    },
+                    {
+                        "id":  "cbe_023",
+                        "body":  "Dear NAME_36 You have successfully transferred ETB600.00 from account 1********0001 to account 1********0007 (NAME_46). Service charge of ETB 0.50 and VAT(15%) of ETB0.08 and Disaster Recovery(5%) of 0.03 with total of ETB600.61 .Your current balance is ETB1,805.20. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/s8-xxxxxxxxxxxxxxxxx076 for feedback: https://forms.gle/xxxxxxxxxxxxxx002",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  60000,
+                                         "counterpartyName":  "NAME_46",
+                                         "balanceAfterMinor":  180520
+                                     }
+                    },
+                    {
+                        "id":  "cbe_024",
+                        "body":  "Dear NAME_36 You have successfully transferred ETB250.00 from account 1********0001 to account 1********0008 (NAME_61). Service charge of ETB 0.50 and VAT(15%) of ETB0.08 and Disaster Recovery(5%) of 0.03 with total of ETB250.61 .Your current balance is ETB2,405.81. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/y8-xxxxxxxxxxxxxxxxx077 for feedback: https://forms.gle/xxxxxxxxxxxxxx002",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  25000,
+                                         "counterpartyName":  "NAME_61",
+                                         "balanceAfterMinor":  240581
+                                     }
+                    },
+                    {
+                        "id":  "cbe_025",
+                        "body":  "Dear NAME_36 You have successfully transferred ETB35.00 from account 1********0001 to account 1********0011 (NAME_44). Service charge of ETB 0.50 and VAT(15%) of ETB0.08 and Disaster Recovery(5%) of 0.03 with total of ETB35.61 .Your current balance is ETB2,754.64. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/l7-xxxxxxxxxxxxxxxxx078",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  3500,
+                                         "counterpartyName":  "NAME_44",
+                                         "balanceAfterMinor":  275464
+                                     }
+                    },
+                    {
+                        "id":  "cbe_026",
+                        "body":  "Dear NAME_36 You have successfully transferred ETB190.00 from account 1********0001 to account 1********0009 (NAME_09). Service charge of ETB 0.50 and VAT(15%) of ETB0.08 and Disaster Recovery(5%) of 0.03 with total of ETB190.61 .Your current balance is ETB2,824.25. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/h3-xxxxxxxxxxxxxxxxx079",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  19000,
+                                         "counterpartyName":  "NAME_09",
+                                         "balanceAfterMinor":  282425
+                                     }
+                    },
+                    {
+                        "id":  "cbe_027",
+                        "body":  "Dear NAME_36 You have successfully transferred ETB140.00 from account 1********0001 to account 1********0011 (NAME_44). Service charge of ETB 0.50 and VAT(15%) of ETB0.08 and Disaster Recovery(5%) of 0.03 with total of ETB140.61 .Your current balance is ETB3,042.86. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/a8-xxxxxxxxxxxxxxxxx080",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  14000,
+                                         "counterpartyName":  "NAME_44",
+                                         "balanceAfterMinor":  304286
+                                     }
+                    },
+                    {
+                        "id":  "cbe_028",
+                        "body":  "Dear NAME_36 You have successfully transferred ETB50.00 from account 1********0001 to account 1********0012 (NAME_30). Service charge of ETB 0.50 and VAT(15%) of ETB0.08 and Disaster Recovery(5%) of 0.03 with total of ETB50.61 .Your current balance is ETB3,236.47. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/v1-xxxxxxxxxxxxxxxxx081",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  5000,
+                                         "counterpartyName":  "NAME_30",
+                                         "balanceAfterMinor":  323647
+                                     }
+                    },
+                    {
+                        "id":  "cbe_029",
+                        "body":  "Dear NAME_36 A debit transaction of ETB 27.0. has occurred on your account 1********0001. Service charge of ETB 0.00 and VAT(15%) of 0.0 and Disaster Recovery(5%) of 0.00 with total of ETB27.00 .Your current balance is ETB2,790.25. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/q7-xxxxxxxxxxxxxxxxx082",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  2700,
+                                         "balanceAfterMinor":  279025
+                                     }
+                    },
+                    {
+                        "id":  "cbe_030",
+                        "body":  "Dear NAME_36 A debit transaction of ETB 7.0. has occurred on your account 1********0001. Service charge of ETB 0.00 and VAT(15%) of 0.0 and Disaster Recovery(5%) of 0.00 with total of ETB7.00 .Your current balance is ETB2,817.25. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/q7-xxxxxxxxxxxxxxxxx083",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  700,
+                                         "balanceAfterMinor":  281725
+                                     }
+                    },
+                    {
+                        "id":  "cbe_031",
+                        "body":  "Dear NAME_36 A debit transaction of ETB 28.0. has occurred on your account 1********0001. Service charge of ETB 0.00 and VAT(15%) of 0.0 and Disaster Recovery(5%) of 0.00 with total of ETB28.00 .Your current balance is ETB3,014.86. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/t0-xxxxxxxxxxxxxxxxx084",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  2800,
+                                         "balanceAfterMinor":  301486
+                                     }
+                    },
+                    {
+                        "id":  "cbe_033",
+                        "body":  "Dear NAME_36 A debit transaction of ETB 1000.0. has occurred on your account 1********0001. Service charge of ETB 10.00 and VAT(15%) of ETB1.50 and Disaster Recovery(5%) of 0.50 with total of ETB1012.00 .Your current balance is ETB87.08. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/q1-xxxxxxxxxxxxxxxxx085",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  100000,
+                                         "balanceAfterMinor":  8708
+                                     }
+                    },
+                    {
+                        "id":  "cbe_034",
+                        "body":  "Dear NAME_36 A debit transaction of ETB 7.0. has occurred on your account 1********0001. Service charge of ETB 0.00 and VAT(15%) of 0.0 and Disaster Recovery(5%) of 0.00 with total of ETB7.00 .Your current balance is ETB990.04. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/z2-xxxxxxxxxxxxxxxxx086",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  700,
+                                         "balanceAfterMinor":  99004
+                                     }
+                    },
+                    {
+                        "id":  "cbe_038",
+                        "body":  "Dear NAME_36 You have received ETB 400.00 from account 1********0014 (NAME_34) to your account 1********0001. Your current balance is ETB3,045.28. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/j3-xxxxxxxxxxxxxxxxx087",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  40000,
+                                         "counterpartyName":  "NAME_34",
+                                         "balanceAfterMinor":  304528
+                                     }
+                    },
+                    {
+                        "id":  "cbe_039",
+                        "body":  "Dear NAME_36 You have received ETB 500.00 from account 1********0002 (NAME_06) to your account 1********0001. Your current balance is ETB3,676.49. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/o4-xxxxxxxxxxxxxxxxx088",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  50000,
+                                         "counterpartyName":  "NAME_06",
+                                         "balanceAfterMinor":  367649
+                                     }
+                    },
+                    {
+                        "id":  "cbe_040",
+                        "body":  "Dear NAME_36 You have received ETB 700.00 from account 1********0006 (NAME_48) to your account 1********0001. Your current balance is ETB1,379.43. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/x0-xxxxxxxxxxxxxxxxx089",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  70000,
+                                         "counterpartyName":  "NAME_48",
+                                         "balanceAfterMinor":  137943
+                                     }
+                    },
+                    {
+                        "id":  "cbe_042",
+                        "body":  "Dear NAME_64 your Account 1********0001 has been debited with ETB 1004.21 including Service charge ETB3.50ETB0.18 and VAT(15%) ETB0.53. Your Current Balance is ETB 2645.28. Thank you for Banking with CBE!. For feedback https://shorturl.at/auUX0",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  100421,
+                                         "balanceAfterMinor":  264528
+                                     }
+                    },
+                    {
+                        "id":  "cbe_044",
+                        "body":  "Dear NAME_36 You have received ETB 2,500.00 from account 1********0002 (NAME_06) to your account 1********0001. Your current balance is ETB3,176.49. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/u9-xxxxxxxxxxxxxxxxx090",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  250000,
+                                         "counterpartyName":  "NAME_06",
+                                         "balanceAfterMinor":  317649
+                                     }
+                    },
+                    {
+                        "id":  "cbe_045",
+                        "body":  "Dear NAME_36 You have successfully transferred ETB310.00 from account 1********0001 to account 1********0015 (NAME_58). Service charge of ETB 0.50 and VAT(15%) of ETB0.08 and Disaster Recovery(5%) of 0.03 with total of ETB310.61 .Your current balance is ETB679.43. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/h5-xxxxxxxxxxxxxxxxx091",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  31000,
+                                         "counterpartyName":  "NAME_58",
+                                         "balanceAfterMinor":  67943
+                                     }
+                    },
+                    {
+                        "id":  "cbe_046",
+                        "body":  "Dear NAME_36 You have successfully transferred ETB100.00 from account 1********0001 to account 1********0016 (NAME_12). Service charge of ETB 0.50 and VAT(15%) of ETB0.08 and Disaster Recovery(5%) of 0.03 with total of ETB100.61 .Your current balance is ETB892.04. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/n2-xxxxxxxxxxxxxxxxx092",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  10000,
+                                         "counterpartyName":  "NAME_12",
+                                         "balanceAfterMinor":  89204
+                                     }
+                    },
+                    {
+                        "id":  "cbe_047",
+                        "body":  "Dear NAME_36 You have successfully transferred ETB165.00 from account 1********0001 to account 1********0017 (NAME_01). Service charge of ETB 0.50 and VAT(15%) of ETB0.08 and Disaster Recovery(5%) of 0.03 with total of ETB165.61 .Your current balance is ETB992.65. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/o5-xxxxxxxxxxxxxxxxx093",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  16500,
+                                         "counterpartyName":  "NAME_01",
+                                         "balanceAfterMinor":  99265
+                                     }
+                    },
+                    {
+                        "id":  "cbe_049",
+                        "body":  "Dear NAME_36 You have received ETB 105.00 from account 1********0006 (NAME_48) to your account 1********0001. Your current balance is ETB997.04. Thanks for Banking with CBE. https://mbreciept.cbe.com.et/x6-xxxxxxxxxxxxxxxxx094",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  10500,
+                                         "counterpartyName":  "NAME_48",
+                                         "balanceAfterMinor":  99704
+                                     }
+                    },
+                    {
+                        "id":  "cbe_050",
+                        "body":  "Dear NAME_36 You have received ETB 200.00 from account 1********0002 (NAME_06) to your account 1********0001. Your current balance is ETB339.44. Thanks for Banking with CBE. https://Mbreciept.cbe.com.et/xxxxxxxxxxxxxxx095",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  20000,
+                                         "counterpartyName":  "NAME_06",
+                                         "balanceAfterMinor":  33944
+                                     }
+                    },
+                    {
+                        "id":  "cbe_053",
+                        "body":  "Dear NAME_36 You have successfully transferred ETB 15.61 from account 1********0001 to account 1********0027 (NAME_55). Service charge of ETB 0.50 and VAT(15%) of ETB0.08 and Disaster Recovery(5%) of 0.03 with total of ETB15.61 .Your current balance is ETB447.39. Thanks for Banking with CBE. https://Mbreciept.cbe.com.et/xxxxxxxxxxxxxxx096",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  1561,
+                                         "counterpartyName":  "NAME_55",
+                                         "balanceAfterMinor":  44739
+                                     }
+                    },
+                    {
+                        "id":  "cbe_054",
+                        "body":  "Dear NAME_36 You have successfully transferred ETB 15.61 from account 1********0001 to account 1********0031 (NAME_33). Service charge of ETB 0.50 and VAT(15%) of ETB0.08 and Disaster Recovery(5%) of 0.03 with total of ETB15.61 .Your current balance is ETB190.00. Thanks for Banking with CBE. https://Mbreciept.cbe.com.et/xxxxxxxxxxxxxxx097",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  1561,
+                                         "counterpartyName":  "NAME_33",
+                                         "balanceAfterMinor":  19000
+                                     }
+                    },
+                    {
+                        "id":  "cbe_055",
+                        "body":  "Dear NAME_36 You have successfully transferred ETB 95.61 from account 1********0001 to account 1********0033 (NAME_13). Service charge of ETB 0.50 and VAT(15%) of ETB0.08 and Disaster Recovery(5%) of 0.03 with total of ETB95.61 .Your current balance is ETB5.61. Thanks for Banking with CBE. https://Mbreciept.cbe.com.et/xxxxxxxxxxxxxxx098",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  9561,
+                                         "counterpartyName":  "NAME_13",
+                                         "balanceAfterMinor":  561
+                                     }
+                    },
+                    {
+                        "id":  "cbe_057",
+                        "body":  "Dear NAME_64 your Account 1********0001 has been credited with ETB 300.00. Your Current Balance is ETB 490. Thank you for Banking with CBE! for Reciept https://apps.cbe.com.et:100/xxxxxxxxxx099/xxxxxxxxx100\u0026xxxxx005",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  30000,
+                                         "balanceAfterMinor":  49000
+                                     }
+                    },
+                    {
+                        "id":  "cbe_058",
+                        "body":  "Dear NAME_64 your Account 1********0001 has been credited with ETB 200. Your Current Balance is ETB 205.61. Thank you for Banking with CBE! for Reciept https://apps.cbe.com.et:100/xxxxxxxxxx101/xxxxxxxxx102\u0026xxxxx005",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  20000,
+                                         "balanceAfterMinor":  20561
+                                     }
+                    },
+                    {
+                        "id":  "cbe_060",
+                        "body":  "Dear NAME_36 You have successfully transferred ETB 450.61 from account 1********0001 to account 1********0041 (NAME_10). Service charge of ETB 0.50 and VAT(15%) of ETB0.08 and Disaster Recovery(5%) of 0.03 with total of ETB450.61 .Your current balance is ETB1,017.08. Thanks for Banking with CBE. https://Mbreciept.cbe.com.et/xxxxxxxxxxxxxxx103",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  45061,
+                                         "counterpartyName":  "NAME_10",
+                                         "balanceAfterMinor":  101708
+                                     }
+                    },
+                    {
+                        "id":  "cbe_061",
+                        "body":  "Dear NAME_36 You have successfully transferred ETB 30.61 from account 1********0001 to account 1********0027 (NAME_55). Service charge of ETB 0.50 and VAT(15%) of ETB0.08 and Disaster Recovery(5%) of 0.03 with total of ETB30.61 .Your current balance is ETB1,054.26. Thanks for Banking with CBE. https://Mbreciept.cbe.com.et/xxxxxxxxxxxxxxx104",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  3061,
+                                         "counterpartyName":  "NAME_55",
+                                         "balanceAfterMinor":  105426
+                                     }
+                    },
+                    {
+                        "id":  "cbe_062",
+                        "body":  "Dear NAME_36 You have successfully transferred ETB 50.61 from account 1********0001 to account 1********0038 (NAME_15). Service charge of ETB 0.50 and VAT(15%) of ETB0.08 and Disaster Recovery(5%) of 0.03 with total of ETB50.61 .Your current balance is ETB1,084.87. Thanks for Banking with CBE. https://Mbreciept.cbe.com.et/xxxxxxxxxxxxxxx105",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  5061,
+                                         "counterpartyName":  "NAME_15",
+                                         "balanceAfterMinor":  108487
+                                     }
+                    }
+                ]
+}

@@ -1,0 +1,124 @@
+{
+    "sender":  "EBIRR",
+    "channel":  "OTHER",
+    "collectedAt":  "2026-08-01",
+    "samples":  [
+                    {
+                        "id":  "ebirr_001",
+                        "body":  "[-EBIRR-KAAFI-] Transfer ID: 000000000003, You have successfully transferred ETB200 Charges: ETB0.80 with VAT: ETB0.12 to bank account No: 0000000000000 ( ), your balance is ETB26.48 https://receipt.ebirr.com/xxxx106/xxxxxxxxxxxxxxxxxxx107==",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  20000,
+                                         "providerTxnId":  "000000000003",
+                                         "balanceAfterMinor":  2648
+                                     }
+                    },
+                    {
+                        "id":  "ebirr_002",
+                        "body":  "EBIRR-KAAFI-\u003e Id: 000000000008, You sent ETB1,000, Charges:ETB2 with VAT:ETB0.40 to NAME_59(900000005) at 30/07/26 12:38:30, Your Balance is ETB227.68. https://receipt.ebirr.com/xxxx108/xxxxxxxxxxxxxxxxxxx109",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  100000,
+                                         "counterpartyName":  "NAME_59",
+                                         "counterpartyPhone":  "+251900000005",
+                                         "providerTxnId":  "000000000008",
+                                         "balanceAfterMinor":  22768,
+                                         "occurredAt":  "2026-07-30T12:38:30+03:00"
+                                     }
+                    },
+                    {
+                        "id":  "ebirr_003",
+                        "body":  "[-EBIRR-KAAFI-] Transfer ID: 000000000006, ETB1100 received from CBE(CBE) via CBE, your balance is ETB1,229.68 https://receipt.ebirr.com/xxxx110/xxxxxxxxxxxxxxxxxxx111",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  110000,
+                                         "counterpartyName":  "CBE",
+                                         "providerTxnId":  "000000000006",
+                                         "balanceAfterMinor":  122968
+                                     }
+                    },
+                    {
+                        "id":  "ebirr_004",
+                        "body":  "EBIRR-KAAFI-\u003e Id: 000000000004, You sent ETB200, Charges:ETB1 with VAT:ETB0.20 to NAME_16(900000006) at 30/07/26 11:29:27, Your Balance is ETB129.88. https://receipt.ebirr.com/xxxx112/xxxxxxxxxxxxxxxxxxx113",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  20000,
+                                         "counterpartyName":  "NAME_16",
+                                         "counterpartyPhone":  "+251900000006",
+                                         "providerTxnId":  "000000000004",
+                                         "balanceAfterMinor":  12988,
+                                         "occurredAt":  "2026-07-30T11:29:27+03:00"
+                                     }
+                    },
+                    {
+                        "id":  "ebirr_005",
+                        "body":  "EBIRR-KAAFI-\u003e Id: 000000000001, You sent ETB100, Charges:ETB1 with VAT:ETB0.20 to NAME_41(900000007) at 30/07/26 11:09:06, Your Balance is ETB81.08. https://receipt.ebirr.com/xxxx114/-xxxxxxxxxxxxxxxx115_v",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  10000,
+                                         "counterpartyName":  "NAME_41",
+                                         "counterpartyPhone":  "+251900000007",
+                                         "providerTxnId":  "000000000001",
+                                         "balanceAfterMinor":  8108,
+                                         "occurredAt":  "2026-07-30T11:09:06+03:00"
+                                     }
+                    },
+                    {
+                        "id":  "ebirr_007",
+                        "body":  "[-EBIRR-KAAFI-] Transfer ID: 000000000002, ETB250 received from CBE(CBE) via CBE, your balance is ETB330.88 https://receipt.ebirr.com/xxxx116/xxxxxxxxxxxxxxxxxxx117",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  25000,
+                                         "counterpartyName":  "CBE",
+                                         "providerTxnId":  "000000000002",
+                                         "balanceAfterMinor":  33088
+                                     }
+                    },
+                    {
+                        "id":  "ebirr_008",
+                        "body":  "[-EBIRR-KAAFI-] Transfer ID: 000000000009, ETB150 received from CBE(CBE) via CBE, your balance is ETB182.08 https://receipt.ebirr.com/xxxx118/xxxxxxx119-xxxxxxxx120",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  15000,
+                                         "counterpartyName":  "CBE",
+                                         "providerTxnId":  "000000000009",
+                                         "balanceAfterMinor":  18208
+                                     }
+                    },
+                    {
+                        "id":  "ebirr_010",
+                        "body":  "EBIRR-KAAFI-\u003e Id: 000000000010, You sent ETB20, Charges:ETB0.20 with VAT:ETB0.04 to NAME_45(900000010) at 30/07/26 09:24:39, Your Balance is ETB34.52. https://receipt.ebirr.com/xxxx121/xxxxxxxxxxxxxxxxxxx122",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  2000,
+                                         "counterpartyName":  "NAME_45",
+                                         "counterpartyPhone":  "+251900000010",
+                                         "providerTxnId":  "000000000010",
+                                         "balanceAfterMinor":  3452,
+                                         "occurredAt":  "2026-07-30T09:24:39+03:00"
+                                     }
+                    },
+                    {
+                        "id":  "ebirr_011",
+                        "body":  "EBIRR-KAAFI-\u003e Id: 000000000007, You sent ETB60, Charges:ETB0.60 with VAT:ETB0.12 to NAME_37(900000011) at 30/07/26 09:22:54, Your Balance is ETB54.84. https://receipt.ebirr.com/xxxx123/xxxxxxxxxxxxx124/ZeWTK==",
+                        "expected":  {
+                                         "direction":  "OUT",
+                                         "amountMinor":  6000,
+                                         "counterpartyName":  "NAME_37",
+                                         "counterpartyPhone":  "+251900000011",
+                                         "providerTxnId":  "000000000007",
+                                         "balanceAfterMinor":  5484,
+                                         "occurredAt":  "2026-07-30T09:22:54+03:00"
+                                     }
+                    },
+                    {
+                        "id":  "ebirr_015",
+                        "body":  "[-EBIRR-KAAFI-] Transfer ID: 000000000005, You have received airtime top-up of ETB20 from 000000000000 https://receipt.ebirr.com/xxxx125/xxxxxxxxxxxxxxxx126-KN",
+                        "expected":  {
+                                         "direction":  "IN",
+                                         "amountMinor":  2000,
+                                         "providerTxnId":  "000000000005"
+                                     }
+                    }
+                ]
+}
