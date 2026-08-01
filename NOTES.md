@@ -166,3 +166,50 @@ Seeder 5, Category 4, ReconciliationSession 3, CategoryRule 2, TodayViewModel 2.
   so it belongs with the capture work in Session 4.
 - Paging is wired (`pagingSourceFiltered`) but nothing consumes it until Session 5.
 - No migration tests yet; there is only one schema version so far.
+
+---
+
+## Session 0 tooling — corpus format, validation, redaction (2026-08-01)
+
+Not a numbered session. Built because Session 2 is blocked on the corpus and this is
+the part of that blocker that could be prepared in advance.
+
+- `parser/src/test/.../corpus/CorpusFormat.kt` — the on-disk shape from `docs/04`.
+  `channel` and `direction` are plain strings rather than enums so a typo in a
+  hand-authored sample surfaces as a readable validation failure instead of a
+  deserialization crash.
+- `CorpusValidationTest` — privacy guard and labelling discipline. Every test skips
+  cleanly while the corpus is empty, so it sits in the repo protecting from now on.
+- `tools/redact-samples.ps1` — mechanical redaction with stable tokens, so the same
+  real phone always maps to the same fake one and "this customer appears twice"
+  survives while identity does not. Names are flagged, never auto-replaced.
+- `tools/corpus-example.json` — format example. Deliberately outside test resources so
+  it is never loaded as corpus data.
+- `CORPUS.md` — template, to be filled during collection.
+
+**The privacy guard was verified by planting a file with six deliberate defects.** All
+six were caught (unredacted local phone, unredacted international phone, unredacted
+account number, invalid direction, missing amount, duplicate id, malformed timestamp),
+each naming the file, sample id and offending value; correctly-redacted samples passed.
+The planted file was then removed. A guard that has never been seen to fire is not a
+guard.
+
+### Placeholder test removed
+
+`PlaceholderTest` in `:parser` was Session 1's deliverable — a deliberately failing
+test proving the test task runs. Real `:parser` tests now exist, so it has served its
+purpose and a permanently red build is worse than the signal it gave. `./gradlew build`
+is no longer red by design.
+
+### Known environment issue
+
+`./gradlew build` runs release-variant lint, which downloads the lint tool from
+`dl.google.com`. That host was timing out during this session, so full `build` fails on
+a network error unrelated to the code. Targeted verification works:
+
+```
+./gradlew :parser:test :app:assemblePlayDebug :app:assembleDirectDebug :app:testPlayDebugUnitTest
+```
+
+Network to Google and Maven Central has been intermittent throughout this session —
+worth remembering before diagnosing a slow build as a hang.

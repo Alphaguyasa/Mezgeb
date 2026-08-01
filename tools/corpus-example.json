@@ -1,0 +1,44 @@
+{
+  "sender": "telebirr",
+  "channel": "TELEBIRR",
+  "collectedAt": "2026-08-01",
+  "notes": "EXAMPLE ONLY — this file lives in tools/ so it is never loaded as corpus data. Copy the shape, not the content. Real files go in parser/src/test/resources/corpus/train/ and .../holdout/.",
+  "samples": [
+    {
+      "id": "telebirr_001",
+      "body": "Dear NAME_01 you have received ETB 450.00 from NAME_02 (+251900000001) on 14/07/2026 at 09:22. Your transaction number is Kf83Hs02Ql. Your current balance is ETB 1,283.50.",
+      "expected": {
+        "direction": "IN",
+        "amountMinor": 45000,
+        "counterpartyName": "NAME_02",
+        "counterpartyPhone": "+251900000001",
+        "providerTxnId": "Kf83Hs02Ql",
+        "balanceAfterMinor": 128350,
+        "occurredAt": "2026-07-14T09:22:00+03:00"
+      },
+      "notes": "standard receive template"
+    },
+    {
+      "id": "telebirr_002",
+      "body": "You have transferred ETB 1,200.00 to NAME_03. Service fee ETB 0.00. Ref Pq41Zn88Rt.",
+      "expected": {
+        "direction": "OUT",
+        "amountMinor": 120000,
+        "counterpartyName": "NAME_03",
+        "providerTxnId": "Pq41Zn88Rt"
+      },
+      "notes": "send template — no phone, no balance, no timestamp in body. Fields genuinely absent are simply omitted; the parser must return null for them rather than inventing a value."
+    },
+    {
+      "id": "telebirr_003",
+      "body": "ውድ ደንበኛችን ብር 75.50 ከ NAME_04 ተቀብለዋል። የግብይት ቁጥር Wm52Kd10Xb።",
+      "expected": {
+        "direction": "IN",
+        "amountMinor": 7550,
+        "counterpartyName": "NAME_04",
+        "providerTxnId": "Wm52Kd10Xb"
+      },
+      "notes": "Amharic template — these are the ones that break naive parsers"
+    }
+  ]
+}
