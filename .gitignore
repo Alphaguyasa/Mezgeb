@@ -13,3 +13,15 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# --- Corpus safety (docs/04-SMS-SAMPLE-COLLECTION.md) ---
+# Unredacted message samples must never reach the repo. These patterns are in place
+# before the first sample is collected, not after.
+**/corpus/raw/
+**/*.unredacted.json
+*.sms.txt
+
+# --- Release signing (Session 12) ---
+keystore.properties
+*.jks
+*.keystore
