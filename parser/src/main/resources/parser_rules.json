@@ -1,0 +1,184 @@
+{
+  "formatVersion": 1,
+  "notes": "Bundled parser rules, authored against the corpus in parser/src/test/resources/corpus. This file is the single source of truth: :parser's accuracy harness measures it and the Gradle syncParserRules task copies it into app/src/main/assets, so the app runs exactly what the tests measure. Rules are data — adding a provider or an Amharic template is an edit here, not a code change.",
+  "rules": [
+    {
+      "id": "cbe_debit_transaction_v1",
+      "name": "CBE — debit transaction with fee breakdown",
+      "senderPattern": "CBE",
+      "channel": "BANK",
+      "bodyPattern": "A debit transaction of ETB\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\.?\\s*has occurred on your account.*?Your current balance is ETB\\s*(?<balance>[\\d,]+(?:\\.\\d+)?)",
+      "fieldMap": { "amount": "AMOUNT", "balance": "BALANCE_AFTER" },
+      "directionStrategy": "FIXED_OUT",
+      "priority": 10,
+      "notes": "The amount is stated before the fees and differs from the 'total of ETB…' that follows it. Anchoring on the leading phrase avoids picking up the total."
+    },
+    {
+      "id": "cbe_transfer_out_v1",
+      "name": "CBE — transfer out to a named account",
+      "senderPattern": "CBE",
+      "channel": "BANK",
+      "bodyPattern": "You have successfully transferred ETB\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+from account\\s+\\S+\\s+to account\\s+\\S+\\s*\\((?<name>[^)]*)\\).*?Your current balance is ETB\\s*(?<balance>[\\d,]+(?:\\.\\d+)?)",
+      "fieldMap": { "amount": "AMOUNT", "name": "COUNTERPARTY_NAME", "balance": "BALANCE_AFTER" },
+      "directionStrategy": "FIXED_OUT",
+      "priority": 10
+    },
+    {
+      "id": "cbe_receive_from_account_v1",
+      "name": "CBE — received from a named account",
+      "senderPattern": "CBE",
+      "channel": "BANK",
+      "bodyPattern": "You have received ETB\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+from account\\s+\\S+\\s*\\((?<name>[^)]*)\\)\\s*to your account.*?Your current balance is ETB\\s*(?<balance>[\\d,]+(?:\\.\\d+)?)",
+      "fieldMap": { "amount": "AMOUNT", "name": "COUNTERPARTY_NAME", "balance": "BALANCE_AFTER" },
+      "directionStrategy": "FIXED_IN",
+      "priority": 10
+    },
+    {
+      "id": "cbe_credited_by_party_v1",
+      "name": "CBE — account credited by a named party",
+      "senderPattern": "CBE",
+      "channel": "BANK",
+      "bodyPattern": "your Account\\s+\\S+\\s+has been credited by\\s+(?<name>.+?)\\s+with ETB\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\.?\\s*Your Current Balance is ETB\\s*(?<balance>[\\d,]+(?:\\.\\d+)?)",
+      "fieldMap": { "amount": "AMOUNT", "name": "COUNTERPARTY_NAME", "balance": "BALANCE_AFTER" },
+      "directionStrategy": "FIXED_IN",
+      "priority": 20,
+      "notes": "Higher priority than the plain 'credited with' rule so the named-party form is preferred when both could apply."
+    },
+    {
+      "id": "cbe_credited_with_ref_v1",
+      "name": "CBE — account credited with reference and in-body timestamp",
+      "senderPattern": "CBE",
+      "channel": "BANK",
+      "bodyPattern": "your Account\\s+\\S+\\s+has been Credited with ETB\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+from\\s+(?<name>.+?),\\s*on\\s+(?<timestamp>\\d{1,2}/\\d{1,2}/\\d{2,4}\\s+at\\s+\\d{1,2}:\\d{2}:\\d{2})\\s+with Ref No\\s+(?<ref>\\S+)\\s+Your Current Balance is ETB\\s*(?<balance>[\\d,]+(?:\\.\\d+)?)",
+      "fieldMap": {
+        "amount": "AMOUNT",
+        "name": "COUNTERPARTY_NAME",
+        "timestamp": "TIMESTAMP",
+        "ref": "PROVIDER_TXN_ID",
+        "balance": "BALANCE_AFTER"
+      },
+      "directionStrategy": "FIXED_IN",
+      "priority": 30
+    },
+    {
+      "id": "cbe_credited_plain_v1",
+      "name": "CBE — account credited, no counterparty stated",
+      "senderPattern": "CBE",
+      "channel": "BANK",
+      "bodyPattern": "your Account\\s+\\S+\\s+has been credited with ETB\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\.?\\s*Your Current Balance is ETB\\s*(?<balance>[\\d,]+(?:\\.\\d+)?)",
+      "fieldMap": { "amount": "AMOUNT", "balance": "BALANCE_AFTER" },
+      "directionStrategy": "FIXED_IN",
+      "priority": 10
+    },
+    {
+      "id": "cbe_debited_inline_fees_v1",
+      "name": "CBE — account debited with inline fees",
+      "senderPattern": "CBE",
+      "channel": "BANK",
+      "bodyPattern": "your Account\\s+\\S+\\s+has been debited with ETB\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+including.*?Your Current Balance is ETB\\s*(?<balance>[\\d,]+(?:\\.\\d+)?)",
+      "fieldMap": { "amount": "AMOUNT", "balance": "BALANCE_AFTER" },
+      "directionStrategy": "FIXED_OUT",
+      "priority": 10
+    },
+
+    {
+      "id": "ebirr_send_v1",
+      "name": "EBIRR — wallet send to a named counterparty",
+      "senderPattern": "EBIRR",
+      "channel": "OTHER",
+      "bodyPattern": "Id:\\s*(?<ref>\\d+),\\s*You sent ETB\\s*(?<amount>[\\d,]+(?:\\.\\d+)?),\\s*Charges:.*?\\s+to\\s+(?<name>[^(]+)\\((?<phone>\\d+)\\)\\s+at\\s+(?<timestamp>\\d{1,2}/\\d{1,2}/\\d{2,4}\\s+\\d{1,2}:\\d{2}:\\d{2}),\\s*Your Balance is ETB\\s*(?<balance>[\\d,]+(?:\\.\\d+)?)",
+      "fieldMap": {
+        "amount": "AMOUNT",
+        "name": "COUNTERPARTY_NAME",
+        "phone": "COUNTERPARTY_PHONE",
+        "ref": "PROVIDER_TXN_ID",
+        "timestamp": "TIMESTAMP",
+        "balance": "BALANCE_AFTER"
+      },
+      "directionStrategy": "FIXED_OUT",
+      "priority": 10
+    },
+    {
+      "id": "ebirr_receive_v1",
+      "name": "EBIRR — wallet receipt from a bank",
+      "senderPattern": "EBIRR",
+      "channel": "OTHER",
+      "bodyPattern": "Transfer ID:\\s*(?<ref>\\d+),\\s*ETB\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+received from\\s+(?<name>[^(]+)\\([^)]*\\)\\s+via\\s+\\S+,\\s*your balance is ETB\\s*(?<balance>[\\d,]+(?:\\.\\d+)?)",
+      "fieldMap": {
+        "amount": "AMOUNT",
+        "name": "COUNTERPARTY_NAME",
+        "ref": "PROVIDER_TXN_ID",
+        "balance": "BALANCE_AFTER"
+      },
+      "directionStrategy": "FIXED_IN",
+      "priority": 10
+    },
+    {
+      "id": "ebirr_transfer_to_bank_v1",
+      "name": "EBIRR — transfer out to a bank account",
+      "senderPattern": "EBIRR",
+      "channel": "OTHER",
+      "bodyPattern": "Transfer ID:\\s*(?<ref>\\d+),\\s*You have successfully transferred ETB\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+Charges:.*?your balance is ETB\\s*(?<balance>[\\d,]+(?:\\.\\d+)?)",
+      "fieldMap": { "amount": "AMOUNT", "ref": "PROVIDER_TXN_ID", "balance": "BALANCE_AFTER" },
+      "directionStrategy": "FIXED_OUT",
+      "priority": 10,
+      "notes": "The counterparty parentheses are empty in this template, so no name is captured. The parser must return null rather than a blank string."
+    },
+    {
+      "id": "ebirr_airtime_topup_v1",
+      "name": "EBIRR — airtime top-up received",
+      "senderPattern": "EBIRR",
+      "channel": "OTHER",
+      "bodyPattern": "Transfer ID:\\s*(?<ref>\\d+),\\s*You have received airtime top-up of ETB\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)",
+      "fieldMap": { "amount": "AMOUNT", "ref": "PROVIDER_TXN_ID" },
+      "directionStrategy": "FIXED_IN",
+      "priority": 10,
+      "confidence": 0.9,
+      "notes": "No balance is stated. Slightly lower confidence because an airtime top-up is arguably not a ledger movement for a shop."
+    },
+
+    {
+      "id": "telebirr_package_purchase_v1",
+      "name": "telebirr — package purchase",
+      "senderPattern": "127",
+      "channel": "TELEBIRR",
+      "bodyPattern": "You have paid ETB\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+for package\\s+.*?purchase made for\\s+(?<phone>\\d+)\\s+on\\s+(?<timestamp>\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{2}:\\d{2})\\.\\s*Your transaction number is\\s+(?<ref>[A-Za-z0-9]+)\\.\\s*Your current balance is ETB\\s*(?<balance>[\\d,]+(?:\\.\\d+)?)",
+      "fieldMap": {
+        "amount": "AMOUNT",
+        "phone": "COUNTERPARTY_PHONE",
+        "timestamp": "TIMESTAMP",
+        "ref": "PROVIDER_TXN_ID",
+        "balance": "BALANCE_AFTER"
+      },
+      "directionStrategy": "FIXED_OUT",
+      "priority": 10
+    },
+    {
+      "id": "telebirr_receive_from_bank_v1",
+      "name": "telebirr — received from a bank",
+      "senderPattern": "127",
+      "channel": "TELEBIRR",
+      "bodyPattern": "You have received ETB\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+by transaction number\\s+(?<ref>[A-Za-z0-9]+)\\s+on\\s+(?<timestamp>\\d{4}-\\d{2}-\\d{2}\\s+\\d{1,2}:\\d{2}:\\d{2})\\s+from\\s+(?<name>.+?)\\s+to your telebirr Account.*?Your current balance is ETB\\s*(?<balance>[\\d,]+(?:\\.\\d+)?)",
+      "fieldMap": {
+        "amount": "AMOUNT",
+        "name": "COUNTERPARTY_NAME",
+        "ref": "PROVIDER_TXN_ID",
+        "timestamp": "TIMESTAMP",
+        "balance": "BALANCE_AFTER"
+      },
+      "directionStrategy": "FIXED_IN",
+      "priority": 10
+    },
+    {
+      "id": "telebirr_airtime_recharge_v1",
+      "name": "telebirr — airtime top-up recharge",
+      "senderPattern": "127",
+      "channel": "TELEBIRR",
+      "bodyPattern": "You have received airtime top up recharge ETB\\s*(?<amount>[\\d,]+(?:\\.\\d+)?)\\s+from\\s+.*?\\s+on\\s+(?<timestamp>\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{2}:\\d{2})\\s*\\.?\\s*Your transaction number is\\s+(?<ref>[A-Za-z0-9]+)",
+      "fieldMap": { "amount": "AMOUNT", "timestamp": "TIMESTAMP", "ref": "PROVIDER_TXN_ID" },
+      "directionStrategy": "FIXED_IN",
+      "priority": 10,
+      "confidence": 0.9
+    }
+  ]
+}

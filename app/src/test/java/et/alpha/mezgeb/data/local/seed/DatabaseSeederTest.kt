@@ -63,8 +63,8 @@ class DatabaseSeederTest : DatabaseTest() {
 
     @Test
     fun `the bundled rules asset parses`() = runTest {
-        // It is empty until Session 2, but it must still be valid JSON in the expected
-        // shape — a malformed asset would silently leave the app with no rules at all.
+        // The asset is copied from :parser by the syncParserRules task, so this also
+        // proves the two modules agree on the wire format.
         val context = ApplicationProvider.getApplicationContext<Context>()
         val raw = context.assets.open(DatabaseSeeder.RULES_ASSET)
             .bufferedReader().use { it.readText() }
@@ -72,6 +72,22 @@ class DatabaseSeederTest : DatabaseTest() {
         val parsed = Json { ignoreUnknownKeys = true }.decodeFromString<BundledRulesFile>(raw)
 
         assertEquals(1, parsed.formatVersion)
+        assertTrue("expected bundled rules, got none", parsed.rules.isNotEmpty())
+        assertTrue(
+            "every bundled rule must map at least an amount",
+            parsed.rules.all { it.fieldMap.values.contains("AMOUNT") },
+        )
+    }
+
+    @Test
+    fun `seeding installs the bundled rules the parser was measured against`() = runTest {
+        seeder().seed()
+
+        val stored = db.parserRuleDao().getEnabled()
+        assertTrue("no rules were seeded", stored.isNotEmpty())
+        assertTrue("bundled rules must not be marked user-created", stored.none { it.isUserCreated })
+        // The field map survives the flattening into the entity's string column.
+        assertTrue(stored.all { it.fieldMapJson.contains("AMOUNT") })
     }
 
     @Test

@@ -62,9 +62,11 @@ class DatabaseSeeder @Inject constructor(
                     senderPattern = rule.senderPattern,
                     channel = rule.channel,
                     bodyPattern = rule.bodyPattern,
-                    fieldMapJson = rule.fieldMapJson,
+                    // The map and keyword object are flattened here: the entity stores
+                    // them as strings, the asset carries them structured.
+                    fieldMapJson = json.encodeToString(rule.fieldMap),
                     directionStrategy = rule.directionStrategy,
-                    directionKeywordsJson = rule.directionKeywordsJson,
+                    directionKeywordsJson = rule.directionKeywords?.let { json.encodeToString(it) },
                     version = rule.version,
                     isUserCreated = false,
                     isEnabled = rule.isEnabled,

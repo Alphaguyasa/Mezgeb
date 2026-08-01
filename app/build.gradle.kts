@@ -76,6 +76,42 @@ ksp {
 }
 
 /**
+ * The bundled parser rules live in `:parser` and are contributed as a generated asset
+ * rather than duplicated. `:parser`'s accuracy harness measures that exact file, so the
+ * rules the app ships are provably the rules the accuracy figure was measured against.
+ * Two committed copies would eventually disagree, and the disagreement would be silent.
+ */
+abstract class SyncParserRules : DefaultTask() {
+    @get:InputFile
+    abstract val source: RegularFileProperty
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun sync() {
+        val target = outputDir.get().asFile
+        target.mkdirs()
+        source.get().asFile.copyTo(target.resolve("parser_rules.json"), overwrite = true)
+    }
+}
+
+val syncParserRules = tasks.register<SyncParserRules>("syncParserRules") {
+    source.set(
+        project(":parser").layout.projectDirectory.file("src/main/resources/parser_rules.json"),
+    )
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.sources.assets?.addGeneratedSourceDirectory(
+            syncParserRules,
+            SyncParserRules::outputDir,
+        )
+    }
+}
+
+/**
  * Robolectric normally downloads its `android-all` runtime itself, on the first test
  * that needs it, straight into `~/.m2`. That fetch happens inside the test JVM with no
  * progress output and no Gradle-level retry, and when it stalls the build simply hangs.

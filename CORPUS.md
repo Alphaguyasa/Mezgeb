@@ -124,11 +124,39 @@ against. A number you tuned against measures nothing.
 
 ## Accuracy
 
-| Run | Date | Train | Holdout |
+| Run | Date | Train + noise | Holdout |
 |---|---|---:|---:|
-| End of Session 2 | — | — | — |
+| End of Session 2 | 2026-08-01 | 100.00% (95 samples) | 100.00% (23 samples) |
 | End of Session 12 | — | — | — |
+
+Zero false positives and zero wrong values on both runs; per-field precision and recall
+100% across all seven extracted fields.
 
 False positives are fatal and fail the build: a missed message lands in the review
 queue where the user fixes it, but a wrong answer silently puts a wrong number in
 someone's ledger.
+
+### How much those figures are worth
+
+Less than they look, and they should never be quoted without this paragraph.
+
+The holdout holds out **samples, not templates**. Both splits come from the same three
+senders and the same thirteen message templates, so every holdout message is a near-twin
+of a training message carrying different amounts and names. That measures resistance to
+overfitting on *values*. It does not measure generalisation to an unseen template or an
+unseen provider, which is what a reader will assume a holdout figure means.
+
+With thirteen templates, one person's account and no Amharic transaction messages at
+all, 100% is the expected outcome for rules written by someone who has read every
+template — not evidence of a strong parser. The figure becomes meaningful once the
+corpus contains other shops, a fourth sender, and Amharic variants.
+
+Reproduce:
+
+```bash
+./gradlew :parser:test --tests '*CorpusAccuracyTest*'
+./gradlew :parser:test --tests '*CorpusHoldoutTest*' -Dmezgeb.holdout=true
+```
+
+The holdout run is opt-in by design: a test that runs on every build becomes a test
+people tune against.

@@ -261,3 +261,77 @@ non-reference runs were zeroed in the corpus to satisfy it.
 
 PowerShell 5.1's `Set-Content -Encoding UTF8` writes a BOM, which kotlinx.serialization
 rejects. Corpus files are written with `UTF8Encoding($false)`.
+
+---
+
+## Session 2 — Parser engine (2026-08-01)
+
+### Accuracy
+
+| Run | Date | Samples | Exact | Missed | Wrong | False positives | Accuracy |
+|---|---|---:|---:|---:|---:|---:|---:|
+| Train + noise | 2026-08-01 | 95 | 95 | 0 | 0 | 0 | **100.00%** |
+| **Holdout** | **2026-08-01** | **23** | **23** | **0** | **0** | **0** | **100.00%** |
+
+Per-field precision and recall are 100% on both runs across direction, amountMinor,
+balanceAfterMinor, counterpartyName, counterpartyPhone, providerTxnId and occurredAt.
+
+### What those numbers are worth — read this before quoting them
+
+**Not much yet, and the README must not imply otherwise.**
+
+1. **The holdout holds out samples, not templates.** Both splits were drawn from the
+   same 3 senders and the same ~13 message templates. Every holdout message is a
+   near-twin of a training message with different amounts and names. A holdout that
+   measured generalisation would contain a sender or a template the rules had never
+   seen. This one measures that the rules are not overfitted to specific *values* —
+   a much weaker claim.
+2. **13 templates, 118 samples, one person's account.** Real coverage is thin.
+3. **Zero Amharic transaction templates**, so the hardest case is untested end to end.
+4. **100% is the expected result** when the rule author has read every template. It
+   would be more informative if it were lower.
+
+The number that will mean something is the one measured after the corpus includes
+other people's shops, a fourth sender, and Amharic templates. Until then, quote the
+corpus size alongside the figure or the figure is misleading.
+
+### Design decisions
+
+- **Rules are data, in one file.** `parser/src/main/resources/parser_rules.json` is the
+  single source of truth. The `syncParserRules` Gradle task contributes it to the app
+  as a generated asset via AGP 9's Variant API, so the rules the app ships are provably
+  the ones the harness measured. Two committed copies would drift silently.
+- **Direction keywords live in rule data**, never in the engine, so an Amharic template
+  is a JSON edit rather than a code change and an app update. Covered by a unit test
+  using real Amharic keywords even though no corpus sample needs it yet.
+- **The engine never guesses.** Equal-priority rules that disagree yield `Ambiguous`; a
+  field that will not normalise yields `Unmatched`. Both land in the review queue.
+- **`Ignored` vs `Unmatched` matters.** 34 noise samples are correctly declined. Three
+  of them come from financial senders — a CBE fraud notice, an EBIRR welcome, a
+  telebirr service activation — which is why the allowlist alone was never going to be
+  enough.
+- **Amount extraction is anchored to the leading phrase**, not to "first number" or
+  "largest number". CBE states the transaction amount, then a service charge, then VAT,
+  then a *total* that differs, then a balance. Four money figures per message.
+- **`AmountNormalizer` is string-only.** `500.5` is 50050 santim, not 50005 — a single
+  decimal place is tenths of a birr. Trailing sentence periods (`ETB 2000.0. has
+  occurred`) are stripped. More than two decimals truncate rather than round, because
+  rounding up invents money.
+- **The holdout test is opt-in** (`-Dmezgeb.holdout=true`) and asserts nothing. A test
+  that runs on every build is a test people tune against, usually without meaning to,
+  by iterating until it goes green.
+
+### Corrections made during the session
+
+- The corpus recorded the telebirr file's sender as `telebirr`, but those messages
+  actually arrive from shortcode `127`; the `telebirr` alpha sender carries marketing
+  only. All 4 telebirr samples were being ignored until the corpus was corrected.
+- The accuracy harness counted noise samples in the denominator but never the
+  numerator, reporting 60% when the true figure was 95.8%. Correctly declining a noise
+  message is a correct outcome.
+
+### Still stubbed
+
+- `RuleInducer` — Session 6.
+- No rule yet for any bank other than CBE, or for CBE Birr, M-Pesa or Amole. The
+  allowlist anticipates them; no rules exist.

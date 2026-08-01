@@ -33,4 +33,7 @@ tasks.withType<Test>().configureEach {
         events("passed", "skipped", "failed")
         showStandardStreams = true
     }
+    // Gradle's -D lands on the Gradle JVM, not the forked test JVM. Forward the
+    // holdout opt-in explicitly so CorpusHoldoutTest can see it.
+    systemProperty("mezgeb.holdout", providers.systemProperty("mezgeb.holdout").getOrElse("false"))
 }
