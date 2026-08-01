@@ -1,0 +1,5 @@
+{
+  "formatVersion": 1,
+  "comment": "Bundled parser rules. Populated in Session 2 from the message corpus; intentionally empty until then so seeding has a real asset to read and the empty case is exercised.",
+  "rules": []
+}

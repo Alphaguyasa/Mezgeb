@@ -35,10 +35,14 @@ junit4 = "4.13.2"
 junitJupiter = "6.1.2"
 junitPlatform = "6.1.2"
 androidxJunit = "1.3.0"
+androidxTestCore = "1.7.0"
 espressoCore = "3.7.0"
 turbine = "1.2.1"
 mockk = "1.14.11"
 robolectric = "4.16.1"
+# The instrumented android-all jar Robolectric runs tests against. Pinned so Gradle
+# resolves it up front instead of Robolectric fetching it mid-test-run.
+robolectricAndroidAll = "14-robolectric-10818077-i7"
 
 [libraries]
 # --- AndroidX core ---
@@ -97,11 +101,13 @@ junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.r
 junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junitPlatform" }
 kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxJunit" }
+androidx-test-core = { group = "androidx.test", name = "core", version.ref = "androidxTestCore" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 mockk-android = { group = "io.mockk", name = "mockk-android", version.ref = "mockk" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+robolectric-android-all = { group = "org.robolectric", name = "android-all-instrumented", version.ref = "robolectricAndroidAll" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

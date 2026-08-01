@@ -69,6 +69,42 @@ kotlin {
     }
 }
 
+ksp {
+    // Schemas are committed to the repo so migrations can be diffed in review.
+    arg("room.schemaLocation", "$projectDir/schemas")
+    arg("room.generateKotlin", "true")
+}
+
+/**
+ * Robolectric normally downloads its `android-all` runtime itself, on the first test
+ * that needs it, straight into `~/.m2`. That fetch happens inside the test JVM with no
+ * progress output and no Gradle-level retry, and when it stalls the build simply hangs.
+ *
+ * Instead: let Gradle resolve the jar as a normal dependency, stage it, and run
+ * Robolectric in offline mode pointed at that directory. Deterministic, visible in the
+ * dependency graph, and works on a machine with a cold `~/.m2`.
+ */
+val robolectricRuntime: Configuration by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+}
+
+val robolectricJarsDir: Provider<Directory> = layout.buildDirectory.dir("robolectric-runtime")
+
+val stageRobolectricRuntime by tasks.registering(Copy::class) {
+    from(robolectricRuntime)
+    into(robolectricJarsDir)
+}
+
+tasks.withType<Test>().configureEach {
+    dependsOn(stageRobolectricRuntime)
+    systemProperty("robolectric.offline", "true")
+    systemProperty(
+        "robolectric.dependency.dir",
+        robolectricJarsDir.get().asFile.absolutePath,
+    )
+}
+
 dependencies {
     // The parsing engine. Pure JVM — see .md hard constraint #4.
     implementation(project(":parser"))
@@ -88,6 +124,16 @@ dependencies {
 
     implementation(libs.androidx.navigation.compose)
 
+    // Persistence. Room is local-only by definition; no network stack.
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.room.paging)
+    ksp(libs.androidx.room.compiler)
+
+    // Paging, for the ledger's transaction list (Session 5 consumes it).
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.compose)
+
     // DI. Hilt's processor runs through KSP; no network stack is pulled in.
     implementation(libs.hilt.android)
     implementation(libs.androidx.hilt.navigation.compose)
@@ -100,7 +146,12 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
     testImplementation(libs.mockk)
+    // Room's in-memory database needs a Context, so DAO tests run under Robolectric
+    // rather than on a device.
     testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.room.testing)
+    testImplementation(libs.androidx.test.core)
+    robolectricRuntime(libs.robolectric.android.all)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

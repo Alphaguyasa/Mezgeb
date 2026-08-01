@@ -1,0 +1,214 @@
+package et.alpha.mezgeb.data.local.dao
+
+import androidx.paging.PagingSource
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
+import et.alpha.mezgeb.data.local.entity.TransactionEntity
+import et.alpha.mezgeb.domain.model.Channel
+import et.alpha.mezgeb.domain.model.Direction
+import kotlinx.coroutines.flow.Flow
+
+data class CategoryTotal(val categoryId: String?, val totalMinor: Long, val transactionCount: Int)
+
+data class ChannelTotal(val channel: Channel, val totalMinor: Long, val transactionCount: Int)
+
+data class DayTotal(val dayEpochMillis: Long, val inMinor: Long, val outMinor: Long)
+
+@Dao
+interface TransactionDao {
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insert(transaction: TransactionEntity)
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertAll(transactions: List<TransactionEntity>)
+
+    @Update
+    suspend fun update(transaction: TransactionEntity)
+
+    @Query("SELECT * FROM transactions WHERE id = :id")
+    suspend fun getById(id: String): TransactionEntity?
+
+    @Query("SELECT * FROM transactions WHERE id = :id")
+    fun observeById(id: String): Flow<TransactionEntity?>
+
+    @Query("SELECT * FROM transactions WHERE providerTxnId = :providerTxnId AND isDeleted = 0 LIMIT 1")
+    suspend fun getByProviderTxnId(providerTxnId: String): TransactionEntity?
+
+    @Query("SELECT * FROM transactions WHERE rawMessageId = :rawMessageId")
+    suspend fun getByRawMessageId(rawMessageId: String): TransactionEntity?
+
+    /**
+     * The ledger's single filtered query. Every filter is nullable and a null means
+     * "don't constrain on this", which keeps one query where six overloads would
+     * otherwise accumulate.
+     *
+     * [query] searches counterparty name, phone, provider reference and note.
+     */
+    @Query(
+        """
+        SELECT * FROM transactions
+        WHERE isDeleted = 0
+          AND (:from IS NULL OR occurredAt >= :from)
+          AND (:to IS NULL OR occurredAt <= :to)
+          AND (:channel IS NULL OR channel = :channel)
+          AND (:direction IS NULL OR direction = :direction)
+          AND (:categoryId IS NULL OR categoryId = :categoryId)
+          AND (:isReconciled IS NULL OR isReconciled = :isReconciled)
+          AND (
+                :query IS NULL
+                OR counterpartyName LIKE '%' || :query || '%'
+                OR counterpartyPhone LIKE '%' || :query || '%'
+                OR providerTxnId LIKE '%' || :query || '%'
+                OR note LIKE '%' || :query || '%'
+              )
+        ORDER BY occurredAt DESC, id DESC
+        """,
+    )
+    fun pagingSourceFiltered(
+        from: Long?,
+        to: Long?,
+        channel: Channel?,
+        direction: Direction?,
+        categoryId: String?,
+        isReconciled: Boolean?,
+        query: String?,
+    ): PagingSource<Int, TransactionEntity>
+
+    /** Same predicate as [pagingSourceFiltered], as a list. Used by tests and export. */
+    @Query(
+        """
+        SELECT * FROM transactions
+        WHERE isDeleted = 0
+          AND (:from IS NULL OR occurredAt >= :from)
+          AND (:to IS NULL OR occurredAt <= :to)
+          AND (:channel IS NULL OR channel = :channel)
+          AND (:direction IS NULL OR direction = :direction)
+          AND (:categoryId IS NULL OR categoryId = :categoryId)
+          AND (:isReconciled IS NULL OR isReconciled = :isReconciled)
+          AND (
+                :query IS NULL
+                OR counterpartyName LIKE '%' || :query || '%'
+                OR counterpartyPhone LIKE '%' || :query || '%'
+                OR providerTxnId LIKE '%' || :query || '%'
+                OR note LIKE '%' || :query || '%'
+              )
+        ORDER BY occurredAt DESC, id DESC
+        """,
+    )
+    suspend fun listFiltered(
+        from: Long?,
+        to: Long?,
+        channel: Channel?,
+        direction: Direction?,
+        categoryId: String?,
+        isReconciled: Boolean?,
+        query: String?,
+    ): List<TransactionEntity>
+
+    @Query("SELECT * FROM transactions WHERE isDeleted = 0 ORDER BY occurredAt DESC LIMIT :limit")
+    fun observeRecent(limit: Int): Flow<List<TransactionEntity>>
+
+    // --- Aggregates -------------------------------------------------------------
+    // COALESCE so an empty period returns 0 rather than null; callers should never
+    // have to reason about "no rows" separately from "zero birr".
+
+    @Query(
+        """
+        SELECT COALESCE(SUM(amountMinor), 0) FROM transactions
+        WHERE isDeleted = 0 AND direction = :direction
+          AND occurredAt >= :from AND occurredAt <= :to
+        """,
+    )
+    suspend fun sumByDirection(direction: Direction, from: Long, to: Long): Long
+
+    @Query(
+        """
+        SELECT COALESCE(SUM(amountMinor), 0) FROM transactions
+        WHERE isDeleted = 0 AND direction = :direction
+          AND occurredAt >= :from AND occurredAt <= :to
+        """,
+    )
+    fun observeSumByDirection(direction: Direction, from: Long, to: Long): Flow<Long>
+
+    @Query(
+        """
+        SELECT COALESCE(SUM(amountMinor), 0) FROM transactions
+        WHERE isDeleted = 0 AND channel = :channel AND direction = :direction
+          AND occurredAt >= :from AND occurredAt <= :to
+        """,
+    )
+    suspend fun sumByChannelAndDirection(
+        channel: Channel,
+        direction: Direction,
+        from: Long,
+        to: Long,
+    ): Long
+
+    @Query(
+        """
+        SELECT categoryId AS categoryId,
+               COALESCE(SUM(amountMinor), 0) AS totalMinor,
+               COUNT(*) AS transactionCount
+        FROM transactions
+        WHERE isDeleted = 0 AND direction = :direction
+          AND occurredAt >= :from AND occurredAt <= :to
+        GROUP BY categoryId
+        ORDER BY totalMinor DESC
+        """,
+    )
+    suspend fun totalsByCategory(direction: Direction, from: Long, to: Long): List<CategoryTotal>
+
+    @Query(
+        """
+        SELECT channel AS channel,
+               COALESCE(SUM(amountMinor), 0) AS totalMinor,
+               COUNT(*) AS transactionCount
+        FROM transactions
+        WHERE isDeleted = 0 AND direction = :direction
+          AND occurredAt >= :from AND occurredAt <= :to
+        GROUP BY channel
+        ORDER BY totalMinor DESC
+        """,
+    )
+    suspend fun totalsByChannel(direction: Direction, from: Long, to: Long): List<ChannelTotal>
+
+    @Query(
+        """
+        SELECT COUNT(*) FROM transactions
+        WHERE isDeleted = 0 AND categoryId IS NULL
+          AND occurredAt >= :from AND occurredAt <= :to
+        """,
+    )
+    suspend fun countUncategorised(from: Long, to: Long): Int
+
+    @Query(
+        """
+        SELECT COUNT(*) FROM transactions
+        WHERE isDeleted = 0 AND editedAt IS NOT NULL AND editedAt >= :since
+          AND occurredAt >= :from AND occurredAt <= :to
+        """,
+    )
+    suspend fun countEditedSince(since: Long, from: Long, to: Long): Int
+
+    // --- Mutations --------------------------------------------------------------
+
+    /** Soft delete. Rows are never removed; the ledger keeps its history. */
+    @Query("UPDATE transactions SET isDeleted = 1, editedAt = :now WHERE id = :id")
+    suspend fun softDelete(id: String, now: Long)
+
+    @Query("UPDATE transactions SET isDeleted = 0, editedAt = :now WHERE id = :id")
+    suspend fun restore(id: String, now: Long)
+
+    @Query("UPDATE transactions SET categoryId = :categoryId, editedAt = :now WHERE id = :id")
+    suspend fun setCategory(id: String, categoryId: String?, now: Long)
+
+    @Query("UPDATE transactions SET isReconciled = :isReconciled, reconciliationSessionId = :sessionId WHERE id = :id")
+    suspend fun setReconciled(id: String, isReconciled: Boolean, sessionId: String?)
+
+    @Query("DELETE FROM transactions")
+    suspend fun deleteAll()
+}

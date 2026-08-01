@@ -90,9 +90,79 @@ compiler is 2.2.10. A stdlib newer than the compiler is the supported direction 
 reverse is not), and everything compiles and runs, so this is left alone rather than
 churned. Worth re-checking if odd metadata errors ever appear.
 
-### Not verified
+### Device verification (2026-08-01, Samsung SM-G965U1, Android 10 / API 29)
 
-Compose previews were not rendered — that needs Android Studio, which cannot be
-driven from the CLI. `TodayScreen.kt` carries an `am`-locale preview
-(`TodayScreenAmharicPreview`) specifically so the Ethiopic render can be eyeballed;
-**that check is still outstanding.** Neither flavor has been installed on a device.
+Both flavors installed side by side, confirming the `.direct` applicationIdSuffix.
+Tapped through all seven destinations: bottom-bar selection tracks correctly, Review /
+Reconcile / Settings push with a back affordance and no bottom bar, system back
+returns to Today. No crashes in logcat.
+
+Amharic rendering is verified as far as it can be without changing the device's system
+language (API 29 predates per-app locales):
+
+- the bundled font covers all 358 codepoints of the Ethiopic block U+1200–U+137F, plus
+  Latin and Arabic digits, checked with `Font.canDisplayUpTo` against every Amharic
+  string the app ships;
+- `aapt2 dump` confirms the `am` locale is packaged and `app_name` resolves to መዝገብ;
+- screenshots confirm the bundled family is what actually renders.
+
+**Still outstanding:** a live screenshot with the device UI in Amharic, and the Studio
+Compose preview (`TodayScreenAmharicPreview`).
+
+---
+
+## Session 3 — Persistence (2026-08-01)
+
+Built out of pack order: Session 2 is blocked on the message corpus, which is
+human data-collection work. Session 3 depends on the parser only for seeding bundled
+rules, which is stubbed — see below.
+
+### Verification results
+
+| Check | Result |
+|---|---|
+| `:app:assemblePlayDebug` / `:app:assembleDirectDebug` | pass |
+| `:app:testPlayDebugUnitTest` | **68 tests, 0 failures** |
+| `app/schemas/…/1.json` exported | yes, all 8 tables, committed |
+
+Test breakdown: TransactionDao 24, CustomerCredit 14, RawMessage 8, ParserRule 6,
+Seeder 5, Category 4, ReconciliationSession 3, CategoryRule 2, TodayViewModel 2.
+
+### Decisions worth knowing
+
+1. **`ADJUSTMENT` has no defined sign in the architecture doc.** The entity contract
+   says `amountMinor` is always positive and `kind` carries the sign — but with
+   CREDIT_GIVEN positive and REPAYMENT negative, ADJUSTMENT is ambiguous by
+   construction. Implemented literally per the doc: ADJUSTMENT increases the balance,
+   and a downward correction is expressed as a REPAYMENT. **Revisit in Session 7**
+   when the credit book UI makes the real requirement obvious.
+
+2. **The running-balance statement uses a correlated subquery, not a window
+   function.** `SUM(...) OVER (...)` needs SQLite 3.28, which ships with API 30; minSdk
+   is 26. The subquery is O(n²) over a single customer's entries, which is irrelevant
+   at the scale of a shop's credit book. Ties on `occurredAt` are broken by `id` in
+   both the outer query and the subquery so the statement stays monotonic.
+
+3. **Seeded category names are English strings in the database, not resources.**
+   .md wants every user-facing string in `strings.xml`, but these are data rows.
+   Session 11 must map the seven system category ids to localised display names rather
+   than translating the stored `name`.
+
+4. **Robolectric's `android-all` runtime is resolved by Gradle, not by Robolectric.**
+   By default Robolectric downloads a 144 MB jar inside the test JVM on first use, with
+   no progress output. It is now declared in the version catalog, staged by a Copy
+   task, and Robolectric runs with `robolectric.offline=true` against that directory —
+   visible in the dependency graph and with normal Gradle retry behaviour. First run
+   still costs the 144 MB download (~30 min here); subsequent runs are ~20 s.
+
+5. **No `fallbackToDestructiveMigration`.** A missing migration must fail loudly in
+   development rather than quietly wipe a shop's ledger in the field.
+
+### Stubbed / deferred
+
+- `assets/parser_rules.json` is a valid, empty rules file. Session 2 populates it. The
+  seeder's empty-asset and malformed-asset paths are both covered by tests.
+- `SettingsRepository` is not built — it is DataStore-backed rather than a DAO wrapper,
+  so it belongs with the capture work in Session 4.
+- Paging is wired (`pagingSourceFiltered`) but nothing consumes it until Session 5.
+- No migration tests yet; there is only one schema version so far.
