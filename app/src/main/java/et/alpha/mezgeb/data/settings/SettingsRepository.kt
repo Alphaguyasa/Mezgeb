@@ -93,6 +93,24 @@ class SettingsRepository @Inject constructor(
         dataStore.edit { it[WATCHED_PACKAGES] = packages }
     }
 
+    // --- Shop identity ----------------------------------------------------------------
+
+    /**
+     * What the shop calls itself, for the header of an exported summary.
+     *
+     * Null until someone says, and the UI falls back to the app's own name — an
+     * export headed with a blank line is worse than one headed "Mezgeb".
+     */
+    fun observeShopName(): Flow<String?> = dataStore.data.map { it[SHOP_NAME] }
+
+    suspend fun shopName(): String? = observeShopName().first()
+
+    suspend fun setShopName(name: String?) {
+        dataStore.edit { prefs ->
+            if (name.isNullOrBlank()) prefs.remove(SHOP_NAME) else prefs[SHOP_NAME] = name.trim()
+        }
+    }
+
     // --- Credit book ------------------------------------------------------------------
 
     /** How many days a debt may sit before the customers screen calls it overdue. */
@@ -168,6 +186,7 @@ class SettingsRepository @Inject constructor(
         /** Mirrors [et.alpha.mezgeb.domain.credit.ComputeCustomerBalanceUseCase]. */
         const val DEFAULT_OVERDUE_DAYS = 30
 
+        val SHOP_NAME = stringPreferencesKey("shop_name")
         val RECONCILE_REMINDERS = booleanPreferencesKey("reconcile_reminders_enabled")
         val OVERDUE_THRESHOLD_DAYS = intPreferencesKey("overdue_threshold_days")
         val REMINDER_TEMPLATE = stringPreferencesKey("reminder_template")

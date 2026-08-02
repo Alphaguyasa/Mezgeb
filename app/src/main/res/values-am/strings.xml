@@ -252,6 +252,23 @@
     <string name="reconcile_reminder_title">ገቢዎን የሚያመሳክሩበት ጊዜ ደርሷል</string>
     <string name="reconcile_reminder_body">ጊዜ ከዘጉ አንድ ሳምንት ሆኗል።</string>
 
+    <!-- Reports and export -->
+    <string name="report_summary">ማጠቃለያ</string>
+    <string name="report_daily_net">በየቀኑ</string>
+    <string name="report_by_channel">በመንገድ</string>
+    <string name="report_by_category">በምድብ</string>
+    <string name="report_top_debtors">በብዛት የሚፈለጉብዎት</string>
+    <string name="report_transaction_count">%1$d ግብይቶች</string>
+    <string name="report_insufficient_body">ለማጠቃለል በቂ መረጃ የለም። ጥቂት ግብይቶች ሲጨመሩ ይህ ጠቃሚ ይሆናል።</string>
+    <string name="report_export">ላክ</string>
+    <string name="report_export_ledger">መዝገብ (CSV)</string>
+    <string name="report_export_credit">የዱቤ መዝገብ (CSV)</string>
+    <string name="report_export_both">ሁለቱም (CSV)</string>
+    <string name="report_export_pdf">ማጠቃለያ (PDF)</string>
+    <string name="report_export_failed">ፋይሉን መጻፍ አልተቻለም።</string>
+    <string name="report_pdf_period">ከ%1$s እስከ %2$s</string>
+    <string name="report_pdf_generated">%1$s በ%2$s ተዘጋጅቷል</string>
+
     <!-- Content descriptions -->
     <string name="cd_open_review">የግምገማ ወረፋን ክፈት</string>
     <string name="cd_open_reconcile">ማስታረቅን ክፈት</string>

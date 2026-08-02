@@ -1054,3 +1054,94 @@ Neither was a logic error a test could have caught without real messages from a 
 bank and a real person.
 
 The 96.3% figure is worth less than the two bugs.
+
+---
+
+## Session 9 — Reports and export (2026-08-02)
+
+### Verification results
+
+| Check | Result |
+|---|---|
+| `:app:testPlayDebugUnitTest` | **288 tests, 0 failures** (was 258) |
+| `:app:testDirectDebugUnitTest` | **295 tests, 0 failures** |
+| `:parser:test` | 83 tests, 0 failures — parser untouched |
+| `:app:assemblePlayDebug` / `assembleDirectDebug` | pass |
+| Reports on the device | 36 transactions over 7 days, in/out/net rendered |
+| PDF export on the device | valid `%PDF-1.4`, `/FontName /NotoSansEthiopic` embedded |
+
+New: `CsvExporterTest` 12, `BuildReportUseCaseTest` 9, `ReportsViewModelTest` 7,
+`PdfExporterTest` 2.
+
+### A bug that only the phone could show
+
+Exporting a PDF wrote a file called **`mezgeb-summary-2026-08-02.pdf.csv`**. The bytes
+were a correct PDF; the name was not, and Android would have handed it to a
+spreadsheet app.
+
+`rememberLauncherForActivityResult` captures its contract on **first composition** and
+never rebuilds it, so `CreateDocument(viewModel.mimeType(pendingKind))` pinned
+`text/csv` — whichever kind happened to be selected first — no matter what the user
+chose from the menu afterwards. The document picker then appended the extension for
+the type it had been given.
+
+Replaced with a small `ActivityResultContract` that takes the name *and* the type as
+its input, so both travel with each launch and nothing is captured at composition.
+Re-verified on the device: `mezgeb-summary-2026-08-02.pdf`, 37 KB, valid header.
+
+Every unit test passed before and after. The contract-capture rule is a Compose
+lifecycle detail, not a logic error, and it is invisible until a picker is on screen.
+
+### Design decisions
+
+1. **The byte-order mark is not decoration.** Excel on Windows reads a UTF-8 CSV as
+   the system code page unless the file starts with a BOM, which turns every Amharic
+   name into mojibake. Three ugly bytes decide whether the export is usable by the
+   people this app is for.
+
+2. **CSV amounts are ungrouped.** `MoneyFormatter.format` writes `1,200.50`, and a
+   comma inside a number in a comma-separated file is a bug waiting for a spreadsheet.
+   Added `MoneyFormatter.formatPlain`, which also absorbed a helper that had been
+   copy-pasted into two ViewModels.
+
+3. **The chart is 60 lines of `Canvas`, not a dependency.** It handles the three
+   things the obvious version gets wrong: negative bars get a baseline where zero is
+   rather than at the bottom; days with no activity are drawn as gaps rather than
+   skipped, so a quiet week looks quiet; and a month scrolls horizontally instead of
+   squeezing to illegibility.
+
+4. **Percentages are of money in, not of everything.** Mixing directions into one
+   denominator produces shares that sum past 100% and answer no question.
+
+5. **Money with no category is its own slice**, labelled "—". Dropping it would leave
+   the percentages not adding up, and "nobody has said what this was" is a real answer.
+
+6. **Export never picks its own destination.** `ACTION_CREATE_DOCUMENT` hands that to
+   the system picker: no storage permission, and the file can land somewhere this app
+   cannot read back. For an app whose selling point is that data stays put, the export
+   is the one door out and the user holds the handle.
+
+### An admission rather than a green tick
+
+`PdfExporter` has almost no unit tests. `PdfDocument` is a thin wrapper over native
+code — `nativeCreateDocument()` returns 0 under Robolectric, so the first `startPage`
+throws "document is closed!". There is no shadow, and writing one would test a fake.
+
+Rather than leave two tests that look like coverage and assert nothing, the rendering
+is verified on the device and said so in the file. What the device confirmed: a valid
+PDF with the bundled Ethiopic font actually embedded, which is the mechanism that
+stops Amharic coming out as boxes.
+
+**Still unverified:** whether Ethiopic *glyphs* render correctly on the page. The shop
+name is the only Amharic on it and it cannot be set until Session 11 builds the
+settings screen, so the exported page currently has no Ethiopic text to look at. That
+check moves to Session 11.
+
+### Deferred
+
+- **The shop name is stored but not editable.** `SettingsRepository.observeShopName`
+  exists and the PDF header reads it, falling back to "Mezgeb". Session 11 owns the
+  screen that sets it.
+- **Chart bars carry no labels.** The dates are implied by the period, and axis labels
+  at bar width would be unreadable on a phone. Worth revisiting if anyone asks which
+  bar is which.

@@ -11,6 +11,7 @@ import et.alpha.mezgeb.domain.reconcile.ReconcilePeriodUseCase
 import et.alpha.mezgeb.parser.normalize.AmountNormalizer
 import et.alpha.mezgeb.util.IdGenerator
 import et.alpha.mezgeb.util.MezgebDates
+import et.alpha.mezgeb.util.MoneyFormatter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -101,7 +102,7 @@ class ReconcileViewModel @Inject constructor(
             periodChoice = localState.periodChoice,
             customRange = localState.customRange,
             expectedInput = localState.expectedInput
-                ?: open?.expectedTotalMinor?.let { editableAmount(it) }
+                ?: open?.expectedTotalMinor?.let { MoneyFormatter.formatPlain(it) }
                 ?: "",
             expectedIsInvalid = localState.expectedIsInvalid,
             isBusy = localState.isBusy,
@@ -245,9 +246,3 @@ class ReconcileViewModel @Inject constructor(
     }
 }
 
-/** Santim to an editable string. Mirrors the transaction editor's own helper. */
-internal fun editableAmount(amountMinor: Long): String {
-    val major = amountMinor / 100
-    val santim = (amountMinor % 100).toInt()
-    return "$major." + santim.toString().padStart(2, '0')
-}

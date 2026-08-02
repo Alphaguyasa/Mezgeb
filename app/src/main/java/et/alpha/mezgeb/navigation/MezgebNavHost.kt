@@ -19,7 +19,7 @@ import et.alpha.mezgeb.ui.detail.TransactionDetailRoute
 import et.alpha.mezgeb.ui.ledger.LedgerRoute
 import et.alpha.mezgeb.ui.onboarding.OnboardingRoute
 import et.alpha.mezgeb.ui.reconcile.ReconcileRoute
-import et.alpha.mezgeb.ui.reports.ReportsScreen
+import et.alpha.mezgeb.ui.reports.ReportsRoute
 import et.alpha.mezgeb.ui.review.ReviewRoute
 import et.alpha.mezgeb.ui.rule.RuleBuilderRoute
 import et.alpha.mezgeb.ui.settings.SettingsScreen
@@ -96,7 +96,7 @@ fun MezgebNavHost(
             composable<MezgebDestination.CreditEntry> {
                 CreditEntryRoute(onBack = { navController.navigateUp() })
             }
-            composable<MezgebDestination.Reports> { ReportsScreen() }
+            composable<MezgebDestination.Reports> { ReportsRoute() }
 
             composable<MezgebDestination.Review> {
                 ReviewRoute(

@@ -282,6 +282,26 @@
     <string name="reconcile_reminder_title">Time to check your takings</string>
     <string name="reconcile_reminder_body">It has been a week since you last closed a period.</string>
 
+    <!-- Reports and export -->
+    <string name="report_summary">Summary</string>
+    <string name="report_daily_net">Each day</string>
+    <string name="report_by_channel">By channel</string>
+    <string name="report_by_category">By category</string>
+    <string name="report_top_debtors">Who owes you most</string>
+    <!-- 1: how many transactions are in the period -->
+    <string name="report_transaction_count">%1$d transactions</string>
+    <string name="report_insufficient_body">There is not enough here to summarise yet. A few more transactions and this becomes useful.</string>
+    <string name="report_export">Export</string>
+    <string name="report_export_ledger">Ledger (CSV)</string>
+    <string name="report_export_credit">Credit book (CSV)</string>
+    <string name="report_export_both">Both (CSV)</string>
+    <string name="report_export_pdf">Summary (PDF)</string>
+    <string name="report_export_failed">Could not write the file.</string>
+    <!-- 1: period start, 2: period end -->
+    <string name="report_pdf_period">%1$s to %2$s</string>
+    <!-- 1: date, 2: time this file was made -->
+    <string name="report_pdf_generated">Generated %1$s at %2$s</string>
+
     <!-- Content descriptions -->
     <string name="cd_open_review">Open review queue</string>
     <string name="cd_open_reconcile">Open reconciliation</string>

@@ -45,6 +45,20 @@ object MoneyFormatter {
         }
     }
 
+    /**
+     * `45000` becomes `450.00` — no grouping, no sign, no currency.
+     *
+     * Deliberately not [formatUnsigned]: that groups thousands with commas for
+     * reading, and a comma is exactly what must not appear in an amount that is
+     * about to be typed back into a field or written into a CSV cell.
+     */
+    fun formatPlain(amountMinor: Long): String {
+        val absolute = amountMinor.absoluteValue
+        val santim = (absolute % 100).toInt()
+        val sign = if (amountMinor < 0) "-" else ""
+        return sign + (absolute / 100) + "." + santim.toString().padStart(2, '0')
+    }
+
     /** Digits only — no sign, no currency. Useful for input fields and keypads. */
     fun formatUnsigned(amountMinor: Long): String {
         val absolute = amountMinor.absoluteValue

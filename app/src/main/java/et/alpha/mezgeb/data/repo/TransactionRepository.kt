@@ -156,6 +156,9 @@ class TransactionRepository @Inject constructor(
     suspend fun sumUncategorised(from: Long, to: Long): Long =
         transactionDao.sumUncategorised(from, to)
 
+    suspend fun countInPeriod(from: Long, to: Long): Int =
+        transactionDao.countInPeriod(from, to)
+
     /** Money in through a message, with hand-entered cash left out. See reconciliation. */
     suspend fun sumCapturedIn(from: Long, to: Long): Long =
         transactionDao.sumByDirectionExcludingChannel(Direction.IN, Channel.CASH, from, to)

@@ -244,6 +244,14 @@ interface TransactionDao {
 
     @Query(
         """
+        SELECT COUNT(*) FROM transactions
+        WHERE isDeleted = 0 AND occurredAt >= :from AND occurredAt <= :to
+        """,
+    )
+    suspend fun countInPeriod(from: Long, to: Long): Int
+
+    @Query(
+        """
         SELECT COALESCE(SUM(amountMinor), 0) FROM transactions
         WHERE isDeleted = 0 AND channel = :channel AND direction = :direction
           AND occurredAt >= :from AND occurredAt <= :to

@@ -19,6 +19,7 @@ import et.alpha.mezgeb.domain.model.Transaction
 import et.alpha.mezgeb.navigation.MezgebDestination
 import et.alpha.mezgeb.parser.normalize.AmountNormalizer
 import et.alpha.mezgeb.util.IdGenerator
+import et.alpha.mezgeb.util.MoneyFormatter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -280,7 +281,7 @@ class TransactionDetailViewModel @Inject constructor(
     }
 
     private fun Transaction.toEditor() = TransactionEditor(
-        amountText = editableAmount(amountMinor),
+        amountText = MoneyFormatter.formatPlain(amountMinor),
         direction = direction,
         channel = channel,
         counterpartyName = counterpartyName.orEmpty(),
@@ -305,15 +306,3 @@ class TransactionDetailViewModel @Inject constructor(
     }
 }
 
-/**
- * Santim to an editable string: "45000" becomes "450.00".
- *
- * Not [et.alpha.mezgeb.util.MoneyFormatter], deliberately — that groups thousands
- * with commas for reading, and feeding a comma back into an input field is how you
- * get an amount that will not re-parse.
- */
-internal fun editableAmount(amountMinor: Long): String {
-    val major = amountMinor / 100
-    val santim = (amountMinor % 100).toInt()
-    return "$major." + santim.toString().padStart(2, '0')
-}

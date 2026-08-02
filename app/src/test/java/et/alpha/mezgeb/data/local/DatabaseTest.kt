@@ -59,7 +59,7 @@ abstract class DatabaseTest {
 
 internal const val DAY: Long = 24 * 60 * 60 * 1000L
 
-/** 2026-07-01T00:00:00Z, a round base so offsets in tests stay readable. */
+/** 2026-07-02T00:00:00Z, a round base so offsets in tests stay readable. */
 internal const val T0: Long = 1_782_950_400_000L
 
 internal fun rawMessage(
