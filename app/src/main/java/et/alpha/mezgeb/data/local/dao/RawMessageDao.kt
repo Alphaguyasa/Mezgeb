@@ -79,6 +79,20 @@ interface RawMessageDao {
     @Query("UPDATE raw_messages SET parseState = :state, matchedRuleId = :matchedRuleId WHERE id = :id")
     suspend fun markResolved(id: String, state: ParseState, matchedRuleId: String?)
 
+    /**
+     * Every stored message, for the one job that has to look at all of them: finding
+     * credentials an earlier build kept. Read in pages so a phone with a backfilled
+     * inbox does not load thousands of bodies at once.
+     */
+    @Query("SELECT * FROM raw_messages ORDER BY receivedAt DESC LIMIT :limit OFFSET :offset")
+    suspend fun getPage(limit: Int, offset: Int): List<RawMessageEntity>
+
+    @Query("SELECT COUNT(*) FROM raw_messages")
+    suspend fun count(): Int
+
+    @Query("DELETE FROM raw_messages WHERE id = :id")
+    suspend fun deleteById(id: String)
+
     @Query("DELETE FROM raw_messages")
     suspend fun deleteAll()
 }

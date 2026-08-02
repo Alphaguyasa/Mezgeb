@@ -462,7 +462,7 @@ that compiles and passes tests, not a capture layer known to work.
   instrumentation runner and a device, and it is worth writing in the same sitting as
   the device verification below rather than blind.
 
-### Outstanding device verification (still open)
+### Device verification — **done 2026-08-02**, see the section at the end of this file
 
 The session's own verify step, none of which an emulator can answer:
 
@@ -902,3 +902,103 @@ Two tests, both explicitly required by the brief and both worth the space:
   out not to force the split: `countEditedSince` wants "a human touched this", which
   is exactly what the column already means. The ledger badge is the loose one. Left
   as it is, now with a reason rather than an intention.
+
+---
+
+## Device verification (2026-08-02, Samsung SM-G965U1, Android 10 / API 29)
+
+Eight sessions of code met a real phone. The Session 4 checklist that had been open
+since then is now closed, and it found something.
+
+### The finding: the app was storing live banking credentials
+
+Teaching a rule for HIBRETBANK — a fourth sender that appeared in the real inbox and
+that the corpus never contained — put a message on screen that was a **mobile-banking
+TPIN reset with the new PIN in cleartext**. Mezgeb had stored it in `raw_messages`,
+where it sat in the review queue, rendered in full, inviting the user to select
+spans out of it.
+
+Three such messages were on the device: two from HIBRETBANK, one from 127.
+
+The reasoning had already been done once and applied to the wrong place. `CORPUS.md`
+records that during collection **19 messages were dropped rather than redacted**
+because they carried codes or PINs — "a redacted credential is still a credential in
+git history." That judgement was applied to the repository and never to the app. The
+capture funnel stored whatever an allowlisted sender sent, so credentials accumulated
+in the ledger and would have been carried into the backup and export features that
+Sessions 9 and 10 are about to build.
+
+No unit test would have found this. Only real messages from a real bank would.
+
+**The fix:**
+
+- `CredentialDetector` (`:parser`, pure, 7 tests) recognises a message that *states* a
+  secret. `CaptureCoordinator` declines those **before the insert** — there is no row
+  and no id, because marking and keeping would leave the credential at rest, which is
+  the whole thing being avoided.
+- `CredentialPurge` runs on every launch and deletes what earlier builds stored. A PIN
+  in a ledger does not become harmless because the next version would not have kept it.
+  Transactions are left alone: the foreign key is `SET NULL`, so a payment keeps its
+  row and loses its link to the text. The money record is what the shop needs; the
+  message text is the part that must not be kept.
+- The import result now says how many messages were passed over and why. A shop owner
+  who counts 273 and sees 270 accounted for deserves the answer.
+
+**Precision is the hard part, and it is tested in both directions.** Detection requires
+a credential word *followed by a value*: CBE's payment messages carry "never share your
+PIN" footers, and firing on one of those would silently cost a shop a payment — the one
+thing this app exists to prevent. `CredentialDetectorTest` pins both sides.
+
+Verified on the device: 273 raw messages → 270 after the purge, 3 removed, **all 263
+transactions intact and no orphans**. One row still matches a loose `LIKE '%otp%'`
+search: a genuine CBE transfer whose receipt URL happens to contain those letters. The
+strict detector correctly left it alone.
+
+### What else the device confirmed
+
+| Check | Result |
+|---|---|
+| Notification listener binds | live `ServiceRecord` + `ConnectionRecord` |
+| App detects access correctly | "Reading payment messages is on" |
+| Vendor battery screen resolves | Samsung target found, card shown |
+| Only `READ_SMS` is ever requested | `RECEIVE_SMS` remained `granted=false` |
+| Import against the real inbox | **273 captured, 263 parsed — 96.3%** |
+| Re-import over the same messages | **"0 payments added. 273 were already in your ledger."** |
+| `FLAG_SECURE` | `screencap` exits 1 with a 0-byte file; the home screen captures fine |
+
+Thirteen of the fourteen bundled rules fired on real traffic. The review queue held 10
+messages across 4 senders, which after the purge is 7 across 3.
+
+**On that 96.3%:** the corpus was extracted from this same phone, so this is not unseen
+data. It is 273 messages against a corpus of 118, so most of it is new — but the
+honest claim is "the rules generalise across this one account's history", not "the
+rules generalise".
+
+### Two smaller things the device surfaced
+
+- **`FLAG_SECURE` blocks screen recording.** Session 6 wants a screen capture of the
+  teach-a-rule flow as demo material, and that now requires temporarily removing the
+  flag. Worth a deliberate decision rather than a surprise on the day.
+- **"1 messages".** The review queue interpolates counts into a plain string. Android
+  has `<plurals>` for exactly this, and Amharic pluralises differently again. Not yet
+  fixed.
+
+### Still not verified
+
+Notification capture end to end. The listener binds and the app agrees it has access,
+but no payment has arrived through it — that needs a real incoming message, which
+cannot be fabricated from the shell (`cmd notification post` posts as the shell's own
+package, which the source filter correctly refuses). The import path exercises the same
+funnel, the same parser and the same dedup, so what remains untested is specifically
+`onNotificationPosted` and the `EXTRA_BIG_TEXT` extraction.
+
+### A suggested addition to .md
+
+Hard constraint #5 covers raw bodies never leaving the device and never being logged.
+It does not cover *storing* a message that contains a credential. Worth adding, since
+the app now depends on it:
+
+> **Messages that state a secret are never stored.** A PIN, a one-time code or a
+> password arriving from an allowlisted sender is declined at the funnel, not stored
+> and marked. Detection must require a credential word followed by a value, because
+> refusing a genuine payment message is the more expensive error.

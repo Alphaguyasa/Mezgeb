@@ -64,6 +64,7 @@
     <string name="onboarding_import_running">ከ%2$d ውስጥ %1$d ተመርምሯል</string>
     <string name="onboarding_import_finished">%1$d ክፍያዎች ተጨመሩ። %2$d ቀደም ብለው በመዝገብዎ ውስጥ ነበሩ።</string>
     <string name="onboarding_import_failed">ያለፉ መልእክቶችን ማንበብ አልተቻለም።</string>
+    <string name="onboarding_import_skipped_credentials">%1$d መልእክቶች የይለፍ ቃል ወይም ኮድ ይዘዋል። መዝገብ አላስቀመጣቸውም።</string>
     <string name="onboarding_done">ተጠናቀቀ</string>
 
     <!-- Shared actions -->

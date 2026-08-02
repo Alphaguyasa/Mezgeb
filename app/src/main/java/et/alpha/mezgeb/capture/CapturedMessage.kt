@@ -39,6 +39,14 @@ sealed interface CaptureOutcome {
     data class Ignored(val rawMessageId: String) : CaptureOutcome
 
     /**
+     * Refused before anything was written, because the message states a secret.
+     *
+     * There is no id because there is no row. Marking it and keeping it would leave
+     * the credential at rest, which is the entire thing being avoided.
+     */
+    data object DeclinedAsCredential : CaptureOutcome
+
+    /**
      * Already captured. Either the content hash collided (tier one) or the parsed
      * provider transaction id already belonged to a transaction (tier two).
      */

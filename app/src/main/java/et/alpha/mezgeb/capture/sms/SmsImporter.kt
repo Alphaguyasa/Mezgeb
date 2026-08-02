@@ -53,6 +53,14 @@ sealed interface SmsImportStatus {
         val imported: Int,
         val duplicates: Int,
         val queued: Int,
+        /**
+         * Messages passed over because they stated a PIN or a one-time code.
+         *
+         * Reported rather than hidden: a shop owner who counts 273 messages and sees
+         * 269 accounted for deserves to know where the other four went, and "we did
+         * not keep them" is the answer.
+         */
+        val skippedCredentials: Int = 0,
     ) : SmsImportStatus
 
     /** Usually the permission being refused. The user is told, not left waiting. */

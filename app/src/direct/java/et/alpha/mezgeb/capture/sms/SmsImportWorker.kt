@@ -64,6 +64,7 @@ class SmsImportWorker @AssistedInject constructor(
         var imported = 0
         var duplicates = 0
         var queued = 0
+        var skippedCredentials = 0
         var newestDate = since
 
         while (true) {
@@ -89,6 +90,9 @@ class SmsImportWorker @AssistedInject constructor(
                     is CaptureOutcome.Duplicate -> duplicates++
                     is CaptureOutcome.Queued -> queued++
                     is CaptureOutcome.Ignored -> Unit
+                    // Counted, never stored. The shop is told how many were passed
+                    // over so the import's arithmetic still adds up for them.
+                    CaptureOutcome.DeclinedAsCredential -> skippedCredentials++
                 }
             }
 
@@ -111,6 +115,7 @@ class SmsImportWorker @AssistedInject constructor(
                 KEY_TOTAL to total,
                 KEY_DUPLICATES to duplicates,
                 KEY_QUEUED to queued,
+                KEY_SKIPPED_CREDENTIALS to skippedCredentials,
             ),
         )
     }
@@ -175,6 +180,7 @@ class SmsImportWorker @AssistedInject constructor(
         const val KEY_TOTAL = "total"
         const val KEY_DUPLICATES = "duplicates"
         const val KEY_QUEUED = "queued"
+        const val KEY_SKIPPED_CREDENTIALS = "skipped_credentials"
 
         /** Per 03-ARCHITECTURE.md section 6. */
         private const val PAGE_SIZE = 500

@@ -71,6 +71,8 @@
     <!-- 1: payments added, 2: payments already in the ledger -->
     <string name="onboarding_import_finished">%1$d payments added. %2$d were already in your ledger.</string>
     <string name="onboarding_import_failed">Could not read past messages.</string>
+    <!-- 1: how many messages carried a PIN or code and were not kept -->
+    <string name="onboarding_import_skipped_credentials">%1$d messages contained a PIN or code. Mezgeb did not keep them.</string>
     <string name="onboarding_done">Done</string>
 
     <!-- Shared actions -->

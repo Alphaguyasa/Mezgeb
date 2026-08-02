@@ -11,6 +11,7 @@ import et.alpha.mezgeb.parser.model.ParseOutcome
 import et.alpha.mezgeb.parser.model.ParsedFields
 import et.alpha.mezgeb.parser.model.UnmatchedReason
 import et.alpha.mezgeb.parser.normalize.SenderNormalizer
+import et.alpha.mezgeb.parser.privacy.CredentialDetector
 import et.alpha.mezgeb.util.IdGenerator
 import et.alpha.mezgeb.util.MoneyFormatter
 import kotlinx.coroutines.sync.Mutex
@@ -61,6 +62,14 @@ class CaptureCoordinator @Inject constructor(
     private val mutex = Mutex()
 
     suspend fun capture(message: CapturedMessage): CaptureOutcome = mutex.withLock {
+        // Before anything is written. Banks send PINs and one-time codes over SMS in
+        // cleartext, from the same senders as payment messages, so they pass the
+        // allowlist and would otherwise sit in the ledger — visible in the review
+        // queue and carried into any backup. Found on a real device, not in a test.
+        if (CredentialDetector.containsCredential(message.body)) {
+            return@withLock CaptureOutcome.DeclinedAsCredential
+        }
+
         val rawMessageId = ids.newId()
         val stored = transactions.insertRawMessage(
             RawMessage(

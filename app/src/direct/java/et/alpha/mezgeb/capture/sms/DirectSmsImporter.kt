@@ -63,6 +63,7 @@ private fun WorkInfo?.toStatus(): SmsImportStatus = when (this?.state) {
         imported = outputData.getInt(SmsImportWorker.KEY_IMPORTED, 0),
         duplicates = outputData.getInt(SmsImportWorker.KEY_DUPLICATES, 0),
         queued = outputData.getInt(SmsImportWorker.KEY_QUEUED, 0),
+        skippedCredentials = outputData.getInt(SmsImportWorker.KEY_SKIPPED_CREDENTIALS, 0),
     )
 
     WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> SmsImportStatus.Failed

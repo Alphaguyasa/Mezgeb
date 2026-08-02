@@ -314,14 +314,30 @@ private fun ImportCard(status: SmsImportStatus, onStartImport: () -> Unit) {
                     }
                 }
 
-                is SmsImportStatus.Finished -> Text(
-                    text = stringResource(
-                        R.string.onboarding_import_finished,
-                        status.imported,
-                        status.duplicates,
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+                is SmsImportStatus.Finished -> Column(
+                    verticalArrangement = Arrangement.spacedBy(spacing.xs),
+                ) {
+                    Text(
+                        text = stringResource(
+                            R.string.onboarding_import_finished,
+                            status.imported,
+                            status.duplicates,
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    if (status.skippedCredentials > 0) {
+                        // Where the missing ones went. Silence here would look like a
+                        // bug, and the reason is one the shop should hear.
+                        Text(
+                            text = stringResource(
+                                R.string.onboarding_import_skipped_credentials,
+                                status.skippedCredentials,
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
 
                 SmsImportStatus.Failed -> Text(
                     text = stringResource(R.string.onboarding_import_failed),

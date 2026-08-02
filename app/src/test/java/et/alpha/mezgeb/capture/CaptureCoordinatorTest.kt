@@ -275,6 +275,37 @@ class CaptureCoordinatorTest : DatabaseTest() {
         )
     }
 
+    // --- Credentials ------------------------------------------------------------------
+
+    @Test
+    fun `a message that states a PIN is refused before anything is written`() = runTest {
+        // Found on a real device: a bank reset a mobile-banking PIN and sent it in
+        // cleartext from a sender the allowlist admits. Nothing about it is stored.
+        val outcome = coordinator.capture(
+            notification(
+                "Your Hibir Mobile TPIN has been reset successfully. New TPIN is 0000",
+                sender = "HIBRETBANK",
+            ),
+        )
+
+        assertEquals(CaptureOutcome.DeclinedAsCredential, outcome)
+        assertTrue(transactions.getByParseState(ParseState.UNMATCHED).isEmpty())
+        assertTrue(transactions.getByParseState(ParseState.IGNORED).isEmpty())
+        assertTrue(allTransactions().isEmpty())
+    }
+
+    @Test
+    fun `a payment message carrying a security footer is still recorded`() = runTest {
+        // The expensive mistake in the other direction: refusing this would cost the
+        // shop a payment, silently.
+        val outcome = coordinator.capture(
+            notification("$CBE_CREDIT Never share your PIN.", sender = "CBE"),
+        )
+
+        assertTrue(outcome is CaptureOutcome.Recorded)
+        assertEquals(1, allTransactions().size)
+    }
+
     // --- Capture health --------------------------------------------------------------
 
     @Test
