@@ -198,6 +198,10 @@ dependencies {
     testImplementation(libs.androidx.room.testing)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.work.testing)
+    // The span-selection interaction is worth a real UI test. Run under Robolectric
+    // rather than on a device so it runs on every build — see RuleBuilderScreenTest.
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
     robolectricRuntime(libs.robolectric.android.all)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))

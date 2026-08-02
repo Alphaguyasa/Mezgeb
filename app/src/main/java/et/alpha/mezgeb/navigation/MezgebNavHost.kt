@@ -18,7 +18,8 @@ import et.alpha.mezgeb.ui.ledger.LedgerRoute
 import et.alpha.mezgeb.ui.onboarding.OnboardingRoute
 import et.alpha.mezgeb.ui.reconcile.ReconcileScreen
 import et.alpha.mezgeb.ui.reports.ReportsScreen
-import et.alpha.mezgeb.ui.review.ReviewScreen
+import et.alpha.mezgeb.ui.review.ReviewRoute
+import et.alpha.mezgeb.ui.rule.RuleBuilderRoute
 import et.alpha.mezgeb.ui.settings.SettingsScreen
 import et.alpha.mezgeb.ui.today.TodayRoute
 
@@ -72,7 +73,15 @@ fun MezgebNavHost(
             composable<MezgebDestination.Reports> { ReportsScreen() }
 
             composable<MezgebDestination.Review> {
-                ReviewScreen(onBack = { navController.navigateUp() })
+                ReviewRoute(
+                    onBack = { navController.navigateUp() },
+                    onTeachRule = { sender ->
+                        navController.navigate(MezgebDestination.RuleBuilder(sender))
+                    },
+                )
+            }
+            composable<MezgebDestination.RuleBuilder> {
+                RuleBuilderRoute(onBack = { navController.navigateUp() })
             }
             composable<MezgebDestination.Reconcile> {
                 ReconcileScreen(onBack = { navController.navigateUp() })

@@ -53,6 +53,19 @@ sealed interface MezgebDestination {
     /** The keypad for takings no message will ever describe. */
     @Serializable
     data object CashEntry : MezgebDestination
+
+    /**
+     * Teach a rule for one sender's messages.
+     *
+     * @param rawMessageId the message to start from, when the user came in from a
+     *   specific one. Null means "whichever is newest" — the usual case, arriving from
+     *   the sender group.
+     */
+    @Serializable
+    data class RuleBuilder(
+        val sender: String,
+        val rawMessageId: String? = null,
+    ) : MezgebDestination
 }
 
 /**

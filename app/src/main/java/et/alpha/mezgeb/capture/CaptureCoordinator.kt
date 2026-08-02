@@ -112,7 +112,12 @@ class CaptureCoordinator @Inject constructor(
                 reason = QueueReason.AMBIGUOUS,
             )
 
-            is ParseOutcome.Success -> record(rawMessageId, message.body, outcome)
+            is ParseOutcome.Success -> record(
+                rawMessageId = rawMessageId,
+                body = message.body,
+                fields = outcome.fields,
+                ruleId = outcome.ruleId,
+            )
         }
     }
 
@@ -126,7 +131,9 @@ class CaptureCoordinator @Inject constructor(
      * Nothing is deleted and nothing is re-hashed: a message that still matches no
      * rule stays exactly where it was.
      */
-    suspend fun reparseUnmatched(): ReparseSummary = mutex.withLock {
+    suspend fun reparseUnmatched(
+        onProgress: (scanned: Int, total: Int) -> Unit = { _, _ -> },
+    ): ReparseSummary = mutex.withLock {
         val queued = transactions.getByParseState(ParseState.UNMATCHED)
         if (queued.isEmpty()) return@withLock ReparseSummary()
 
@@ -134,8 +141,10 @@ class CaptureCoordinator @Inject constructor(
         var recorded = 0
         var duplicates = 0
         var ignored = 0
+        var scanned = 0
 
         for (message in queued) {
+            onProgress(scanned++, queued.size)
             when (
                 val outcome = parser.parse(message.sender, message.body, message.receivedAt)
             ) {
@@ -148,7 +157,8 @@ class CaptureCoordinator @Inject constructor(
                     val result = record(
                         rawMessageId = message.id,
                         body = message.body,
-                        outcome = outcome,
+                        fields = outcome.fields,
+                        ruleId = outcome.ruleId,
                     )
                     if (result is CaptureOutcome.Recorded) recorded++ else duplicates++
                 }
@@ -166,13 +176,37 @@ class CaptureCoordinator @Inject constructor(
         )
     }
 
+    /**
+     * Records a transaction from fields the user tagged by hand, without a rule.
+     *
+     * The escape hatch for a message that is worth recording but not worth teaching —
+     * a one-off template, or one the user cannot see a pattern in. It goes through the
+     * same funnel so that a message resolved by hand is still deduplicated against the
+     * same payment arriving from the other source.
+     */
+    suspend fun resolveManually(
+        rawMessageId: String,
+        fields: ParsedFields,
+    ): CaptureOutcome = mutex.withLock {
+        val message = transactions.getRawMessage(rawMessageId)
+            ?: return@withLock CaptureOutcome.Duplicate(DedupTier.CONTENT_HASH)
+
+        record(
+            rawMessageId = rawMessageId,
+            body = message.body,
+            fields = fields,
+            ruleId = null,
+            resolvedState = ParseState.RESOLVED_MANUALLY,
+        )
+    }
+
     private suspend fun record(
         rawMessageId: String,
         body: String,
-        outcome: ParseOutcome.Success,
+        fields: ParsedFields,
+        ruleId: String?,
+        resolvedState: ParseState = ParseState.PARSED,
     ): CaptureOutcome {
-        val fields = outcome.fields
-
         // Tier two. The provider's own transaction id is authoritative: when the
         // notification and the inbox render the same payment differently enough to
         // survive the content hash, this is what catches it.
@@ -181,15 +215,15 @@ class CaptureCoordinator @Inject constructor(
             transactions.markRawMessageResolved(
                 id = rawMessageId,
                 state = ParseState.DUPLICATE,
-                matchedRuleId = outcome.ruleId,
+                matchedRuleId = ruleId,
             )
             return CaptureOutcome.Duplicate(DedupTier.PROVIDER_TXN_ID)
         }
 
         val transactionId = ids.newId()
         transactions.insert(fields.toTransaction(transactionId, rawMessageId, body))
-        transactions.markRawMessageResolved(rawMessageId, ParseState.PARSED, outcome.ruleId)
-        rules.recordParserRuleMatch(outcome.ruleId)
+        transactions.markRawMessageResolved(rawMessageId, resolvedState, ruleId)
+        ruleId?.let { rules.recordParserRuleMatch(it) }
         return CaptureOutcome.Recorded(rawMessageId, transactionId)
     }
 

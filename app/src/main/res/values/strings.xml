@@ -154,6 +154,49 @@
     <string name="cash_save_failed">Could not save. Try again.</string>
     <string name="keypad_backspace">Delete last digit</string>
 
+    <!-- Review queue -->
+    <!-- 1: total messages waiting -->
+    <string name="review_intro">%1$d messages could not be read. Teach Mezgeb one rule per sender and they will be read from now on — including the ones already waiting.</string>
+    <!-- 1: message count, 2: newest message day -->
+    <string name="review_group_summary">%1$d messages, newest %2$s</string>
+    <string name="review_teach_rule">Teach a rule</string>
+    <string name="review_try_again">Try again</string>
+    <string name="review_empty_title">Every message was read</string>
+    <string name="review_empty_body">Nothing is waiting. When a message arrives that Mezgeb cannot read, it appears here so you can teach it.</string>
+    <!-- 1: messages checked, 2: total -->
+    <string name="review_reprocessing">Checking %1$d of %2$d</string>
+    <!-- 1: transactions recorded -->
+    <string name="review_reprocessed">%1$d messages could now be read</string>
+
+    <!-- Rule builder -->
+    <!-- 1: the sender the rule is for -->
+    <string name="rule_title">Teach a rule for %1$s</string>
+    <string name="rule_instruction">Select part of the message, then say what it is.</string>
+    <string name="rule_what_is_this">This is the…</string>
+    <string name="rule_field_amount">Amount</string>
+    <string name="rule_field_who">Who</string>
+    <string name="rule_field_reference">Reference</string>
+    <string name="rule_field_balance">Balance</string>
+    <string name="rule_clear_field">Remove</string>
+    <string name="rule_amount_required">Select the amount to continue.</string>
+    <string name="rule_direction_question">Is this money in or out?</string>
+    <string name="rule_preview_heading">Mezgeb would record</string>
+    <string name="rule_preview_empty">Nothing yet — select the amount first.</string>
+    <string name="rule_test">Test</string>
+    <string name="rule_save">Save rule</string>
+    <string name="rule_resolve_one">Just record this one message</string>
+    <string name="rule_nothing_to_teach">There are no messages from this sender waiting.</string>
+    <string name="rule_save_failed">Could not save the rule. Try again.</string>
+    <!-- 1: messages matched, 2: messages tested against -->
+    <string name="rule_report_matches">Reads %1$d of %2$d other messages</string>
+    <string name="rule_report_too_specific">This rule reads very few of them. Something you selected may only appear in this one message.</string>
+    <!-- 1: the name of the rule that already reads these messages -->
+    <string name="rule_report_conflict">“%1$s” already reads some of these messages. Two rules that disagree cannot both be used.</string>
+    <!-- 1: position, 2: total -->
+    <string name="rule_example_position">Message %1$d of %2$d</string>
+    <string name="rule_previous_example">Previous message</string>
+    <string name="rule_next_example">Next message</string>
+
     <!-- Content descriptions -->
     <string name="cd_open_review">Open review queue</string>
     <string name="cd_open_reconcile">Open reconciliation</string>

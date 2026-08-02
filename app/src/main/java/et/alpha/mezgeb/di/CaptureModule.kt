@@ -4,8 +4,10 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import et.alpha.mezgeb.capture.BacklogReprocessor
 import et.alpha.mezgeb.capture.ParserProvider
 import et.alpha.mezgeb.capture.RuleBackedParserProvider
+import et.alpha.mezgeb.capture.WorkManagerBacklogReprocessor
 import et.alpha.mezgeb.capture.notification.AndroidCaptureAccess
 import et.alpha.mezgeb.capture.notification.CaptureAccess
 import et.alpha.mezgeb.util.IdGenerator
@@ -34,4 +36,10 @@ abstract class CaptureModule {
     @Binds
     @Singleton
     abstract fun bindIdGenerator(generator: UuidGenerator): IdGenerator
+
+    @Binds
+    @Singleton
+    abstract fun bindBacklogReprocessor(
+        reprocessor: WorkManagerBacklogReprocessor,
+    ): BacklogReprocessor
 }

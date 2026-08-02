@@ -144,6 +144,41 @@
     <string name="cash_save_failed">ማስቀመጥ አልተቻለም። እንደገና ይሞክሩ።</string>
     <string name="keypad_backspace">የመጨረሻውን ቁጥር አጥፋ</string>
 
+    <!-- Review queue -->
+    <string name="review_intro">%1$d መልእክቶች ሊነበቡ አልቻሉም። ለእያንዳንዱ ላኪ አንድ ሕግ ካስተማሩ ከዚህ በኋላ ይነበባሉ — አሁን የሚጠብቁትንም ጨምሮ።</string>
+    <string name="review_group_summary">%1$d መልእክቶች፣ የቅርቡ %2$s</string>
+    <string name="review_teach_rule">ሕግ አስተምር</string>
+    <string name="review_try_again">እንደገና ሞክር</string>
+    <string name="review_empty_title">ሁሉም መልእክት ተነቧል</string>
+    <string name="review_empty_body">የሚጠብቅ ነገር የለም። መዝገብ ማንበብ የማይችለው መልእክት ሲደርስ እንዲያስተምሩት እዚህ ይታያል።</string>
+    <string name="review_reprocessing">ከ%2$d ውስጥ %1$d በመመርመር ላይ</string>
+    <string name="review_reprocessed">%1$d መልእክቶች አሁን ተነበቡ</string>
+
+    <!-- Rule builder -->
+    <string name="rule_title">ለ%1$s ሕግ አስተምር</string>
+    <string name="rule_instruction">የመልእክቱን ክፍል ይምረጡ፤ ከዚያ ምን እንደሆነ ይንገሩ።</string>
+    <string name="rule_what_is_this">ይህ የ…</string>
+    <string name="rule_field_amount">መጠን</string>
+    <string name="rule_field_who">ማን</string>
+    <string name="rule_field_reference">ማመሳከሪያ</string>
+    <string name="rule_field_balance">ቀሪ ሒሳብ</string>
+    <string name="rule_clear_field">አስወግድ</string>
+    <string name="rule_amount_required">ለመቀጠል መጠኑን ይምረጡ።</string>
+    <string name="rule_direction_question">ይህ ገቢ ነው ወይስ ወጪ?</string>
+    <string name="rule_preview_heading">መዝገብ የሚመዘግበው</string>
+    <string name="rule_preview_empty">እስካሁን ምንም የለም — መጀመሪያ መጠኑን ይምረጡ።</string>
+    <string name="rule_test">ሞክር</string>
+    <string name="rule_save">ሕጉን አስቀምጥ</string>
+    <string name="rule_resolve_one">ይህን መልእክት ብቻ መዝግብ</string>
+    <string name="rule_nothing_to_teach">ከዚህ ላኪ የሚጠብቅ መልእክት የለም።</string>
+    <string name="rule_save_failed">ሕጉን ማስቀመጥ አልተቻለም። እንደገና ይሞክሩ።</string>
+    <string name="rule_report_matches">ከሌሎቹ %2$d መልእክቶች %1$d ያነባል</string>
+    <string name="rule_report_too_specific">ይህ ሕግ በጣም ጥቂቶቹን ብቻ ነው የሚያነበው። የመረጡት ነገር በዚህ መልእክት ብቻ ሊገኝ ይችላል።</string>
+    <string name="rule_report_conflict">«%1$s» አስቀድሞ ከእነዚህ መልእክቶች የተወሰኑትን ያነባል። የሚጋጩ ሁለት ሕጎች አብረው ሊሠሩ አይችሉም።</string>
+    <string name="rule_example_position">መልእክት %1$d ከ%2$d</string>
+    <string name="rule_previous_example">ቀዳሚ መልእክት</string>
+    <string name="rule_next_example">ቀጣይ መልእክት</string>
+
     <!-- Content descriptions -->
     <string name="cd_open_review">የግምገማ ወረፋን ክፈት</string>
     <string name="cd_open_reconcile">ማስታረቅን ክፈት</string>

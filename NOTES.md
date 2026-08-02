@@ -593,3 +593,120 @@ guessing at it would break the feature that depends on it.
   turns out to be needed, it is a picker away.
 - **No UI tests yet.** .md wants them for permission flows and rule induction —
   the second of those does not exist until Session 6, and both want a device.
+  *(Session 6 added the rule-induction one; the permission flow is still open.)*
+
+---
+
+## Session 6 — Review queue and rule induction (2026-08-02)
+
+### Verification results
+
+| Check | Result |
+|---|---|
+| `:parser:test` | **65 tests, 0 failures** (was 43) |
+| `:app:testPlayDebugUnitTest` | **180 tests, 0 failures** |
+| `:app:testDirectDebugUnitTest` | **187 tests, 0 failures** |
+| `:app:assemblePlayDebug` / `assembleDirectDebug` | pass |
+| Corpus accuracy | unchanged — no bundled rule or normalizer was touched |
+
+New: `RuleInducerTest` 20, `CorpusInductionTest` 2, `RuleBuilderViewModelTest` 7,
+`RuleBuilderScreenTest` 4 (a real UI test), `ReviewViewModelTest` 5.
+
+### The corpus test earned the whole session
+
+03-ARCHITECTURE.md section 5 specifies anchoring the induced pattern with `^...$`.
+Implemented exactly as written, then measured against real messages:
+
+```
+removed rule    : cbe_transfer_out_v1
+taught from     : cbe_048
+other messages  : 21
+matched         : 0        ← the documented algorithm
+hit rate        : 0.0%
+```
+
+CBE ends every message with a receipt URL carrying a random token
+(`https://mbreciept.cbe.com.et/i0-<random token>`); EBIRR does the same. With
+`$` anchoring, that token has to match exactly, so a rule taught from one message
+reads no other message ever. The feature would have shipped looking correct and doing
+nothing.
+
+The tail is now truncated to 24 characters and neither end is anchored — enough
+closing text to bound the last capture group, and none of the receipt link. Literals
+*between* spans are still kept in full, because those are the template's signature.
+
+```
+matched         : 21 of 21
+hit rate        : 100.0%
+```
+
+A second test asserts the induced rule matches **zero** messages from other senders,
+so the fix bought coverage rather than looseness.
+
+### Design decisions
+
+1. **The tapped field decides how tightly a span is matched, not the text.** The
+   architecture infers a "content class" from the span's characters alone, but a bare
+   ten-digit phone number and a large amount are the same characters. Getting that
+   wrong produces a rule that reads a phone number as money. The user already said
+   which it was by tapping a chip; the text only confirms it, and falls back to
+   free-text when it disagrees.
+
+2. **A read-only `BasicTextField`, not a `SelectionContainer`.** Compose gives no way
+   to read a selection out of a `SelectionContainer`, and the selection is the entire
+   input to this screen. The highlight is a `VisualTransformation` with
+   `OffsetMapping.Identity` — load-bearing, because a transformation that changed the
+   text length would make every subsequent offset point at the wrong character.
+
+3. **Four taggable fields, not seven.** Amount, Who, Reference, Balance. Direction is
+   a separate two-chip question because it is a property of the template rather than a
+   piece of its text, and timestamp is not worth the screen space when `receivedAt` is
+   already a good answer.
+
+4. **"Resolve manually" lives on the rule builder, not on a list of messages.** The
+   session brief puts it per-message in the queue, which would need a second list
+   screen to reach individual messages. Instead the builder pages through the sender's
+   messages and offers both endings — you tag the spans either way, and the only
+   question left is whether to keep the rule. Fewer screens, same two outcomes.
+
+5. **Saving a rule re-parses the backlog inline, then hands the rest to WorkManager.**
+   The inline pass is what makes the flow feel like it did something: the user sees
+   "3 messages could now be read" before leaving the screen. The worker picks up
+   anything an inbox import left behind, where thousands of messages should not block
+   a screen.
+
+6. **`resolveManually` goes through `CaptureCoordinator`.** A message resolved by hand
+   still has to deduplicate against the same payment arriving from the other source,
+   so it uses the same funnel rather than writing a transaction directly.
+
+7. **The backlog worker runs without a foreground notification.** The `play` flavor
+   declares no foreground service type, and a job that only reads the local database
+   needs no user-visible lifeline. Progress is reported through WorkManager and shown
+   on the review screen while someone is watching it.
+
+8. **The empty review queue is drawn as a success.** A tick and "every message was
+   read", not a shrug. A user who learns to read "nothing here" as failure stops
+   opening the screen, and this queue only works if it gets opened.
+
+### The UI test
+
+`RuleBuilderScreenTest` runs the span-selection interaction under Robolectric rather
+than on a device, so it runs on every build. It covers the chain no unit test can see:
+chips appear only once something is selected, and the range a chip reports is exactly
+the characters that were highlighted — an off-by-one there reads `450.0` as the amount
+and silently loses a santim.
+
+### Deferred
+
+- **Not tried by a human.** The session asks for the flow to be timed end to end, with
+  a 90-second target and a screen capture. Both need a device and both are still open.
+  The interaction is three taps by design; whether it reads that way to someone who has
+  not built it is exactly what the timing is meant to find out.
+- **Induction learns from one message at a time.** Generalising across two or three
+  tagged examples would produce better rules — literals that differ between examples
+  could be loosened automatically rather than left to the trailing-context heuristic.
+  Worth doing only if the 100% figure above turns out to be optimistic on senders
+  outside this corpus.
+- **The parser rule `confidence` field is still not persisted** (flagged in Session 4).
+  Induced rules report 0.8 in the engine and 1.0 once stored. Still wants the schema
+  change.
