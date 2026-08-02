@@ -113,6 +113,26 @@ interface TransactionDao {
     fun observeRecent(limit: Int): Flow<List<TransactionEntity>>
 
     /**
+     * Money-in transactions since [since] that no credit repayment claims yet.
+     *
+     * The candidate list for "which payment was this repayment?". Already-linked
+     * transactions are excluded so the same payment cannot settle two debts.
+     */
+    @Query(
+        """
+        SELECT t.* FROM transactions t
+        WHERE t.isDeleted = 0
+          AND t.direction = 'IN'
+          AND t.occurredAt >= :since
+          AND NOT EXISTS (
+              SELECT 1 FROM credit_entries e WHERE e.linkedTransactionId = t.id
+          )
+        ORDER BY t.occurredAt DESC
+        """,
+    )
+    suspend fun unlinkedIncomingSince(since: Long): List<TransactionEntity>
+
+    /**
      * Per-day in and out totals for the same predicate as [pagingSourceFiltered], so
      * the ledger can show a subtotal on each day header.
      *

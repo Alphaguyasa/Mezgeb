@@ -21,6 +21,7 @@ data class CustomerWithBalance(
     val phone: String?,
     val note: String?,
     val createdAt: Long,
+    val isArchived: Boolean,
     val balanceMinor: Long,
     val oldestUnpaidAt: Long?,
 )
@@ -59,6 +60,7 @@ interface CustomerDao {
                c.phone AS phone,
                c.note AS note,
                c.createdAt AS createdAt,
+               c.isArchived AS isArchived,
                COALESCE(SUM(
                    CASE e.kind
                        WHEN 'REPAYMENT' THEN -e.amountMinor
@@ -68,6 +70,7 @@ interface CustomerDao {
                MIN(CASE WHEN e.kind = 'CREDIT_GIVEN' THEN e.occurredAt END) AS oldestUnpaidAt
         FROM customers c
         LEFT JOIN credit_entries e ON e.customerId = c.id
+        WHERE c.isArchived = 0
         GROUP BY c.id
         ORDER BY balanceMinor DESC, c.name ASC
         """,
@@ -81,6 +84,7 @@ interface CustomerDao {
                c.phone AS phone,
                c.note AS note,
                c.createdAt AS createdAt,
+               c.isArchived AS isArchived,
                COALESCE(SUM(
                    CASE e.kind
                        WHEN 'REPAYMENT' THEN -e.amountMinor
@@ -103,6 +107,7 @@ interface CustomerDao {
                c.phone AS phone,
                c.note AS note,
                c.createdAt AS createdAt,
+               c.isArchived AS isArchived,
                COALESCE(SUM(
                    CASE e.kind
                        WHEN 'REPAYMENT' THEN -e.amountMinor
@@ -112,14 +117,22 @@ interface CustomerDao {
                MIN(CASE WHEN e.kind = 'CREDIT_GIVEN' THEN e.occurredAt END) AS oldestUnpaidAt
         FROM customers c
         LEFT JOIN credit_entries e ON e.customerId = c.id
-        WHERE c.name LIKE '%' || :query || '%' OR c.phone LIKE '%' || :query || '%'
+        WHERE c.isArchived = 0
+          AND (c.name LIKE '%' || :query || '%' OR c.phone LIKE '%' || :query || '%')
         GROUP BY c.id
         ORDER BY balanceMinor DESC, c.name ASC
         """,
     )
     fun searchWithBalance(query: String): Flow<List<CustomerWithBalance>>
 
-    /** Total outstanding across all customers, and how many owe anything. */
+    /**
+     * Total outstanding across the customers still on the books.
+     *
+     * Only positive balances are summed. A customer the shop happens to owe money to
+     * is a real thing, but netting them off against what everyone else owes would
+     * understate the debt the shop is actually carrying — the number this header
+     * exists to state.
+     */
     @Query(
         """
         SELECT COALESCE(SUM(balanceMinor), 0) FROM (
@@ -131,11 +144,36 @@ interface CustomerDao {
                    ), 0) AS balanceMinor
             FROM customers c
             LEFT JOIN credit_entries e ON e.customerId = c.id
+            WHERE c.isArchived = 0
             GROUP BY c.id
         )
+        WHERE balanceMinor > 0
         """,
     )
     fun observeTotalOutstandingMinor(): Flow<Long>
+
+    /** How many customers currently owe the shop anything at all. */
+    @Query(
+        """
+        SELECT COUNT(*) FROM (
+            SELECT COALESCE(SUM(
+                       CASE e.kind
+                           WHEN 'REPAYMENT' THEN -e.amountMinor
+                           ELSE e.amountMinor
+                       END
+                   ), 0) AS balanceMinor
+            FROM customers c
+            LEFT JOIN credit_entries e ON e.customerId = c.id
+            WHERE c.isArchived = 0
+            GROUP BY c.id
+        )
+        WHERE balanceMinor > 0
+        """,
+    )
+    fun observeCustomersInDebtCount(): Flow<Int>
+
+    @Query("UPDATE customers SET isArchived = :isArchived WHERE id = :id")
+    suspend fun setArchived(id: String, isArchived: Boolean)
 
     @Query("DELETE FROM customers")
     suspend fun deleteAll()

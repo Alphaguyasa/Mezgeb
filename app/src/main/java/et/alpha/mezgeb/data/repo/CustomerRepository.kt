@@ -31,6 +31,12 @@ class CustomerRepository @Inject constructor(
 
     fun observeTotalOutstandingMinor(): Flow<Long> = customerDao.observeTotalOutstandingMinor()
 
+    fun observeCustomersInDebtCount(): Flow<Int> = customerDao.observeCustomersInDebtCount()
+
+    /** Off the books, history kept. See [et.alpha.mezgeb.data.local.entity.CustomerEntity]. */
+    suspend fun setArchived(id: String, isArchived: Boolean) =
+        customerDao.setArchived(id, isArchived)
+
     suspend fun getCustomer(id: String): Customer? = customerDao.getById(id)?.toDomain()
 
     suspend fun insertCustomer(customer: Customer) = customerDao.insert(customer.toEntity())
@@ -61,6 +67,15 @@ class CustomerRepository @Inject constructor(
 
     suspend fun linkRepaymentToTransaction(entryId: String, transactionId: String?) =
         creditEntryDao.setLinkedTransaction(entryId, transactionId)
+
+    /**
+     * The repayment a captured payment was used to settle, if any.
+     *
+     * The link is worth showing from both ends: from the statement it explains where
+     * the money came from, and from the transaction it explains where the money went.
+     */
+    suspend fun repaymentForTransaction(transactionId: String): CreditEntry? =
+        creditEntryDao.getByLinkedTransaction(transactionId)?.toDomain()
 
     suspend fun sumByKind(kind: CreditKind, from: Long, to: Long): Long =
         creditEntryDao.sumByKind(kind, from, to)

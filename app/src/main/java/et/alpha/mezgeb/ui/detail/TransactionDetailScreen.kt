@@ -216,6 +216,9 @@ private fun ViewMode(
             transaction.note?.let {
                 DetailRow(stringResource(R.string.detail_field_note), it)
             }
+            state.linkedCustomerName?.let {
+                DetailRow(stringResource(R.string.detail_field_settles_credit), it)
+            }
         }
     }
 

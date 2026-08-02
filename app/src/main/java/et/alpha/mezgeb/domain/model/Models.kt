@@ -52,14 +52,19 @@ data class Customer(
     val phone: String?,
     val note: String?,
     val createdAt: Long,
+    /** Off the books, but their history is kept. */
+    val isArchived: Boolean = false,
 )
 
 /** A customer plus their outstanding balance. Negative means the shop owes them. */
 data class CustomerBalance(
     val customer: Customer,
     val balanceMinor: Long,
+    /** When credit was first given and not yet cleared. Null when they owe nothing. */
     val oldestUnpaidAt: Long?,
-)
+) {
+    val owesMoney: Boolean get() = balanceMinor > 0
+}
 
 data class CreditEntry(
     val id: String,

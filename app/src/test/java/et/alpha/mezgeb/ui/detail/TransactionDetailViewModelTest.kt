@@ -8,6 +8,7 @@ import et.alpha.mezgeb.data.local.T0
 import et.alpha.mezgeb.data.local.category
 import et.alpha.mezgeb.data.local.rawMessage
 import et.alpha.mezgeb.data.local.transaction
+import et.alpha.mezgeb.data.repo.CustomerRepository
 import et.alpha.mezgeb.data.repo.RuleRepository
 import et.alpha.mezgeb.data.repo.TransactionRepository
 import et.alpha.mezgeb.domain.model.Direction
@@ -210,6 +211,7 @@ class TransactionDetailViewModelTest : DatabaseTest() {
     private fun viewModel(transactionId: String) = TransactionDetailViewModel(
         transactions = transactions,
         rules = rules,
+        customers = CustomerRepository(db.customerDao(), db.creditEntryDao()),
         ids = IdGenerator { "rule_1" },
         clock = Clock.fixed(Instant.ofEpochMilli(now), ZoneOffset.UTC),
         savedStateHandle = SavedStateHandle(mapOf("transactionId" to transactionId)),

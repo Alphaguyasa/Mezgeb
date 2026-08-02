@@ -61,6 +61,7 @@ android {
     testOptions {
         unitTests.isIncludeAndroidResources = true
     }
+
 }
 
 kotlin {

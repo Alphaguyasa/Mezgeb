@@ -103,6 +103,7 @@ fun CustomerEntity.toDomain(): Customer = Customer(
     phone = phone,
     note = note,
     createdAt = createdAt,
+    isArchived = isArchived,
 )
 
 fun Customer.toEntity(): CustomerEntity = CustomerEntity(
@@ -111,6 +112,7 @@ fun Customer.toEntity(): CustomerEntity = CustomerEntity(
     phone = phone,
     note = note,
     createdAt = createdAt,
+    isArchived = isArchived,
 )
 
 fun CustomerWithBalance.toDomain(): CustomerBalance = CustomerBalance(
@@ -120,6 +122,7 @@ fun CustomerWithBalance.toDomain(): CustomerBalance = CustomerBalance(
         phone = phone,
         note = note,
         createdAt = createdAt,
+        isArchived = isArchived,
     ),
     balanceMinor = balanceMinor,
     oldestUnpaidAt = oldestUnpaidAt,

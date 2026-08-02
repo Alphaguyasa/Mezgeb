@@ -137,6 +137,7 @@
     <string name="detail_field_balance">Balance after</string>
     <string name="detail_field_note">Note</string>
     <string name="detail_field_category">Category</string>
+    <string name="detail_field_settles_credit">Settled credit for</string>
     <string name="detail_category_none">No category</string>
     <string name="detail_category_always">Always use this category for this name</string>
     <string name="detail_reconciled">Reconciled</string>
@@ -196,6 +197,51 @@
     <string name="rule_example_position">Message %1$d of %2$d</string>
     <string name="rule_previous_example">Previous message</string>
     <string name="rule_next_example">Next message</string>
+
+    <!-- Credit book -->
+    <string name="customers_add">Add customer</string>
+    <string name="customers_name">Name</string>
+    <string name="customers_phone">Phone</string>
+    <string name="customers_search_hint">Search by name or phone</string>
+    <string name="customers_outstanding_label">Owed to you</string>
+    <!-- 1: number of customers who owe something -->
+    <string name="customers_in_debt">%1$d customers owe you money</string>
+    <!-- 1: days since the oldest unpaid credit -->
+    <string name="customers_days_outstanding">%1$d days</string>
+    <string name="customers_overdue">Overdue</string>
+    <string name="customers_shop_owes">You owe them</string>
+    <string name="customers_no_match_title">No customer found</string>
+    <string name="customers_no_match_body">No name or phone matches what you typed.</string>
+    <string name="customers_save_failed">Could not save. Try again.</string>
+
+    <string name="credit_balance_owes">Owes you</string>
+    <string name="credit_balance_shop_owes">You owe them</string>
+    <string name="credit_add_sale">Give credit</string>
+    <string name="credit_record_repayment">Record payment</string>
+    <string name="credit_send_reminder">Send a reminder</string>
+    <string name="credit_edit_customer">Edit customer</string>
+    <string name="credit_customer_not_found">This customer no longer exists.</string>
+    <string name="credit_statement_heading">Statement</string>
+    <string name="credit_statement_empty_title">Nothing yet</string>
+    <string name="credit_statement_empty_body">Credit you give and payments you receive will be listed here, with the balance after each one.</string>
+    <string name="credit_kind_given">Credit given</string>
+    <string name="credit_kind_repayment">Payment received</string>
+    <string name="credit_kind_adjustment">Adjustment</string>
+    <string name="credit_linked_unlink">Linked to a payment — unlink</string>
+    <string name="credit_archive">Archive</string>
+    <string name="credit_archive_title">Archive this customer?</string>
+    <string name="credit_archive_body">They come off your list, and everything you recorded together is kept.</string>
+    <string name="credit_save_failed">Could not save. Try again.</string>
+    <string name="credit_match_heading">Was this one of these payments?</string>
+    <string name="credit_match_none">No payment arrived in the last week that is not already accounted for.</string>
+    <string name="credit_match_amount">Same amount</string>
+    <string name="credit_match_phone">Same phone number</string>
+    <string name="credit_match_amount_and_phone">Same amount and phone number</string>
+    <!--
+        Reminder template. {name} and {amount} are replaced; anything else is sent as
+        written. Mezgeb never sends this — it opens your messaging app with it ready.
+    -->
+    <string name="credit_reminder_default_template">Hello {name}, this is a friendly reminder about {amount} outstanding. Thank you.</string>
 
     <!-- Content descriptions -->
     <string name="cd_open_review">Open review queue</string>

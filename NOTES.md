@@ -710,3 +710,97 @@ and silently loses a santim.
 - **The parser rule `confidence` field is still not persisted** (flagged in Session 4).
   Induced rules report 0.8 in the engine and 1.0 once stored. Still wants the schema
   change.
+
+---
+
+## Session 7 — Credit book (2026-08-02)
+
+### Verification results
+
+| Check | Result |
+|---|---|
+| `:app:testPlayDebugUnitTest` | **225 tests, 0 failures** (was 180) |
+| `:app:testDirectDebugUnitTest` | **232 tests, 0 failures** |
+| `:parser:test` | 65 tests, 0 failures — parser untouched |
+| `:app:assemblePlayDebug` / `assembleDirectDebug` | pass |
+| Schema | **v1 → v2**, migrated and tested |
+
+New: `CustomerCreditTest` 12, `SuggestRepaymentMatchesTest` 8, `ReminderMessageTest` 6,
+`CreditBookViewModelTest` 16, `MigrationTest` 3.
+
+### The first schema migration
+
+Archiving a customer needed a column, so this is the project's first migration —
+`ALTER TABLE customers ADD COLUMN isArchived INTEGER NOT NULL DEFAULT 0`.
+
+There is no `fallbackToDestructiveMigration` in this project, which is only a safe
+decision if the migrations are right: the alternative to a tested migration is not a
+crash, it is a shop's ledger quietly emptying on an app update. So `MigrationTest`
+builds the v1 database **from the committed `schemas/…/1.json`** — including the
+identity hash, so Room recognises it — puts real customers, credit entries,
+transactions and raw messages in it, runs the migration, and reads everything back
+through the real DAOs. Room validates the migrated schema against what the code
+compiles to on open, so a migration that produced anything else fails there.
+
+**The test was checked by breaking the migration.** Emptied to a no-op, all three
+tests fail with Room's `IllegalStateException`; restored, all three pass. A migration
+test that has never been seen to fail is not a test.
+
+Room's own `MigrationTestHelper` reads schemas from instrumentation assets, which do
+not exist in a Robolectric unit test — hence building v1 by hand. The upside is that
+this runs on every build rather than only when someone remembers to plug in a phone.
+
+### Design decisions
+
+1. **Archive, not delete.** Deleting a customer cascades their credit history away,
+   and the customer you most need records for is the one who has just settled up and
+   gone quiet. Archived customers leave the list and the totals; every entry stays.
+
+2. **The outstanding total sums only positive balances.** Netting off a customer the
+   shop happens to owe money to would understate the debt the shop is actually
+   carrying, which is the one number that header exists to state.
+
+3. **Kotlin and SQL both compute balances, and a test holds them together.** The
+   customers list cannot load every entry to render a row, so the sign convention
+   lives in `ComputeCustomerBalanceUseCase`, `CustomerDao` and `CreditEntryDao`. Two
+   tests run the same entries through both paths — including a negative balance and
+   an out-of-order statement — and assert they agree.
+
+4. **A repayment larger than the balance is accepted.** It produces a negative
+   balance: the shop is holding the customer's money. Refusing it would be the app
+   telling a shop owner that something which just happened in front of her did not
+   happen.
+
+5. **Repayment links are suggested, never automatic.** Recent unlinked money-in
+   transactions are ranked — amount first, phone second — and each row states its
+   reason, so the ranking is checkable rather than magic. A wrongly linked repayment
+   makes a debt vanish against an unrelated payment and surfaces weeks later at
+   reconciliation with no way to tell which record lied. A payment already claimed by
+   another repayment is excluded, so one payment cannot settle two debts.
+
+6. **Phone numbers are compared by their last nine digits.** `+251911234567`,
+   `0911234567` and `911234567` are one number written three ways, and which form
+   arrives depends on the provider.
+
+7. **Reminders open the messaging app; they never send.** `ACTION_SENDTO` with the
+   text prefilled, no `SEND_SMS`, ever. A test asserts the action is not `ACTION_SEND`
+   — an app that can message a shop's customers on its own judgement is a different
+   and much worse product. The template is stored, not hard-coded, and falls back to
+   a translated default so the built-in wording is right in both languages.
+
+8. **Days outstanding are calendar days in local time.** Credit given yesterday
+   evening is one day old this morning, which is how the person holding the book
+   counts it — not a 24-hour clock.
+
+### Deferred
+
+- **The reminder template and the overdue threshold are stored but not editable yet.**
+  Both live in DataStore with defaults and are read by the credit book; the settings
+  screen that edits them is Session 11, which owns settings. The session brief puts
+  the template's editor in settings, so this is where it stops for now.
+- **No inline "create customer" from the credit-sale screen.** The brief allows
+  creating one inline; today you add the customer from the list first. One screen
+  fewer to build, one tap more to use — worth revisiting after someone has actually
+  used it at a counter.
+- **`editedAt` still carries two meanings** (flagged in Session 5). Session 8 owns
+  reconciliation and should split it.

@@ -8,6 +8,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import et.alpha.mezgeb.data.local.MezgebDatabase
+import et.alpha.mezgeb.data.local.Migrations
 import et.alpha.mezgeb.data.local.dao.CategoryDao
 import et.alpha.mezgeb.data.local.dao.CategoryRuleDao
 import et.alpha.mezgeb.data.local.dao.CreditEntryDao
@@ -31,6 +32,7 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): MezgebDatabase =
         Room.databaseBuilder(context, MezgebDatabase::class.java, MezgebDatabase.NAME)
+            .addMigrations(*Migrations.ALL)
             .build()
 
     @Provides fun provideRawMessageDao(db: MezgebDatabase): RawMessageDao = db.rawMessageDao()

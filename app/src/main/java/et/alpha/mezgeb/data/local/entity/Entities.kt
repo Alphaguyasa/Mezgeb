@@ -102,6 +102,15 @@ data class CustomerEntity(
     val phone: String?,
     val note: String?,
     val createdAt: Long,
+    /**
+     * Archived customers drop out of the list and the totals but keep every entry.
+     *
+     * Deleting a customer would cascade their credit history away, and a shop that
+     * settles up with someone still needs to be able to answer "what did we do
+     * together last year". Archiving is the operation people actually want when they
+     * reach for delete.
+     */
+    val isArchived: Boolean = false,
 )
 
 /** Money a customer owes, has repaid, or an adjustment to that balance. */

@@ -110,6 +110,10 @@ class TransactionRepository @Inject constructor(
     suspend fun getByProviderTxnId(providerTxnId: String): Transaction? =
         transactionDao.getByProviderTxnId(providerTxnId)?.toDomain()
 
+    /** Candidates for "which payment settled this debt?". See the credit book. */
+    suspend fun unlinkedIncomingSince(since: Long): List<Transaction> =
+        transactionDao.unlinkedIncomingSince(since).map { it.toDomain() }
+
     suspend fun insert(transaction: Transaction) = transactionDao.insert(transaction.toEntity())
 
     suspend fun update(transaction: Transaction) = transactionDao.update(transaction.toEntity())

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
+import et.alpha.mezgeb.data.repo.CustomerRepository
 import et.alpha.mezgeb.data.repo.RuleRepository
 import et.alpha.mezgeb.data.repo.TransactionRepository
 import et.alpha.mezgeb.domain.model.Category
@@ -55,6 +56,8 @@ data class TransactionDetailUiState(
     val categories: List<Category> = emptyList(),
     val categoryName: String? = null,
     val isBodyExpanded: Boolean = false,
+    /** Set when this payment was used to settle a customer's credit. */
+    val linkedCustomerName: String? = null,
     /** Non-null while editing. The view is read-only otherwise. */
     val editor: TransactionEditor? = null,
     val isConfirmingDelete: Boolean = false,
@@ -101,6 +104,7 @@ sealed interface TransactionDetailEvent {
 class TransactionDetailViewModel @Inject constructor(
     private val transactions: TransactionRepository,
     private val rules: RuleRepository,
+    private val customers: CustomerRepository,
     private val ids: IdGenerator,
     private val clock: Clock,
     savedStateHandle: SavedStateHandle,
@@ -123,6 +127,7 @@ class TransactionDetailViewModel @Inject constructor(
             categories = categories,
             categoryName = categories.firstOrNull { it.id == transaction?.categoryId }?.name,
             isBodyExpanded = localState.isBodyExpanded,
+            linkedCustomerName = localState.linkedCustomerName,
             editor = localState.editor,
             isConfirmingDelete = localState.isConfirmingDelete,
             isDeleted = transaction?.isDeleted == true,
@@ -138,7 +143,13 @@ class TransactionDetailViewModel @Inject constructor(
         viewModelScope.launch {
             val transaction = transactions.getTransaction(transactionId) ?: return@launch
             val raw = transaction.rawMessageId?.let { transactions.getRawMessage(it) }
-            local.update { it.copy(rawMessage = raw) }
+            // If a customer's repayment claims this payment, say so: from here the
+            // link explains where the money went, and it is the only place a shop
+            // owner would think to look for that.
+            val linkedName = customers.repaymentForTransaction(transactionId)
+                ?.let { customers.getCustomer(it.customerId) }
+                ?.name
+            local.update { it.copy(rawMessage = raw, linkedCustomerName = linkedName) }
         }
     }
 
@@ -280,6 +291,7 @@ class TransactionDetailViewModel @Inject constructor(
 
     private data class LocalState(
         val rawMessage: RawMessage? = null,
+        val linkedCustomerName: String? = null,
         val isBodyExpanded: Boolean = false,
         val editor: TransactionEditor? = null,
         val isConfirmingDelete: Boolean = false,

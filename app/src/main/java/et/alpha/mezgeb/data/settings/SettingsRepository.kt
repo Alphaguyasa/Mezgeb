@@ -4,7 +4,9 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -91,6 +93,36 @@ class SettingsRepository @Inject constructor(
         dataStore.edit { it[WATCHED_PACKAGES] = packages }
     }
 
+    // --- Credit book ------------------------------------------------------------------
+
+    /** How many days a debt may sit before the customers screen calls it overdue. */
+    fun observeOverdueThresholdDays(): Flow<Int> =
+        dataStore.data.map { it[OVERDUE_THRESHOLD_DAYS] ?: DEFAULT_OVERDUE_DAYS }
+
+    suspend fun setOverdueThresholdDays(days: Int) {
+        dataStore.edit { it[OVERDUE_THRESHOLD_DAYS] = days.coerceAtLeast(1) }
+    }
+
+    /**
+     * The reminder message, with `{name}` and `{amount}` placeholders.
+     *
+     * Stored rather than hard-coded because the wording a shop uses with its own
+     * customers is theirs, not the app's — and because the default in one language is
+     * the wrong tone in another. Null means "use the built-in default for the current
+     * language", which is why this is not seeded with an English string on first run.
+     */
+    fun observeReminderTemplate(): Flow<String?> = dataStore.data.map { it[REMINDER_TEMPLATE] }
+
+    suspend fun setReminderTemplate(template: String?) {
+        dataStore.edit { prefs ->
+            if (template.isNullOrBlank()) {
+                prefs.remove(REMINDER_TEMPLATE)
+            } else {
+                prefs[REMINDER_TEMPLATE] = template
+            }
+        }
+    }
+
     // --- SMS import (direct flavor only reads these) ---------------------------------
 
     /**
@@ -118,6 +150,12 @@ class SettingsRepository @Inject constructor(
     }
 
     private companion object {
+        /** Mirrors [et.alpha.mezgeb.domain.credit.ComputeCustomerBalanceUseCase]. */
+        const val DEFAULT_OVERDUE_DAYS = 30
+
+        val OVERDUE_THRESHOLD_DAYS = intPreferencesKey("overdue_threshold_days")
+        val REMINDER_TEMPLATE = stringPreferencesKey("reminder_template")
+
         val LAST_CAPTURE_AT = longPreferencesKey("last_capture_at")
         val FIRST_RUN_AT = longPreferencesKey("first_run_at")
         val ACCESS_LOST_AT = longPreferencesKey("notification_access_lost_at")

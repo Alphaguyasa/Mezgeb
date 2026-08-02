@@ -12,7 +12,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import et.alpha.mezgeb.ui.cash.CashEntryRoute
-import et.alpha.mezgeb.ui.customers.CustomersScreen
+import et.alpha.mezgeb.ui.customers.CreditEntryRoute
+import et.alpha.mezgeb.ui.customers.CustomerDetailRoute
+import et.alpha.mezgeb.ui.customers.CustomersRoute
 import et.alpha.mezgeb.ui.detail.TransactionDetailRoute
 import et.alpha.mezgeb.ui.ledger.LedgerRoute
 import et.alpha.mezgeb.ui.onboarding.OnboardingRoute
@@ -69,7 +71,31 @@ fun MezgebNavHost(
             composable<MezgebDestination.Ledger> {
                 LedgerRoute(onOpenTransaction = { navController.navigateToTransaction(it) })
             }
-            composable<MezgebDestination.Customers> { CustomersScreen() }
+            composable<MezgebDestination.Customers> {
+                CustomersRoute(
+                    onOpenCustomer = {
+                        navController.navigate(MezgebDestination.CustomerDetail(it))
+                    },
+                )
+            }
+            composable<MezgebDestination.CustomerDetail> {
+                CustomerDetailRoute(
+                    onBack = { navController.navigateUp() },
+                    onAddCredit = {
+                        navController.navigate(
+                            MezgebDestination.CreditEntry(it, isRepayment = false),
+                        )
+                    },
+                    onRecordRepayment = {
+                        navController.navigate(
+                            MezgebDestination.CreditEntry(it, isRepayment = true),
+                        )
+                    },
+                )
+            }
+            composable<MezgebDestination.CreditEntry> {
+                CreditEntryRoute(onBack = { navController.navigateUp() })
+            }
             composable<MezgebDestination.Reports> { ReportsScreen() }
 
             composable<MezgebDestination.Review> {

@@ -66,6 +66,23 @@ sealed interface MezgebDestination {
         val sender: String,
         val rawMessageId: String? = null,
     ) : MezgebDestination
+
+    /** One customer's running statement. */
+    @Serializable
+    data class CustomerDetail(val customerId: String) : MezgebDestination
+
+    /**
+     * Adding credit, or recording a repayment against it.
+     *
+     * One destination for both because they are the same form — an amount, a date, a
+     * note — differing only in sign and in whether captured payments are offered to
+     * link against.
+     */
+    @Serializable
+    data class CreditEntry(
+        val customerId: String,
+        val isRepayment: Boolean,
+    ) : MezgebDestination
 }
 
 /**

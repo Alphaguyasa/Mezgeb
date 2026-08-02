@@ -128,6 +128,7 @@
     <string name="detail_field_balance">ቀሪ ሒሳብ</string>
     <string name="detail_field_note">ማስታወሻ</string>
     <string name="detail_field_category">ምድብ</string>
+    <string name="detail_field_settles_credit">የከፈለው የ</string>
     <string name="detail_category_none">ምድብ የለም</string>
     <string name="detail_category_always">ለዚህ ስም ሁልጊዜ ይህን ምድብ ተጠቀም</string>
     <string name="detail_reconciled">የተስተካከለ</string>
@@ -178,6 +179,45 @@
     <string name="rule_example_position">መልእክት %1$d ከ%2$d</string>
     <string name="rule_previous_example">ቀዳሚ መልእክት</string>
     <string name="rule_next_example">ቀጣይ መልእክት</string>
+
+    <!-- Credit book -->
+    <string name="customers_add">ደንበኛ ጨምር</string>
+    <string name="customers_name">ስም</string>
+    <string name="customers_phone">ስልክ</string>
+    <string name="customers_search_hint">በስም ወይም በስልክ ይፈልጉ</string>
+    <string name="customers_outstanding_label">የሚፈልጉት</string>
+    <string name="customers_in_debt">%1$d ደንበኞች ገንዘብ ይፈልጉብዎታል</string>
+    <string name="customers_days_outstanding">%1$d ቀናት</string>
+    <string name="customers_overdue">ጊዜው አልፎበታል</string>
+    <string name="customers_shop_owes">እርስዎ ይፈለጉባቸዋል</string>
+    <string name="customers_no_match_title">ደንበኛ አልተገኘም</string>
+    <string name="customers_no_match_body">ካስገቡት ጋር የሚዛመድ ስም ወይም ስልክ የለም።</string>
+    <string name="customers_save_failed">ማስቀመጥ አልተቻለም። እንደገና ይሞክሩ።</string>
+
+    <string name="credit_balance_owes">ይፈለግብዎታል</string>
+    <string name="credit_balance_shop_owes">እርስዎ ይፈለጉባቸዋል</string>
+    <string name="credit_add_sale">ዱቤ ስጥ</string>
+    <string name="credit_record_repayment">ክፍያ መዝግብ</string>
+    <string name="credit_send_reminder">ማስታወሻ ላክ</string>
+    <string name="credit_edit_customer">ደንበኛን አስተካክል</string>
+    <string name="credit_customer_not_found">ይህ ደንበኛ ከእንግዲህ የለም።</string>
+    <string name="credit_statement_heading">ማብራሪያ</string>
+    <string name="credit_statement_empty_title">እስካሁን ምንም የለም</string>
+    <string name="credit_statement_empty_body">የሰጡት ዱቤና የተቀበሉት ክፍያ ከእያንዳንዱ በኋላ ካለው ቀሪ ሒሳብ ጋር እዚህ ይዘረዘራል።</string>
+    <string name="credit_kind_given">ዱቤ ተሰጥቷል</string>
+    <string name="credit_kind_repayment">ክፍያ ተቀብለዋል</string>
+    <string name="credit_kind_adjustment">ማስተካከያ</string>
+    <string name="credit_linked_unlink">ከክፍያ ጋር ተያይዟል — አላቅቅ</string>
+    <string name="credit_archive">አስቀምጥ</string>
+    <string name="credit_archive_title">ይህ ደንበኛ ይቀመጥ?</string>
+    <string name="credit_archive_body">ከዝርዝርዎ ይወጣሉ፤ አብራችሁ የመዘገባችሁት ሁሉ ግን ይቀመጣል።</string>
+    <string name="credit_save_failed">ማስቀመጥ አልተቻለም። እንደገና ይሞክሩ።</string>
+    <string name="credit_match_heading">ከእነዚህ ክፍያዎች አንዱ ነበር?</string>
+    <string name="credit_match_none">ባለፈው ሳምንት ያልተያዘ ክፍያ አልደረሰም።</string>
+    <string name="credit_match_amount">ተመሳሳይ መጠን</string>
+    <string name="credit_match_phone">ተመሳሳይ ስልክ ቁጥር</string>
+    <string name="credit_match_amount_and_phone">ተመሳሳይ መጠንና ስልክ ቁጥር</string>
+    <string name="credit_reminder_default_template">ሰላም {name}፣ ስለቀረው {amount} ለማስታወስ ነው። አመሰግናለሁ።</string>
 
     <!-- Content descriptions -->
     <string name="cd_open_review">የግምገማ ወረፋን ክፈት</string>
