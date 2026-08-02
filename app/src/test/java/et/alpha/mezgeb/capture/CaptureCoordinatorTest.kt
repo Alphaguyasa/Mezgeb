@@ -198,16 +198,44 @@ class CaptureCoordinatorTest : DatabaseTest() {
     }
 
     @Test
-    fun `a message from a sender that is not financial is stored and declined`() = runTest {
+    fun `a message from a person is never written down at all`() = runTest {
+        // The onboarding screen promises "messages from people are ignored", and a
+        // shop owner reads ignored as not kept. Storing one and labelling it IGNORED
+        // kept the text — which a single plain SMS on a real phone demonstrated.
+        val outcome = coordinator.capture(
+            notification("see you at the shop tomorrow", sender = "+251911000009"),
+        )
+
+        assertEquals(CaptureOutcome.DeclinedAsNotFinancial, outcome)
+        assertTrue(transactions.getByParseState(ParseState.IGNORED).isEmpty())
+        assertTrue(transactions.getByParseState(ParseState.UNMATCHED).isEmpty())
+        assertEquals(0, transactions.observeUnmatchedCount().first())
+    }
+
+    @Test
+    fun `an advert from a promotional shortcode is not kept either`() = runTest {
         val outcome = coordinator.capture(
             notification("Get 5GB for 99 birr this week only", sender = "PROMO-4455"),
         )
 
-        val ignored = outcome as CaptureOutcome.Ignored
-        assertEquals(ParseState.IGNORED, transactions.getRawMessage(ignored.rawMessageId)?.parseState)
-        // Declined is not queued. A review queue full of adverts is a review queue
-        // nobody reads.
-        assertEquals(0, transactions.observeUnmatchedCount().first())
+        assertEquals(CaptureOutcome.DeclinedAsNotFinancial, outcome)
+    }
+
+    @Test
+    fun `noise from a financial sender is kept, because that distinction matters`() = runTest {
+        // CBE sends fraud warnings from the same shortcode as payments. Those are
+        // stored and marked IGNORED: "we could not read this" and "this was never
+        // ours to keep" are different answers, and the review queue depends on the
+        // difference.
+        val outcome = coordinator.capture(
+            notification("Dear customer, beware of fraud.", sender = "CBE"),
+        )
+
+        val queued = outcome as CaptureOutcome.Queued
+        assertEquals(
+            ParseState.UNMATCHED,
+            transactions.getRawMessage(queued.rawMessageId)?.parseState,
+        )
     }
 
     // --- Re-parsing the review queue -------------------------------------------------

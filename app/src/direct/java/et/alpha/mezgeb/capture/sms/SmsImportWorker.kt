@@ -24,7 +24,6 @@ import et.alpha.mezgeb.capture.CaptureOutcome
 import et.alpha.mezgeb.capture.CapturedMessage
 import et.alpha.mezgeb.data.settings.SettingsRepository
 import et.alpha.mezgeb.domain.model.CaptureSource
-import et.alpha.mezgeb.parser.rule.SenderAllowlist
 import java.time.Clock
 
 /**
@@ -34,11 +33,12 @@ import java.time.Clock
  * listener uses, so a payment already captured live is rejected by the dedup index
  * rather than recorded twice.
  *
- * Note where the sender allowlist is applied: **before** the coordinator, not inside
- * it. A phone's inbox is mostly personal correspondence, and the app has no business
- * storing any of it. Filtering here means a message from a friend is read from the
- * cursor, found not to be from a financial sender, and dropped — it never reaches the
- * database at all.
+ * A phone's inbox is mostly private correspondence, and the app has no business
+ * storing any of it. The funnel refuses anything from outside the financial sender
+ * allowlist before it writes a row, so a message from a friend is read out of the
+ * cursor, declined, and never reaches the database. That rule lives in the funnel
+ * rather than here, so the notification listener obeys it too — it did not, until a
+ * plain SMS on a real phone showed that it did not.
  */
 @HiltWorker
 class SmsImportWorker @AssistedInject constructor(
@@ -49,8 +49,6 @@ class SmsImportWorker @AssistedInject constructor(
     private val settings: SettingsRepository,
     private val clock: Clock,
 ) : CoroutineWorker(context, params) {
-
-    private val allowlist = SenderAllowlist.DEFAULT
 
     override suspend fun doWork(): Result {
         if (!hasInboxPermission()) return Result.failure()
@@ -75,7 +73,6 @@ class SmsImportWorker @AssistedInject constructor(
                 scanned++
                 offset++
                 if (row.date > newestDate) newestDate = row.date
-                if (!allowlist.allows(row.address)) continue
 
                 val outcome = coordinator.capture(
                     CapturedMessage(
@@ -93,6 +90,9 @@ class SmsImportWorker @AssistedInject constructor(
                     // Counted, never stored. The shop is told how many were passed
                     // over so the import's arithmetic still adds up for them.
                     CaptureOutcome.DeclinedAsCredential -> skippedCredentials++
+                    // A phone's inbox is mostly private correspondence. None of it is
+                    // read past the sender, and none of it is written down.
+                    CaptureOutcome.DeclinedAsNotFinancial -> Unit
                 }
             }
 

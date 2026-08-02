@@ -1002,3 +1002,55 @@ the app now depends on it:
 > password arriving from an allowlisted sender is declined at the funnel, not stored
 > and marked. Detection must require a credential word followed by a value, because
 > refusing a genuine payment message is the more expensive error.
+
+### The notification path, verified — and a second finding
+
+A plain SMS was sent to the phone and watched. It landed:
+
+```
+source        parseState   count
+NOTIFICATION  IGNORED      1
+```
+
+So `onNotificationPosted` fires, the package filter admits the messaging app, the
+title becomes the sender and the text becomes the body, and the funnel and the parser
+both run. The last untested piece of Session 4 is now tested.
+
+**And it exposed the second privacy hole.** That message was from a person. It was
+stored verbatim in `raw_messages` and merely labelled `IGNORED` — while the onboarding
+screen promises, in both languages:
+
+> It reads only messages from banks and payment services. Messages from people are
+> ignored.
+
+A shop owner reads *ignored* as *not kept*. It was kept.
+
+The asymmetry had been written down and praised a session earlier: `SmsImportWorker`
+applied the sender allowlist **before** the funnel precisely so private correspondence
+never reached the database — "a message from a friend is read from the cursor, found
+not to be from a financial sender, and dropped". The notification listener did no such
+thing. One policy, two paths, one of them wrong, and the wrong one is the path that
+runs on every message a phone receives.
+
+**The fix:** the allowlist check moved into `CaptureCoordinator`, before the insert,
+next to the credential check. The import worker's own filter was deleted rather than
+kept in parallel — one funnel, one place for the policy to be wrong. `PrivacyPurge`
+(formerly `CredentialPurge`) now removes both kinds.
+
+The distinction that had to survive: a **financial** sender whose message no rule can
+read is still stored, because that is the review queue. "We could not read this" and
+"this was never ours to keep" are different answers, and the whole teach-a-rule feature
+depends on the first one existing.
+
+Verified on the device: the personal message is gone, and the ledger is untouched —
+263 transactions, 0 orphans, 7 still in the review queue.
+
+### What device verification actually cost and bought
+
+Two hours on a phone found two data-protection defects that eight sessions of unit
+tests, a 118-sample corpus and a 100% accuracy figure did not. Both were failures of
+the same kind: a rule stated correctly in one place and not applied in another.
+Neither was a logic error a test could have caught without real messages from a real
+bank and a real person.
+
+The 96.3% figure is worth less than the two bugs.

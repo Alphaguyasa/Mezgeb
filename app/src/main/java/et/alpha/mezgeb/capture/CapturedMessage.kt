@@ -47,6 +47,15 @@ sealed interface CaptureOutcome {
     data object DeclinedAsCredential : CaptureOutcome
 
     /**
+     * Refused before anything was written: the sender is not a financial one.
+     *
+     * The onboarding screen promises "messages from people are ignored", and a shop
+     * owner reads *ignored* as *not kept*. A private message from a friend, stored
+     * verbatim and merely labelled, would make that promise false.
+     */
+    data object DeclinedAsNotFinancial : CaptureOutcome
+
+    /**
      * Already captured. Either the content hash collided (tier one) or the parsed
      * provider transaction id already belonged to a transaction (tier two).
      */

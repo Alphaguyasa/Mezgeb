@@ -12,6 +12,7 @@ import et.alpha.mezgeb.parser.model.ParsedFields
 import et.alpha.mezgeb.parser.model.UnmatchedReason
 import et.alpha.mezgeb.parser.normalize.SenderNormalizer
 import et.alpha.mezgeb.parser.privacy.CredentialDetector
+import et.alpha.mezgeb.parser.rule.SenderAllowlist
 import et.alpha.mezgeb.util.IdGenerator
 import et.alpha.mezgeb.util.MoneyFormatter
 import kotlinx.coroutines.sync.Mutex
@@ -61,6 +62,12 @@ class CaptureCoordinator @Inject constructor(
 
     private val mutex = Mutex()
 
+    /**
+     * The same allowlist the parser uses, applied one step earlier so that a message
+     * from outside it is never written down at all.
+     */
+    private val allowlist = SenderAllowlist.DEFAULT
+
     suspend fun capture(message: CapturedMessage): CaptureOutcome = mutex.withLock {
         // Before anything is written. Banks send PINs and one-time codes over SMS in
         // cleartext, from the same senders as payment messages, so they pass the
@@ -68,6 +75,19 @@ class CaptureCoordinator @Inject constructor(
         // queue and carried into any backup. Found on a real device, not in a test.
         if (CredentialDetector.containsCredential(message.body)) {
             return@withLock CaptureOutcome.DeclinedAsCredential
+        }
+
+        // Also before the insert, and for the same reason. The notification listener
+        // sees every message the phone's messaging app posts, most of which is private
+        // correspondence. Storing it and marking it IGNORED kept the text; the
+        // onboarding screen says messages from people are ignored, and a shop owner
+        // reads that as "not kept". Found on a device by sending one plain SMS.
+        //
+        // Senders that *are* financial still get stored when no rule reads them: that
+        // is the review queue, and the difference between "we could not read this" and
+        // "this was never ours to keep" is the whole distinction.
+        if (!allowlist.allows(message.sender)) {
+            return@withLock CaptureOutcome.DeclinedAsNotFinancial
         }
 
         val rawMessageId = ids.newId()
