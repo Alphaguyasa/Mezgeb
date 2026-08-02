@@ -269,6 +269,51 @@
     <string name="report_pdf_period">ከ%1$s እስከ %2$s</string>
     <string name="report_pdf_generated">%1$s በ%2$s ተዘጋጅቷል</string>
 
+    <!-- App lock -->
+    <string name="lock_title">የይለፍ ቁጥርዎን ያስገቡ</string>
+    <string name="lock_unlock">ክፈት</string>
+    <string name="lock_wrong">ይህ የይለፍ ቁጥር ትክክል አይደለም።</string>
+    <string name="lock_wrong_with_tries">ይህ የይለፍ ቁጥር ትክክል አይደለም። %1$d ሙከራዎች ቀርተዋል።</string>
+    <string name="lock_locked_out">በጣም ብዙ ሙከራ። ከ%1$d ሰከንድ በኋላ ይሞክሩ።</string>
+    <string name="lock_biometric_title">መዝገብን ክፈት</string>
+    <string name="lock_use_pin">የይለፍ ቁጥር ተጠቀም</string>
+
+    <!-- Settings: security and backup -->
+    <string name="settings_security">ደኅንነት</string>
+    <string name="settings_lock">መዝገብን በይለፍ ቁጥር ቆልፍ</string>
+    <string name="settings_lock_body">መዝገብዎ ከመታየቱ በፊት የይለፍ ቁጥር ይጠየቃል።</string>
+    <string name="settings_lock_set_title">የይለፍ ቁጥር ይምረጡ</string>
+    <string name="settings_lock_pin_label">ከ4 እስከ 6 አኃዞች</string>
+    <string name="settings_lock_no_recovery">ይህን የይለፍ ቁጥር ከረሱት መዝገቦችዎ ሊመለሱ አይችሉም። እኛንም ጨምሮ ማንም ሊከፍታቸው አይችልም።</string>
+    <string name="settings_lock_acknowledge">የይለፍ ቁጥሬን ብረሳ መዝገቦቼ እንደሚጠፉ ተረድቻለሁ።</string>
+    <string name="settings_lock_remove_title">የይለፍ ቁጥሩ ይወገድ?</string>
+    <string name="settings_lock_remove_body">ይህን ስልክ የያዘ ማንኛውም ሰው መዝገብዎን መክፈት ይችላል።</string>
+    <string name="settings_lock_remove_confirm">አስወግድ</string>
+    <string name="settings_biometric">የጣት አሻራዎን ይጠቀሙ</string>
+    <string name="settings_biometric_body">የይለፍ ቁጥርዎ አሁንም ይሠራል፤ አሻራው ካልታወቀ ይጠየቃል።</string>
+    <string name="settings_timeout">እንደገና የሚጠየቅበት ጊዜ</string>
+    <string name="settings_timeout_immediately">ወዲያውኑ</string>
+    <string name="settings_timeout_seconds">%1$d ሰከንድ</string>
+    <string name="settings_message_pin_set">የይለፍ ቁጥር ተቀምጧል።</string>
+    <string name="settings_message_pin_removed">የይለፍ ቁጥር ተወግዷል።</string>
+    <string name="settings_message_pin_rejected">ይህ የይለፍ ቁጥር ሊቀመጥ አልቻለም።</string>
+
+    <string name="settings_backup">ምትኬ</string>
+    <string name="settings_backup_body">ምትኬ ሁሉንም የያዘ አንድ የተመሰጠረ ፋይል ነው። በአስተማማኝ ቦታ ያስቀምጡት — ፋይሉና የይለፍ ሐረጉ ያለው ሰው መዝገብዎ አለው።</string>
+    <string name="settings_backup_action">ምትኬ አስቀምጥ</string>
+    <string name="settings_backup_passphrase_body">የይለፍ ሐረግ ይምረጡ። የትም አይቀመጥም፤ ያለሱ ምትኬው አይከፈትም።</string>
+    <string name="settings_passphrase_label">የይለፍ ሐረግ</string>
+    <string name="settings_restore_action">ከምትኬ መልስ</string>
+    <string name="settings_restore_warning">መመለስ በዚህ መተግበሪያ ውስጥ ያለውን ሁሉ በፋይሉ ውስጥ ባለው ይተካል። ከዚያ ምትኬ በኋላ የተመዘገበው ይጠፋል።</string>
+    <string name="settings_restore_confirm">ሁሉንም ተካ</string>
+    <string name="settings_message_backup_written">ምትኬ ተቀምጧል።</string>
+    <string name="settings_message_backup_failed">ምትኬውን መጻፍ አልተቻለም።</string>
+    <string name="settings_message_restored">%1$d መዝገቦች ተመልሰዋል።</string>
+    <string name="settings_restore_not_a_backup">ይህ ፋይል የመዝገብ ምትኬ አይደለም።</string>
+    <string name="settings_restore_too_new">ይህ ምትኬ በአዲስ የመዝገብ ስሪት የተሠራ ነው።</string>
+    <string name="settings_restore_wrong_passphrase">የይለፍ ሐረጉ ትክክል አይደለም፣ ወይም ፋይሉ ተበላሽቷል።</string>
+    <string name="settings_restore_malformed">ይህ ፋይል ሊነበብ አልቻለም።</string>
+
     <!-- Content descriptions -->
     <string name="cd_open_review">የግምገማ ወረፋን ክፈት</string>
     <string name="cd_open_reconcile">ማስታረቅን ክፈት</string>

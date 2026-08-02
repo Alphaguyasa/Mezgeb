@@ -29,6 +29,9 @@ coroutines = "1.11.0"
 # --- Security (wired up in Session 10) ---
 # androidx.biometric has no stable release past 1.1.0; the 1.4.0 line is alpha.
 biometric = "1.1.0"
+# security-crypto 1.0.0 is the last stable line; 1.1.0 has been alpha for years.
+# Used only to hold the PIN hash behind a Keystore-backed key.
+securityCrypto = "1.0.0"
 
 # --- Testing ---
 junit4 = "4.13.2"
@@ -94,6 +97,7 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 
 # --- Security ---
 androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
+androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 
 # --- Testing ---
 junit4 = { group = "junit", name = "junit", version.ref = "junit4" }

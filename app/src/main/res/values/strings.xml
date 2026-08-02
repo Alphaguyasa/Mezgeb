@@ -302,6 +302,55 @@
     <!-- 1: date, 2: time this file was made -->
     <string name="report_pdf_generated">Generated %1$s at %2$s</string>
 
+    <!-- App lock -->
+    <string name="lock_title">Enter your PIN</string>
+    <string name="lock_unlock">Unlock</string>
+    <string name="lock_wrong">That PIN is not right.</string>
+    <!-- 1: tries left before waiting starts -->
+    <string name="lock_wrong_with_tries">That PIN is not right. %1$d tries left.</string>
+    <!-- 1: seconds to wait -->
+    <string name="lock_locked_out">Too many attempts. Try again in %1$d seconds.</string>
+    <string name="lock_biometric_title">Unlock Mezgeb</string>
+    <string name="lock_use_pin">Use PIN</string>
+
+    <!-- Settings: security and backup -->
+    <string name="settings_security">Security</string>
+    <string name="settings_lock">Lock Mezgeb with a PIN</string>
+    <string name="settings_lock_body">Ask for a PIN before your ledger can be seen.</string>
+    <string name="settings_lock_set_title">Choose a PIN</string>
+    <string name="settings_lock_pin_label">4 to 6 digits</string>
+    <string name="settings_lock_no_recovery">If you forget this PIN, your records cannot be recovered. There is no way for anyone, including us, to unlock them.</string>
+    <string name="settings_lock_acknowledge">I understand that a forgotten PIN means losing my records.</string>
+    <string name="settings_lock_remove_title">Remove the PIN?</string>
+    <string name="settings_lock_remove_body">Anyone holding this phone will be able to open your ledger.</string>
+    <string name="settings_lock_remove_confirm">Remove</string>
+    <string name="settings_biometric">Use your fingerprint</string>
+    <string name="settings_biometric_body">Your PIN still works, and is asked for if the fingerprint is not recognised.</string>
+    <string name="settings_timeout">Ask again after</string>
+    <string name="settings_timeout_immediately">Straight away</string>
+    <!-- 1: seconds of background before the PIN is asked for again -->
+    <string name="settings_timeout_seconds">%1$d seconds</string>
+    <string name="settings_message_pin_set">PIN set.</string>
+    <string name="settings_message_pin_removed">PIN removed.</string>
+    <string name="settings_message_pin_rejected">That PIN could not be set.</string>
+
+    <string name="settings_backup">Backup</string>
+    <string name="settings_backup_body">A backup is one encrypted file holding everything. Keep it somewhere safe — anyone with the file and the passphrase has your records.</string>
+    <string name="settings_backup_action">Save a backup</string>
+    <string name="settings_backup_passphrase_body">Choose a passphrase. It is not stored anywhere, and without it the backup cannot be opened.</string>
+    <string name="settings_passphrase_label">Passphrase</string>
+    <string name="settings_restore_action">Restore from a backup</string>
+    <string name="settings_restore_warning">Restoring replaces everything in this app with what is in the file. Anything recorded since that backup will be gone.</string>
+    <string name="settings_restore_confirm">Replace everything</string>
+    <string name="settings_message_backup_written">Backup saved.</string>
+    <string name="settings_message_backup_failed">Could not write the backup.</string>
+    <!-- 1: how many records were restored -->
+    <string name="settings_message_restored">Restored %1$d records.</string>
+    <string name="settings_restore_not_a_backup">That file is not a Mezgeb backup.</string>
+    <string name="settings_restore_too_new">That backup was made by a newer version of Mezgeb.</string>
+    <string name="settings_restore_wrong_passphrase">Wrong passphrase, or the file has been damaged.</string>
+    <string name="settings_restore_malformed">That file could not be read.</string>
+
     <!-- Content descriptions -->
     <string name="cd_open_review">Open review queue</string>
     <string name="cd_open_reconcile">Open reconciliation</string>

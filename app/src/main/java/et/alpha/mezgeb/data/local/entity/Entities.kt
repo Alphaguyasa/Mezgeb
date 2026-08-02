@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 import et.alpha.mezgeb.domain.model.CaptureSource
 import et.alpha.mezgeb.domain.model.CategoryKind
 import et.alpha.mezgeb.domain.model.Channel
@@ -41,6 +42,7 @@ import et.alpha.mezgeb.domain.model.SessionStatus
         Index(value = ["sender"]),
     ],
 )
+@Serializable
 data class RawMessageEntity(
     @PrimaryKey val id: String,
     val sender: String,
@@ -72,6 +74,7 @@ data class RawMessageEntity(
         Index(value = ["reconciliationSessionId"]),
     ],
 )
+@Serializable
 data class TransactionEntity(
     @PrimaryKey val id: String,
     /** Null for manual cash entries, which have no originating message. */
@@ -96,6 +99,7 @@ data class TransactionEntity(
 )
 
 @Entity(tableName = "customers")
+@Serializable
 data class CustomerEntity(
     @PrimaryKey val id: String,
     val name: String,
@@ -130,6 +134,7 @@ data class CustomerEntity(
         Index(value = ["linkedTransactionId"]),
     ],
 )
+@Serializable
 data class CreditEntryEntity(
     @PrimaryKey val id: String,
     val customerId: String,
@@ -143,6 +148,7 @@ data class CreditEntryEntity(
 )
 
 @Entity(tableName = "categories")
+@Serializable
 data class CategoryEntity(
     @PrimaryKey val id: String,
     val name: String,
@@ -155,6 +161,7 @@ data class CategoryEntity(
     tableName = "category_rules",
     indices = [Index(value = ["categoryId"]), Index(value = ["priority"])],
 )
+@Serializable
 data class CategoryRuleEntity(
     @PrimaryKey val id: String,
     val matchField: MatchField,
@@ -175,6 +182,7 @@ data class CategoryRuleEntity(
     tableName = "parser_rules",
     indices = [Index(value = ["priority"]), Index(value = ["isEnabled"])],
 )
+@Serializable
 data class ParserRuleEntity(
     @PrimaryKey val id: String,
     val name: String,
@@ -203,6 +211,7 @@ data class ParserRuleEntity(
     tableName = "reconciliation_sessions",
     indices = [Index(value = ["periodStart"]), Index(value = ["status"])],
 )
+@Serializable
 data class ReconciliationSessionEntity(
     @PrimaryKey val id: String,
     val periodStart: Long,

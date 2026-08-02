@@ -39,6 +39,10 @@ interface CreditEntryDao {
     @Query("SELECT * FROM credit_entries WHERE id = :id")
     suspend fun getById(id: String): CreditEntryEntity?
 
+    /** Every entry, for backup. */
+    @Query("SELECT * FROM credit_entries ORDER BY occurredAt ASC, id ASC")
+    suspend fun getAll(): List<CreditEntryEntity>
+
     @Query("SELECT * FROM credit_entries WHERE customerId = :customerId ORDER BY occurredAt ASC, id ASC")
     fun observeForCustomer(customerId: String): Flow<List<CreditEntryEntity>>
 

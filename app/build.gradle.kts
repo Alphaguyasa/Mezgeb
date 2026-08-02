@@ -181,6 +181,12 @@ dependencies {
     ksp(libs.androidx.hilt.compiler)
     implementation(libs.androidx.datastore.preferences)
 
+    // App lock. security-crypto keeps the PIN hash behind a Keystore-backed key, so
+    // a stolen file cannot be brute-forced offline — which a four-digit PIN would
+    // otherwise fall to in ten thousand guesses. Neither library touches the network.
+    implementation(libs.androidx.security.crypto)
+    implementation(libs.androidx.biometric)
+
     // DI. Hilt's processor runs through KSP; no network stack is pulled in.
     implementation(libs.hilt.android)
     implementation(libs.androidx.hilt.navigation.compose)

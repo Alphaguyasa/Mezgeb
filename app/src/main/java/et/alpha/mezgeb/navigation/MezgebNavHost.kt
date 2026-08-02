@@ -22,7 +22,7 @@ import et.alpha.mezgeb.ui.reconcile.ReconcileRoute
 import et.alpha.mezgeb.ui.reports.ReportsRoute
 import et.alpha.mezgeb.ui.review.ReviewRoute
 import et.alpha.mezgeb.ui.rule.RuleBuilderRoute
-import et.alpha.mezgeb.ui.settings.SettingsScreen
+import et.alpha.mezgeb.ui.settings.SettingsRoute
 import et.alpha.mezgeb.ui.today.TodayRoute
 
 /**
@@ -120,7 +120,7 @@ fun MezgebNavHost(
                 )
             }
             composable<MezgebDestination.Settings> {
-                SettingsScreen(onBack = { navController.navigateUp() })
+                SettingsRoute(onBack = { navController.navigateUp() })
             }
 
             composable<MezgebDestination.TransactionDetail> {

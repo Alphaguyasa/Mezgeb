@@ -104,6 +104,9 @@ interface ParserRuleDao {
     @Query("SELECT * FROM parser_rules ORDER BY priority DESC, id ASC")
     fun observeAll(): Flow<List<ParserRuleEntity>>
 
+    @Query("SELECT * FROM parser_rules ORDER BY priority DESC, id ASC")
+    suspend fun getAll(): List<ParserRuleEntity>
+
     @Query("SELECT COUNT(*) FROM parser_rules WHERE isUserCreated = 0")
     suspend fun countBundled(): Int
 
@@ -128,6 +131,9 @@ interface ReconciliationSessionDao {
 
     @Query("SELECT * FROM reconciliation_sessions WHERE id = :id")
     suspend fun getById(id: String): ReconciliationSessionEntity?
+
+    @Query("SELECT * FROM reconciliation_sessions ORDER BY periodStart ASC")
+    suspend fun getAll(): List<ReconciliationSessionEntity>
 
     @Query("SELECT * FROM reconciliation_sessions WHERE status = 'OPEN' ORDER BY periodStart DESC LIMIT 1")
     fun observeOpenSession(): Flow<ReconciliationSessionEntity?>

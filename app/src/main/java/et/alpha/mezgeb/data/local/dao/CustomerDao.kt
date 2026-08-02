@@ -44,6 +44,9 @@ interface CustomerDao {
     @Query("SELECT * FROM customers ORDER BY name ASC")
     fun observeAll(): Flow<List<CustomerEntity>>
 
+    @Query("SELECT * FROM customers ORDER BY name ASC")
+    suspend fun getAll(): List<CustomerEntity>
+
     /**
      * Balance per customer, summed in SQL rather than in Kotlin so the customers
      * screen never has to load every credit entry to render a list.

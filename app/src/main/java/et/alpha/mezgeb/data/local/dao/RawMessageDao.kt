@@ -90,6 +90,9 @@ interface RawMessageDao {
     @Query("SELECT COUNT(*) FROM raw_messages")
     suspend fun count(): Int
 
+    @Query("SELECT * FROM raw_messages ORDER BY receivedAt ASC")
+    suspend fun getAll(): List<RawMessageEntity>
+
     @Query("DELETE FROM raw_messages WHERE id = :id")
     suspend fun deleteById(id: String)
 
