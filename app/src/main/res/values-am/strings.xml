@@ -39,6 +39,33 @@
     <string name="placeholder_settings_title">ቅንብሮች</string>
     <string name="placeholder_settings_body">ቋንቋ፣ ማስታወሻ፣ ደኅንነትና ምትኬ እዚህ ይገኛሉ።</string>
 
+    <!-- Onboarding -->
+    <string name="onboarding_title">መዝገብ ክፍያዎችዎን እንዴት እንደሚያነብ</string>
+    <string name="onboarding_intro">የክፍያ መልእክት ሲደርስ — ቴሌብር፣ ሲቢኢ ወይም ባንክዎ — ስልክዎ ማስታወቂያ ያሳያል። መዝገብ ያንን ማስታወቂያ አንብቦ ክፍያውን በመዝገብዎ ውስጥ ይመዘግባል።</string>
+    <string name="onboarding_promise_heading">መዝገብ በፍጹም የማያደርገው</string>
+    <string name="onboarding_promise_no_payments">ገንዘብ አይልክም፤ አይቀበልም። ማንበብ ብቻ ነው የሚያደርገው።</string>
+    <string name="onboarding_promise_offline">ኢንተርኔት አይጠቀምም። የመዘገቡት ነገር ከዚህ ስልክ አይወጣም።</string>
+    <string name="onboarding_promise_only_financial">ከባንኮችና ከክፍያ አገልግሎቶች የሚላኩ መልእክቶችን ብቻ ያነባል። የግል መልእክቶች አይነኩም።</string>
+    <string name="onboarding_promise_revocable">በማንኛውም ጊዜ ከስልክዎ ቅንብሮች ውስጥ ማጥፋት ይችላሉ።</string>
+    <string name="onboarding_access_on">የክፍያ መልእክቶችን ማንበብ በርቷል።</string>
+    <string name="onboarding_access_off">የክፍያ መልእክቶችን ማንበብ ጠፍቷል። ክፍያዎች አይመዘገቡም።</string>
+    <string name="onboarding_grant_action">የመልእክት ንባብን አብራ</string>
+    <string name="onboarding_grant_hint">በሚከፈተው ዝርዝር ውስጥ መዝገብን አግኝተው ያብሩት።</string>
+
+    <!-- Vendor battery optimisation -->
+    <string name="onboarding_battery_title">መዝገብ ሳይቋረጥ እንዲሠራ</string>
+    <string name="onboarding_battery_body">ስልክዎ ከጀርባ የሚሠሩ መተግበሪያዎችን ሊያቆም ይችላል። ይህ ከሆነ ክፍያዎች መመዝገባቸው ይቆማል፤ የሚነግርዎትም ነገር የለም። መዝገብ እንዲቀጥል ይፍቀዱለት።</string>
+    <string name="onboarding_battery_action">የባትሪ ቅንብሮችን ክፈት</string>
+
+    <!-- Backfill -->
+    <string name="onboarding_import_title">ያለፉ ክፍያዎችን ጨምር</string>
+    <string name="onboarding_import_body">ከዛሬ በፊት የደረሱ ክፍያዎች በዚህ ስልክ ውስጥ አሉ። መዝገብ አንድ ጊዜ አንብቦ ወደ መዝገብዎ ሊጨምራቸው ይችላል።</string>
+    <string name="onboarding_import_action">ያለፉ መልእክቶችን አንብብ</string>
+    <string name="onboarding_import_running">ከ%2$d ውስጥ %1$d ተመርምሯል</string>
+    <string name="onboarding_import_finished">%1$d ክፍያዎች ተጨመሩ። %2$d ቀደም ብለው በመዝገብዎ ውስጥ ነበሩ።</string>
+    <string name="onboarding_import_failed">ያለፉ መልእክቶችን ማንበብ አልተቻለም።</string>
+    <string name="onboarding_done">ተጠናቀቀ</string>
+
     <!-- Content descriptions -->
     <string name="cd_open_review">የግምገማ ወረፋን ክፈት</string>
     <string name="cd_open_reconcile">ማስታረቅን ክፈት</string>

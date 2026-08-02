@@ -170,6 +170,16 @@ dependencies {
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.compose)
 
+    // Background capture. WorkManager runs the direct flavor's inbox backfill;
+    // DataStore holds the capture cursor, the import cursor and the health
+    // timestamps. Neither library carries an HTTP client — WorkManager does declare
+    // ACCESS_NETWORK_STATE for its network constraints, which the main manifest
+    // removes explicitly. See .md constraint #1.
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
+    implementation(libs.androidx.datastore.preferences)
+
     // DI. Hilt's processor runs through KSP; no network stack is pulled in.
     implementation(libs.hilt.android)
     implementation(libs.androidx.hilt.navigation.compose)
@@ -187,6 +197,7 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.room.testing)
     testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.work.testing)
     robolectricRuntime(libs.robolectric.android.all)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))

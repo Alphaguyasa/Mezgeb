@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    `direct` flavor strings. The play build never contains these, because the only
+    thing that shows them is the inbox import worker, which only this flavor has.
+-->
+<resources>
+    <string name="sms_import_channel_name">Reading past messages</string>
+    <string name="sms_import_channel_description">Shown while Mezgeb reads payment messages already on this phone.</string>
+    <string name="sms_import_notification_title">Reading past messages</string>
+    <!-- 1: messages checked so far, 2: messages to check -->
+    <string name="sms_import_notification_progress">Checked %1$d of %2$d</string>
+</resources>

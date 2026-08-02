@@ -18,6 +18,13 @@ import kotlinx.serialization.Serializable
  */
 sealed interface MezgebDestination {
 
+    /**
+     * Shown instead of Today until the shop has been told what the app reads. Not
+     * reachable from the bottom bar: it is a start destination, not a tab.
+     */
+    @Serializable
+    data object Onboarding : MezgebDestination
+
     @Serializable
     data object Today : MezgebDestination
 

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sms_import_channel_name">ያለፉ መልእክቶችን ማንበብ</string>
+    <string name="sms_import_channel_description">መዝገብ በዚህ ስልክ ላይ ያሉ የክፍያ መልእክቶችን ሲያነብ ይታያል።</string>
+    <string name="sms_import_notification_title">ያለፉ መልእክቶችን በማንበብ ላይ</string>
+    <string name="sms_import_notification_progress">ከ%2$d ውስጥ %1$d ተመርምሯል</string>
+</resources>

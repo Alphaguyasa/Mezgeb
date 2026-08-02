@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Status-bar icon for the import progress notification.
+
+    Three ledger lines, and nothing else. Android renders a notification small icon
+    as an alpha mask: colour is discarded and anything drawn becomes solid, so a
+    glyph built from cut-outs turns into a filled block. Only the silhouette reads.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M4,5 h16 v2.6 h-16 z M4,10.7 h16 v2.6 h-16 z M4,16.4 h10.5 v2.6 h-10.5 z" />
+</vector>

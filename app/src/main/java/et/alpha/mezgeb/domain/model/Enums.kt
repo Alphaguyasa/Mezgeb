@@ -13,6 +13,14 @@ enum class ParseState {
     UNMATCHED,
     IGNORED,
     RESOLVED_MANUALLY,
+
+    /**
+     * Parsed successfully, but the transaction it describes was already recorded from
+     * the other capture source under a different wording. The row is kept rather than
+     * deleted: it is the evidence that the two sources disagree about the text, and
+     * deleting it would let the next inbox import raise the same message again.
+     */
+    DUPLICATE,
 }
 
 /**

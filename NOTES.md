@@ -335,3 +335,143 @@ corpus size alongside the figure or the figure is misleading.
 - `RuleInducer` — Session 6.
 - No rule yet for any bank other than CBE, or for CBE Birr, M-Pesa or Amole. The
   allowlist anticipates them; no rules exist.
+
+---
+
+## Session 4 — Capture layer (2026-08-02)
+
+### Verification results
+
+| Check | Result |
+|---|---|
+| `:app:assemblePlayDebug` / `:app:assembleDirectDebug` | pass |
+| `:app:testPlayDebugUnitTest` | **124 tests, 0 failures** |
+| `:app:testDirectDebugUnitTest` | **131 tests, 0 failures** (124 shared + 7 direct-only) |
+| `:parser:test` | 43 tests, 0 failures, 1 skipped (opt-in holdout) |
+| Parser accuracy, train + noise | **100.00%** — unchanged, no parser code touched |
+| SMS tokens in `app/src/main/` | clean (0 occurrences) |
+| `INTERNET` in either merged manifest | clean (0) |
+| Android imports in `parser/src/main/` | clean (0) |
+
+Permissions in the merged `playDebug` manifest: `RECEIVE_BOOT_COMPLETED`,
+`FOREGROUND_SERVICE`, `WAKE_LOCK`. The `directDebug` manifest adds `READ_SMS`,
+`RECEIVE_SMS`, `FOREGROUND_SERVICE_DATA_SYNC` and `POST_NOTIFICATIONS`.
+
+**Not verified: the thing this session is actually for.** Notification capture cannot
+be tested in an emulator, and no real payment has been through the funnel. See
+"Outstanding device verification" below — until that is done, this session is code
+that compiles and passes tests, not a capture layer known to work.
+
+### Design decisions
+
+1. **Two tiers of deduplication, and a mutex around both.** The unique index on
+   `contentHash` makes the first tier race-proof by itself, but the second is a read
+   of `providerTxnId` followed by a write — two sources delivering the same payment at
+   the same instant could both find nothing and both insert. `CaptureCoordinator`
+   serialises every call. Throughput does not matter here: a busy shop sees a few
+   messages a minute, and an import is one loop.
+
+2. **`ContentHasher` does not strip all punctuation, contrary to 03-ARCHITECTURE.md
+   section 1.** Taken literally, "strips punctuation" makes `ETB 450.00` and
+   `ETB 45000` the same string, so two genuinely different payments from one sender
+   collide and the second is silently dropped. Punctuation is now stripped *except*
+   between two digits, which keeps decimal points and thousands separators while still
+   discarding the trailing full stops and brackets that differ between the notification
+   and the inbox copy of one message. `ContentHasherTest` has the regression.
+
+3. **`ParseState.DUPLICATE` is new.** When the strong key catches a message the content
+   hash did not, the row is kept and marked rather than deleted: it is the evidence
+   that the two sources word the same payment differently, and deleting it would let
+   the next import raise it again. Enums are stored by name in a `TEXT` column, so this
+   is not a schema change and needs no migration.
+
+4. **`lastCaptureAt` is only stamped by the notification listener, never by an import.**
+   The stamp exists to expose a listener killed silently by a vendor battery manager.
+   A backfill refreshing it would make a dead listener look alive, which is precisely
+   the failure it is there to catch.
+
+5. **The sender allowlist runs before the funnel in `SmsImportWorker`, not inside it.**
+   A phone's inbox is mostly private correspondence and this app has no business
+   storing any of it. A message from a friend is read from the cursor, found not to be
+   from a financial sender, and dropped — it never reaches the database.
+   `SmsImportWorkerTest` asserts this directly.
+
+6. **`RawMessage.sender` is stored normalised.** The review queue groups by sender, and
+   `CBE`, `cbe` and `+251CBE` are one sender with one rule to teach, not three. The
+   body is stored verbatim.
+
+7. **`ACCESS_NETWORK_STATE` is removed from the merged manifest.** WorkManager declares
+   it for network constraints. Mezgeb has no such job and never will, and an app whose
+   selling point is that it cannot reach the internet should not appear to ask about
+   the network. `FOREGROUND_SERVICE` and `WAKE_LOCK` also arrive from WorkManager and
+   are left alone: both are normal permissions WorkManager genuinely uses.
+
+8. **The parser keeps `SenderAllowlist.DEFAULT` rather than narrowing to senders that
+   have rules.** A financial sender nobody has written a rule for yet must reach the
+   review queue, which is where the shop teaches one. Narrowing would discard exactly
+   the messages the app most needs to be shown.
+
+9. **Vendor battery targets are resolved before use.** MIUI, ColorOS, FuntouchOS, EMUI
+   and Transsion's HiOS each ship an autostart list that a notification listener must be
+   on to survive, and the component names are undocumented and move between firmware
+   versions. `BatteryOptimizationHelper` tries each candidate against the package
+   manager and falls back to the stock battery screen, so the "keep Mezgeb running"
+   button cannot throw on the one device that needed it most. Deliberately
+   `ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS` (a list) rather than
+   `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` (one tap), because the latter needs a
+   permission Play restricts to app categories this is not one of.
+
+10. **Onboarding is a start destination, resolved once.** `MainViewModel` takes the
+    stored flag with `take(1)`: a navigation graph cannot have its start changed
+    underneath it, and re-resolving when onboarding completes would rebuild the graph
+    and throw the back stack away.
+
+11. **`SmsImporter.requiredPermissions()` returns opaque strings.** It is how the shared
+    onboarding screen requests a permission that only one flavor has without any code in
+    `src/main` naming it. Constraint #2 is about more than the manifest.
+
+### Flagged — decisions worth revisiting
+
+- **`RECEIVE_SMS` is declared and unused.** The Session 4 brief asks for both
+  restricted permissions in the `direct` manifest; only `READ_SMS` has a caller,
+  because live capture goes through the notification listener in both flavors. An
+  unused restricted permission on a sideloaded APK is worth removing unless a live
+  SMS receiver actually ships. Not removed unilaterally — it is what the brief says.
+- **Rule `confidence` is not persisted.** `ParserRuleEntity` has no column for it, so
+  every rule reports 1.0 in the app even where the bundled JSON says otherwise. The
+  accuracy harness reads the JSON directly and is unaffected. Needs a schema bump;
+  Session 6 is already opening that file.
+- **The configurable banking-app package list is empty by default.** The default
+  messaging app is the real source, and guessing Ethiopian banking app package names
+  would fail invisibly — messages simply never arrive, with nothing to show why. Better
+  filled in from a real device than from memory.
+- **`SmsInboxReader` puts `LIMIT`/`OFFSET` in the sort order.** The SMS provider passes
+  it through to SQLite, which is universal in practice but not a documented contract.
+  If a device ever returns unpaged results, this is the first place to look.
+
+### Stubbed / deferred
+
+- `CaptureHealthMonitor` computes `HEALTHY` / `NO_ACCESS` / `SILENT_TOO_LONG` and has no
+  UI yet — Today is still a placeholder until Session 5, which is where the indicator
+  belongs.
+- Nothing re-parses the review queue when a rule is added. That is rule induction,
+  Session 6.
+- `POST_NOTIFICATIONS` is requested alongside the import and nowhere else. Reminders in
+  Session 11 will need their own request.
+- No UI test for the permission flow yet. .md asks for one; it needs the
+  instrumentation runner and a device, and it is worth writing in the same sitting as
+  the device verification below rather than blind.
+
+### Outstanding device verification
+
+The session's own verify step, none of which an emulator can answer:
+
+1. Install `direct` on a real phone, grant notification access, have someone send a
+   small telebirr payment, and confirm it reaches the database within seconds.
+2. Run an inbox import afterwards and confirm the same payment is **not** duplicated —
+   the tier-two path, which is the one no test can prove against real provider text.
+3. Confirm the notification title really is the sender shortcode on the device's
+   messaging app, and that the full body arrives in `EXTRA_BIG_TEXT` rather than
+   truncated in `EXTRA_TEXT`. This assumption underpins the whole capture path.
+4. Fill in the banking-app package list from what actually posts notifications.
+5. Reboot and confirm the listener rebinds.

@@ -13,6 +13,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import et.alpha.mezgeb.ui.customers.CustomersScreen
 import et.alpha.mezgeb.ui.ledger.LedgerScreen
+import et.alpha.mezgeb.ui.onboarding.OnboardingRoute
 import et.alpha.mezgeb.ui.reconcile.ReconcileScreen
 import et.alpha.mezgeb.ui.reports.ReportsScreen
 import et.alpha.mezgeb.ui.review.ReviewScreen
@@ -29,6 +30,7 @@ import et.alpha.mezgeb.ui.today.TodayRoute
 @Composable
 fun MezgebNavHost(
     modifier: Modifier = Modifier,
+    startDestination: MezgebDestination = MezgebDestination.Today,
     navController: NavHostController = rememberNavController(),
 ) {
     val currentEntry by navController.currentBackStackEntryAsState()
@@ -37,9 +39,21 @@ fun MezgebNavHost(
     Column(modifier = modifier.fillMaxSize()) {
         NavHost(
             navController = navController,
-            startDestination = MezgebDestination.Today,
+            startDestination = startDestination,
             modifier = Modifier.weight(1f),
         ) {
+            composable<MezgebDestination.Onboarding> {
+                OnboardingRoute(
+                    onFinished = {
+                        navController.navigate(MezgebDestination.Today) {
+                            // Onboarding is done: system back from Today must leave the
+                            // app, not walk back into the explanation screen.
+                            popUpTo(MezgebDestination.Onboarding) { inclusive = true }
+                        }
+                    },
+                )
+            }
+
             composable<MezgebDestination.Today> {
                 TodayRoute(
                     onOpenReview = { navController.navigate(MezgebDestination.Review) },

@@ -40,6 +40,39 @@
     <string name="placeholder_settings_title">Settings</string>
     <string name="placeholder_settings_body">Language, reminders, security and backup live here.</string>
 
+    <!--
+        Onboarding. Written for a shop owner, not a developer: no "permission",
+        no "service", no "listener". What it reads, what it will never do, and how
+        to turn it off.
+    -->
+    <string name="onboarding_title">How Mezgeb reads your payments</string>
+    <string name="onboarding_intro">When a payment message arrives — telebirr, CBE, your bank — your phone shows a notification. Mezgeb reads that notification and writes the payment into your ledger.</string>
+    <string name="onboarding_promise_heading">What Mezgeb never does</string>
+    <string name="onboarding_promise_no_payments">It cannot send money or take money. It only reads.</string>
+    <string name="onboarding_promise_offline">It has no internet access. Nothing you record leaves this phone.</string>
+    <string name="onboarding_promise_only_financial">It reads only messages from banks and payment services. Messages from people are ignored.</string>
+    <string name="onboarding_promise_revocable">You can turn it off at any time in your phone\'s settings.</string>
+    <string name="onboarding_access_on">Reading payment messages is on.</string>
+    <string name="onboarding_access_off">Reading payment messages is off. Payments will not be recorded.</string>
+    <string name="onboarding_grant_action">Turn on message reading</string>
+    <string name="onboarding_grant_hint">Find Mezgeb in the list that opens and switch it on.</string>
+
+    <!-- Vendor battery optimisation. -->
+    <string name="onboarding_battery_title">Keep Mezgeb running</string>
+    <string name="onboarding_battery_body">Your phone may stop apps that run in the background. If that happens, payments stop being recorded and nothing tells you. Allow Mezgeb to keep running.</string>
+    <string name="onboarding_battery_action">Open battery settings</string>
+
+    <!-- Backfill of messages already on the phone. direct flavor only. -->
+    <string name="onboarding_import_title">Add past payments</string>
+    <string name="onboarding_import_body">Payments received before today are already on this phone. Mezgeb can read them once and add them to your ledger.</string>
+    <string name="onboarding_import_action">Read past messages</string>
+    <!-- 1: messages checked so far, 2: messages to check -->
+    <string name="onboarding_import_running">Checked %1$d of %2$d</string>
+    <!-- 1: payments added, 2: payments already in the ledger -->
+    <string name="onboarding_import_finished">%1$d payments added. %2$d were already in your ledger.</string>
+    <string name="onboarding_import_failed">Could not read past messages.</string>
+    <string name="onboarding_done">Done</string>
+
     <!-- Content descriptions -->
     <string name="cd_open_review">Open review queue</string>
     <string name="cd_open_reconcile">Open reconciliation</string>

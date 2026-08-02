@@ -12,7 +12,22 @@
     allowBackup is false and there are no dataExtractionRules: a shop's ledger
     must not be auto-backed-up off device. See 03-ARCHITECTURE.md section 8.
 -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- The notification listener does not survive a reboot on its own. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!--
+        WorkManager's own manifest declares ACCESS_NETWORK_STATE so that jobs can
+        carry network constraints. Mezgeb has no such job and never will, and an
+        app that advertises "it cannot reach the internet" should not be asking
+        about the network on the settings screen. Removed at merge time, verified
+        by reading the merged manifest.
+    -->
+    <uses-permission
+        android:name="android.permission.ACCESS_NETWORK_STATE"
+        tools:node="remove" />
 
     <application
         android:name=".MezgebApplication"
@@ -34,6 +49,47 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--
+            Capture. Exported because the system binds it from another process; the
+            signature-level BIND_NOTIFICATION_LISTENER_SERVICE permission is what
+            makes that safe, and the binding only happens at all once the user has
+            granted notification access in system settings.
+        -->
+        <service
+            android:name=".capture.notification.MezgebNotificationListener"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <receiver
+            android:name=".capture.boot.BootCompletedReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!--
+            WorkManager is initialised by the application class instead of by App
+            Startup, so that workers can be constructed by Hilt.
+        -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
     </application>
 
 </manifest>
