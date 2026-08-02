@@ -123,6 +123,21 @@ class SettingsRepository @Inject constructor(
         }
     }
 
+    // --- Reconciliation ---------------------------------------------------------------
+
+    /** On by default: the habit is the product, and a habit needs reminding into being. */
+    fun observeReconcileRemindersEnabled(): Flow<Boolean> =
+        dataStore.data.map { it[RECONCILE_REMINDERS] ?: true }
+
+    suspend fun reconcileRemindersEnabled(): Boolean =
+        observeReconcileRemindersEnabled().first()
+
+    suspend fun setReconcileRemindersEnabled(enabled: Boolean) {
+        dataStore.edit { it[RECONCILE_REMINDERS] = enabled }
+    }
+
+    suspend fun firstRunAt(): Long? = observeFirstRunAt().first()
+
     // --- SMS import (direct flavor only reads these) ---------------------------------
 
     /**
@@ -153,6 +168,7 @@ class SettingsRepository @Inject constructor(
         /** Mirrors [et.alpha.mezgeb.domain.credit.ComputeCustomerBalanceUseCase]. */
         const val DEFAULT_OVERDUE_DAYS = 30
 
+        val RECONCILE_REMINDERS = booleanPreferencesKey("reconcile_reminders_enabled")
         val OVERDUE_THRESHOLD_DAYS = intPreferencesKey("overdue_threshold_days")
         val REMINDER_TEMPLATE = stringPreferencesKey("reminder_template")
 

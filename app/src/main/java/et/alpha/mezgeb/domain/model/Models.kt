@@ -122,6 +122,8 @@ data class ReconciliationSession(
     val id: String,
     val periodStart: Long,
     val periodEnd: Long,
+    /** When the period was opened, which is not when it starts. */
+    val openedAt: Long,
     val expectedTotalMinor: Long?,
     val capturedInMinor: Long,
     val capturedOutMinor: Long,

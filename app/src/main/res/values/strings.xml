@@ -243,6 +243,43 @@
     -->
     <string name="credit_reminder_default_template">Hello {name}, this is a friendly reminder about {amount} outstanding. Thank you.</string>
 
+    <!-- Reconciliation -->
+    <string name="reconcile_pick_period">Which period do you want to check?</string>
+    <string name="reconcile_period_week">Last 7 days</string>
+    <string name="reconcile_period_custom">Choose dates</string>
+    <string name="reconcile_open_period">Start checking</string>
+    <string name="reconcile_expected_label">What you think you took</string>
+    <string name="reconcile_expected_hint">Your own figure — from the till, the notebook, or memory.</string>
+    <string name="reconcile_expected_invalid">Enter an amount.</string>
+    <string name="reconcile_check">Check</string>
+    <string name="reconcile_captured_in">Payments received</string>
+    <string name="reconcile_cash_recorded">Cash you recorded</string>
+    <string name="reconcile_credit_given">Credit given</string>
+    <string name="reconcile_credit_repaid">Credit repaid</string>
+    <string name="reconcile_accounted_for">Accounted for</string>
+    <string name="reconcile_gap_short">Missing</string>
+    <string name="reconcile_gap_over">More than you expected</string>
+    <string name="reconcile_gap_explain">Here is what could account for it, most likely first.</string>
+    <string name="reconcile_balanced_title">Everything adds up</string>
+    <string name="reconcile_balanced_body">What you took and what Mezgeb recorded agree to the santim.</string>
+    <string name="reconcile_close_period">Close this period</string>
+    <string name="reconcile_history">Periods you have closed</string>
+    <string name="reconcile_snapshot_note">These figures were saved when the period closed. Later changes do not affect them.</string>
+    <!-- 1: number of messages -->
+    <string name="reconcile_explain_unmatched">%1$d messages could not be read</string>
+    <!-- 1: a money amount -->
+    <string name="reconcile_explain_roughly">roughly %1$s between them</string>
+    <!-- 1: number of transactions -->
+    <string name="reconcile_explain_uncategorised">%1$d transactions have no category</string>
+    <!-- 1: number of customers -->
+    <string name="reconcile_explain_credit">%1$d customers owe you money</string>
+    <!-- 1: number of transactions changed -->
+    <string name="reconcile_explain_edited">%1$d transactions changed since you started checking</string>
+    <string name="reconcile_reminder_channel">Reconciliation reminders</string>
+    <string name="reconcile_reminder_channel_description">A weekly nudge to check your takings against your records.</string>
+    <string name="reconcile_reminder_title">Time to check your takings</string>
+    <string name="reconcile_reminder_body">It has been a week since you last closed a period.</string>
+
     <!-- Content descriptions -->
     <string name="cd_open_review">Open review queue</string>
     <string name="cd_open_reconcile">Open reconciliation</string>

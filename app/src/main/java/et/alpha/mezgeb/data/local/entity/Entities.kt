@@ -207,6 +207,14 @@ data class ReconciliationSessionEntity(
     @PrimaryKey val id: String,
     val periodStart: Long,
     val periodEnd: Long,
+    /**
+     * When the period was opened, which is not the same as when it starts.
+     *
+     * "Manual edits made inside the period since it was opened" is one of the ranked
+     * gap explanations, and a shop reconciling yesterday opens the period today —
+     * measuring from [periodStart] would count edits made before anyone was looking.
+     */
+    val openedAt: Long = 0L,
     val expectedTotalMinor: Long?,
     val capturedInMinor: Long,
     val capturedOutMinor: Long,

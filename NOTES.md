@@ -804,3 +804,101 @@ this runs on every build rather than only when someone remembers to plug in a ph
   used it at a counter.
 - **`editedAt` still carries two meanings** (flagged in Session 5). Session 8 owns
   reconciliation and should split it.
+
+---
+
+## Session 8 — Reconciliation (2026-08-02)
+
+### Verification results
+
+| Check | Result |
+|---|---|
+| `:app:testPlayDebugUnitTest` | **246 tests, 0 failures** (was 225) |
+| `:app:testDirectDebugUnitTest` | **253 tests, 0 failures** |
+| `:parser:test` | **75 tests, 0 failures** (was 65) |
+| `:app:assemblePlayDebug` / `assembleDirectDebug` | pass |
+| Schema | **v2 → v3**, migrated and tested from v1 through both |
+| `play` merged permissions | `RECEIVE_BOOT_COMPLETED`, `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE`, `WAKE_LOCK` — still no `INTERNET`, no `ACCESS_NETWORK_STATE` |
+
+New: `ReconcilePeriodUseCaseTest` 10, `ReconcileViewModelTest` 10, `AmountSnifferTest`
+10, plus a fourth migration test covering v1 → current in one run.
+
+### The formula, as documented, tells the shop it is short by exactly its cash
+
+03-ARCHITECTURE.md section 7 writes:
+
+```
+capturedIn   = Σ transactions where direction=IN
+cashRecorded = Σ transactions where channel=CASH and direction=IN
+accountedFor = capturedIn + cashRecorded + creditGiven - creditRepaid
+```
+
+A cash sale is a transaction with `direction=IN` and `channel=CASH`, so it is inside
+both terms. Implemented literally, a shop that took 200 birr by telebirr and 100 in
+cash is told it accounted for 400 and is therefore missing 100 — **the exact amount
+of cash it took**. That is the worst answer a reconciliation screen can give: it is
+plausible, it is precise, and it sends someone hunting for money that was never
+missing.
+
+The glossary settles the intent: "captured" means "arrived as a message", and a cash
+entry has no message. So `capturedIn` here excludes `CASH`, and the first test in
+`ReconcilePeriodUseCaseTest` is the one that pins it down.
+
+### Design decisions
+
+1. **`ExpectedSalesProvider` is the v2 seam, and nothing names the implementation.**
+   `ManualEntryExpectedSalesProvider` reads the figure a person typed into the open
+   period; a Suq-backed one is a new binding in `DomainModule` and nothing else.
+
+2. **The session records `openedAt` (schema v3).** "Edits made since the period was
+   opened" is one of the ranked explanations, and a shop reconciling yesterday opens
+   the period today — measuring from `periodStart` would have counted edits made
+   before anyone was looking. The migration defaults existing rows to 0, which
+   over-reports rather than hides.
+
+3. **Gap explanations rank by how much they could account for, and the unknowable
+   rank last rather than as zero.** An edit has no amount attached; calling it zero
+   would claim it explains nothing, which is not what "we don't know" means.
+
+4. **`AmountSniffer` lives in `:parser` but outside the engine.** Ranking unreadable
+   messages needs a rough total, and "14 messages, roughly 3,200 birr between them"
+   is far more useful than "14 messages". It is anchored to a currency word rather
+   than taking the first number, it reports how many messages it actually found an
+   amount in, the UI says "roughly", and nothing it produces is ever stored. The
+   parser still declines rather than guesses; this is a hint shown as a hint.
+
+5. **Balanced is drawn as an event, not as a zero.** It is the moment the app
+   justifies itself. A shop owner who reaches it should feel it, not have to read a
+   column of numbers to work out that nothing is wrong.
+
+6. **Every explanation is tappable through to the screen that would fix it** —
+   unreadable messages to the review queue, credit to customers, the rest to the
+   ledger. A lead that cannot be followed is a complaint.
+
+7. **The reminder is once a day at most, only after a real week, low importance, and
+   refusable.** `POST_NOTIFICATIONS` is now declared in the main manifest for it and
+   for nothing else; refusing it costs the reminder and nothing more.
+
+### Closed periods are immutable, and it is tested
+
+Two tests, both explicitly required by the brief and both worth the space:
+
+- editing a transaction inside a closed period leaves every closed figure exactly as
+  it was;
+- the same edit then appears in the **next** period's `EditedSincePeriodOpened`
+  explanation, which is the honest place for it.
+
+### Deferred
+
+- **The reminder toggle is stored but has no switch yet.** Default on, read by the
+  worker, editable in Session 11 along with the rest of settings.
+- **`POST_NOTIFICATIONS` is never requested at runtime.** On API 33+ that means the
+  reminder is silently suppressed until something asks. Session 11's settings screen
+  is the right place to ask, next to the toggle that controls it.
+- **The closed-period snapshot is a dialog, not a destination.** It is read-only and
+  it shows the stored columns rather than a recomputation, which is what the brief
+  asks for; a full screen would be a better home if it ever grows a chart.
+- **`editedAt` still carries two meanings** (Session 5's flag). Reconciliation turned
+  out not to force the split: `countEditedSince` wants "a human touched this", which
+  is exactly what the column already means. The ledger badge is the loose one. Left
+  as it is, now with a reason rather than an intention.

@@ -18,7 +18,7 @@ import et.alpha.mezgeb.ui.customers.CustomersRoute
 import et.alpha.mezgeb.ui.detail.TransactionDetailRoute
 import et.alpha.mezgeb.ui.ledger.LedgerRoute
 import et.alpha.mezgeb.ui.onboarding.OnboardingRoute
-import et.alpha.mezgeb.ui.reconcile.ReconcileScreen
+import et.alpha.mezgeb.ui.reconcile.ReconcileRoute
 import et.alpha.mezgeb.ui.reports.ReportsScreen
 import et.alpha.mezgeb.ui.review.ReviewRoute
 import et.alpha.mezgeb.ui.rule.RuleBuilderRoute
@@ -110,7 +110,14 @@ fun MezgebNavHost(
                 RuleBuilderRoute(onBack = { navController.navigateUp() })
             }
             composable<MezgebDestination.Reconcile> {
-                ReconcileScreen(onBack = { navController.navigateUp() })
+                ReconcileRoute(
+                    onBack = { navController.navigateUp() },
+                    onOpenReview = { navController.navigate(MezgebDestination.Review) },
+                    onOpenLedger = { navController.navigateToTopLevel(TopLevelDestination.LEDGER) },
+                    onOpenCustomers = {
+                        navController.navigateToTopLevel(TopLevelDestination.CUSTOMERS)
+                    },
+                )
             }
             composable<MezgebDestination.Settings> {
                 SettingsScreen(onBack = { navController.navigateUp() })
@@ -133,15 +140,15 @@ fun MezgebNavHost(
     }
 }
 
-/**
- * Single-instance tab switching: pop back to the graph's start, keep each tab's own
- * state, and never stack duplicate copies of a tab.
- */
 /** Both Today and the Ledger open the same detail screen; only the route knows how. */
 private fun NavHostController.navigateToTransaction(transactionId: String) {
     navigate(MezgebDestination.TransactionDetail(transactionId))
 }
 
+/**
+ * Single-instance tab switching: pop back to the graph's start, keep each tab's own
+ * state, and never stack duplicate copies of a tab.
+ */
 private fun NavHostController.navigateToTopLevel(destination: TopLevelDestination) {
     navigate(destination.route) {
         popUpTo(graph.findStartDestination().id) { saveState = true }

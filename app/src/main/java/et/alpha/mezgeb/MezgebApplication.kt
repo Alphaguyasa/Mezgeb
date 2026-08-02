@@ -7,6 +7,7 @@ import dagger.hilt.android.HiltAndroidApp
 import et.alpha.mezgeb.data.local.seed.DatabaseSeeder
 import et.alpha.mezgeb.data.settings.SettingsRepository
 import et.alpha.mezgeb.di.ApplicationScope
+import et.alpha.mezgeb.domain.reconcile.ReconcileReminderScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.time.Clock
@@ -22,6 +23,8 @@ class MezgebApplication : Application(), Configuration.Provider {
     @Inject lateinit var clock: Clock
 
     @Inject lateinit var workerFactory: HiltWorkerFactory
+
+    @Inject lateinit var reconcileReminders: ReconcileReminderScheduler
 
     @Inject @ApplicationScope lateinit var applicationScope: CoroutineScope
 
@@ -47,5 +50,8 @@ class MezgebApplication : Application(), Configuration.Provider {
             // arrives, so this stamp has to exist before capture can be judged.
             settings.markFirstRun(clock.millis())
         }
+
+        // Idempotent, and cheap: WorkManager keeps the existing schedule.
+        reconcileReminders.schedule()
     }
 }

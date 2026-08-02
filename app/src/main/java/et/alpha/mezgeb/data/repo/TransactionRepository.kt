@@ -153,6 +153,16 @@ class TransactionRepository @Inject constructor(
     suspend fun countUncategorised(from: Long, to: Long): Int =
         transactionDao.countUncategorised(from, to)
 
+    suspend fun sumUncategorised(from: Long, to: Long): Long =
+        transactionDao.sumUncategorised(from, to)
+
+    /** Money in through a message, with hand-entered cash left out. See reconciliation. */
+    suspend fun sumCapturedIn(from: Long, to: Long): Long =
+        transactionDao.sumByDirectionExcludingChannel(Direction.IN, Channel.CASH, from, to)
+
+    suspend fun getUnmatchedBetween(from: Long, to: Long): List<RawMessage> =
+        rawMessageDao.getUnmatchedBetween(from, to).map { it.toDomain() }
+
     suspend fun countEditedSince(since: Long, from: Long, to: Long): Int =
         transactionDao.countEditedSince(since, from, to)
 

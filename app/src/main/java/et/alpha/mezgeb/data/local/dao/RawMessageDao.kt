@@ -60,6 +60,22 @@ interface RawMessageDao {
     @Query("SELECT COUNT(*) FROM raw_messages WHERE parseState = :state")
     fun observeCountByParseState(state: ParseState): Flow<Int>
 
+    /**
+     * Unreadable messages that arrived inside a period.
+     *
+     * Reconciliation asks how much of a gap these could account for, so it needs the
+     * messages themselves rather than a count — the amount, if there is one, is in
+     * the body.
+     */
+    @Query(
+        """
+        SELECT * FROM raw_messages
+        WHERE parseState = 'UNMATCHED' AND receivedAt >= :from AND receivedAt <= :to
+        ORDER BY receivedAt DESC
+        """,
+    )
+    suspend fun getUnmatchedBetween(from: Long, to: Long): List<RawMessageEntity>
+
     @Query("UPDATE raw_messages SET parseState = :state, matchedRuleId = :matchedRuleId WHERE id = :id")
     suspend fun markResolved(id: String, state: ParseState, matchedRuleId: String?)
 

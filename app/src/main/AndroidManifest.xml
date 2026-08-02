@@ -19,6 +19,13 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!--
+        For the reconciliation reminder, and nothing else. Refusing it costs the
+        reminder and nothing more: no feature of this app depends on being able to
+        interrupt someone.
+    -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!--
         WorkManager's own manifest declares ACCESS_NETWORK_STATE so that jobs can
         carry network constraints. Mezgeb has no such job and never will, and an
         app that advertises "it cannot reach the internet" should not be asking

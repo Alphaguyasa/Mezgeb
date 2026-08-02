@@ -212,6 +212,36 @@ interface TransactionDao {
     )
     fun observeSumByDirection(direction: Direction, from: Long, to: Long): Flow<Long>
 
+    /**
+     * Money in that arrived through a message, excluding the given channel.
+     *
+     * Reconciliation needs captured money and hand-entered cash counted separately —
+     * see [et.alpha.mezgeb.domain.reconcile.ReconcilePeriodUseCase], which explains
+     * why adding the two together otherwise counts cash twice.
+     */
+    @Query(
+        """
+        SELECT COALESCE(SUM(amountMinor), 0) FROM transactions
+        WHERE isDeleted = 0 AND direction = :direction AND channel != :excludingChannel
+          AND occurredAt >= :from AND occurredAt <= :to
+        """,
+    )
+    suspend fun sumByDirectionExcludingChannel(
+        direction: Direction,
+        excludingChannel: Channel,
+        from: Long,
+        to: Long,
+    ): Long
+
+    @Query(
+        """
+        SELECT COALESCE(SUM(amountMinor), 0) FROM transactions
+        WHERE isDeleted = 0 AND categoryId IS NULL
+          AND occurredAt >= :from AND occurredAt <= :to
+        """,
+    )
+    suspend fun sumUncategorised(from: Long, to: Long): Long
+
     @Query(
         """
         SELECT COALESCE(SUM(amountMinor), 0) FROM transactions

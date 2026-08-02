@@ -136,6 +136,36 @@ class MigrationTest {
         migrated.close()
     }
 
+    @Test
+    fun `v1 straight to the current version, through every migration in turn`() = runTest {
+        // Someone who has not opened the app since version 1 runs all of them at once.
+        createVersionOne { db ->
+            db.execSQL(
+                """
+                INSERT INTO reconciliation_sessions
+                    (id, periodStart, periodEnd, expectedTotalMinor, capturedInMinor,
+                     capturedOutMinor, cashRecordedMinor, creditGivenMinor,
+                     creditRepaidMinor, status, closedAt, note)
+                VALUES ('s1', 1782950400000, 1783036799999, 40000, 20000, 0, 10000, 0, 0,
+                        'CLOSED', 1783036799999, NULL)
+                """.trimIndent(),
+            )
+        }
+
+        val migrated = openAtCurrentVersion()
+
+        val session = migrated.reconciliationSessionDao().getById("s1")
+        assertNotNull("a closed period must survive every migration", session)
+        // The figures a shop owner already agreed with are still those figures.
+        assertEquals(40_000L, session?.expectedTotalMinor)
+        assertEquals(20_000L, session?.capturedInMinor)
+        assertEquals(10_000L, session?.cashRecordedMinor)
+        // A period opened before the column existed reports an unknown opening time as
+        // 0, which counts every edit as recent. Over-reporting, never hiding.
+        assertEquals(0L, session?.openedAt)
+        migrated.close()
+    }
+
     // --- Building version 1 from what version 1 actually was ---------------------------
 
     /**

@@ -27,6 +27,22 @@ object Migrations {
         }
     }
 
+    /**
+     * v2 → v3: a reconciliation period records when it was opened.
+     *
+     * The default of 0 is deliberate rather than "now": an existing open period was
+     * opened at an unknown time, and 0 means every edit inside it counts as having
+     * happened since — which over-reports rather than under-reports. Nothing is
+     * hidden from the person reconciling.
+     */
+    val MIGRATION_2_3 = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE reconciliation_sessions ADD COLUMN openedAt INTEGER NOT NULL DEFAULT 0",
+            )
+        }
+    }
+
     /** Everything, in order, for the database builder. */
-    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2)
+    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
 }
