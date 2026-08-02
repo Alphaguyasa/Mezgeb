@@ -66,6 +66,84 @@
     <string name="onboarding_import_failed">ያለፉ መልእክቶችን ማንበብ አልተቻለም።</string>
     <string name="onboarding_done">ተጠናቀቀ</string>
 
+    <!-- Shared actions -->
+    <string name="action_save">አስቀምጥ</string>
+    <string name="action_cancel">ተወው</string>
+
+    <!-- Days -->
+    <string name="day_today">ዛሬ</string>
+    <string name="day_yesterday">ትናንት</string>
+
+    <!-- Transaction rows -->
+    <string name="transaction_no_counterparty">ስም አልተጠቀሰም</string>
+    <string name="transaction_edited">ተስተካክሏል</string>
+
+    <!-- Today -->
+    <string name="today_total_in">ዛሬ የገባ</string>
+    <string name="today_total_out">ዛሬ የወጣ</string>
+    <string name="today_net">ተጣራ</string>
+    <string name="today_record_cash">ጥሬ ገንዘብ መዝግብ</string>
+    <string name="today_review_queue">%1$d መልእክቶች ለማንበብ እርስዎን ይጠብቃሉ</string>
+    <string name="today_empty_title">ዛሬ እስካሁን ምንም የለም</string>
+    <string name="today_empty_body_quiet_day">ክፍያዎች እንደደረሱ እዚህ ይታያሉ። የመዘገቡት ጥሬ ገንዘብም እዚሁ ይታያል።</string>
+    <string name="today_empty_body_nothing_yet">እስካሁን ምንም ክፍያ አልተመዘገበም። መዝገብን ከጫኑ በኋላ ክፍያ ደርሶዎት ከሆነ የክፍያ መልእክቶችን ማንበብ አሁንም መብራቱን ያረጋግጡ።</string>
+
+    <!-- Capture health -->
+    <string name="capture_health_no_access_title">ክፍያዎች እየተመዘገቡ አይደለም</string>
+    <string name="capture_health_no_access_body">መዝገብ የክፍያ መልእክቶችን ማንበብ አይችልም። እስኪበራ ድረስ ወደ መዝገብዎ ምንም አይጨመርም።</string>
+    <string name="capture_health_no_access_action">እንደገና አብራ</string>
+    <string name="capture_health_silent_title">ለሁለት ቀናት ክፍያ የለም</string>
+    <string name="capture_health_silent_body">ስልክዎ መዝገብን ከጀርባ እንዳይሠራ ሲያቆም ይህ ሊከሰት ይችላል። ባለፉት ሁለት ቀናት ክፍያ ደርሶዎት ከሆነ የባትሪ ቅንብሮችዎን ይመልከቱ።</string>
+    <string name="capture_health_silent_action">የባትሪ ቅንብሮችን ይመልከቱ</string>
+
+    <!-- Ledger -->
+    <string name="ledger_search_hint">ስም፣ ስልክ፣ ማመሳከሪያ ወይም ማስታወሻ ይፈልጉ</string>
+    <string name="ledger_search_clear">ፍለጋን አጽዳ</string>
+    <string name="ledger_filter_clear">ማጣሪያዎችን አጽዳ</string>
+    <string name="ledger_filter_date_all">ማንኛውም ቀን</string>
+    <string name="ledger_filter_date_today">ዛሬ</string>
+    <string name="ledger_filter_date_7_days">ያለፉት 7 ቀናት</string>
+    <string name="ledger_filter_date_30_days">ያለፉት 30 ቀናት</string>
+    <string name="ledger_filter_direction_any">ገቢና ወጪ</string>
+    <string name="ledger_filter_channel_any">ማንኛውም መንገድ</string>
+    <string name="ledger_filter_category_any">ማንኛውም ምድብ</string>
+    <string name="ledger_filter_reconciled">የተስተካከለ</string>
+    <string name="ledger_empty_filtered_title">የሚዛመድ የለም</string>
+    <string name="ledger_empty_filtered_body">በእነዚህ ማጣሪያዎች የሚዛመድ ግብይት የለም። መዝገብዎ ባዶ አይደለም፤ ማጣሪያዎቹ ናቸው የሚደብቁት።</string>
+    <string name="ledger_reparse_changed">%1$d ተጨማሪ መልእክቶች ተነበቡ</string>
+    <string name="ledger_reparse_unchanged">አዲስ የተነበበ ነገር የለም</string>
+
+    <!-- Transaction detail -->
+    <string name="detail_title">ግብይት</string>
+    <string name="detail_edit">ይህን ግብይት አስተካክል</string>
+    <string name="detail_not_found">ይህ ግብይት ከእንግዲህ የለም።</string>
+    <string name="detail_edited_notice">ከተያዘ በኋላ ይህን መዝገብ እርስዎ አስተካክለውታል።</string>
+    <string name="detail_field_amount">መጠን</string>
+    <string name="detail_field_direction">አቅጣጫ</string>
+    <string name="detail_field_channel">የተከፈለበት መንገድ</string>
+    <string name="detail_field_when">መቼ</string>
+    <string name="detail_field_counterparty">ስም</string>
+    <string name="detail_field_phone">ስልክ</string>
+    <string name="detail_field_reference">ማመሳከሪያ</string>
+    <string name="detail_field_balance">ቀሪ ሒሳብ</string>
+    <string name="detail_field_note">ማስታወሻ</string>
+    <string name="detail_field_category">ምድብ</string>
+    <string name="detail_category_none">ምድብ የለም</string>
+    <string name="detail_category_always">ለዚህ ስም ሁልጊዜ ይህን ምድብ ተጠቀም</string>
+    <string name="detail_reconciled">የተስተካከለ</string>
+    <string name="detail_original_message">ከ%1$s የደረሰ መልእክት</string>
+    <string name="detail_amount_invalid">ከዜሮ የሚበልጥ መጠን ያስገቡ</string>
+    <string name="detail_delete">ሰርዝ</string>
+    <string name="detail_delete_title">ይህ ግብይት ይሰረዝ?</string>
+    <string name="detail_delete_body">ከመዝገብዎና ከድምርዎ ይወጣል። ምንም ነገር ለዘለቄታው አይጠፋም።</string>
+    <string name="detail_delete_confirm">ሰርዝ</string>
+
+    <!-- Cash entry -->
+    <string name="cash_title">ጥሬ ገንዘብ</string>
+    <string name="cash_counterparty">ስም (አማራጭ)</string>
+    <string name="cash_save_failed">ማስቀመጥ አልተቻለም። እንደገና ይሞክሩ።</string>
+    <string name="keypad_backspace">የመጨረሻውን ቁጥር አጥፋ</string>
+
     <!-- Content descriptions -->
     <string name="cd_open_review">የግምገማ ወረፋን ክፈት</string>
     <string name="cd_open_reconcile">ማስታረቅን ክፈት</string>

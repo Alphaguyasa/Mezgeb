@@ -112,6 +112,64 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE isDeleted = 0 ORDER BY occurredAt DESC LIMIT :limit")
     fun observeRecent(limit: Int): Flow<List<TransactionEntity>>
 
+    /**
+     * Per-day in and out totals for the same predicate as [pagingSourceFiltered], so
+     * the ledger can show a subtotal on each day header.
+     *
+     * Days are cut in **local** time, not UTC. A shop's day ends when the shop closes;
+     * a payment at 9pm in Addis belongs to that day and not to the next one. Timestamps
+     * are still stored as epoch millis UTC — this is a presentation boundary.
+     *
+     * [offsetMillis] is the zone's offset from UTC, passed in rather than left to
+     * SQLite's `localtime` modifier. That modifier reads the *process* time zone, which
+     * is not necessarily the JVM's — they disagreed the first time this was tested, and
+     * a day header whose subtotal belongs to a different day than the rows beneath it is
+     * precisely the sort of quietly wrong number this app exists to prevent. Passing the
+     * offset makes SQLite and [et.alpha.mezgeb.util.MezgebDates] compute the same
+     * boundary by construction.
+     *
+     * This assumes a zone with no daylight saving, which Ethiopia has none of. A build
+     * for anywhere that does would need the offset resolved per row rather than once.
+     *
+     * [dayEpochMillis] is local midnight as a UTC timestamp, so the caller gets an
+     * instant back rather than a string it would have to re-parse.
+     */
+    @Query(
+        """
+        SELECT ((occurredAt + :offsetMillis) / 86400000) * 86400000 - :offsetMillis
+                    AS dayEpochMillis,
+               COALESCE(SUM(CASE WHEN direction = 'IN' THEN amountMinor ELSE 0 END), 0) AS inMinor,
+               COALESCE(SUM(CASE WHEN direction = 'OUT' THEN amountMinor ELSE 0 END), 0) AS outMinor
+        FROM transactions
+        WHERE isDeleted = 0
+          AND (:from IS NULL OR occurredAt >= :from)
+          AND (:to IS NULL OR occurredAt <= :to)
+          AND (:channel IS NULL OR channel = :channel)
+          AND (:direction IS NULL OR direction = :direction)
+          AND (:categoryId IS NULL OR categoryId = :categoryId)
+          AND (:isReconciled IS NULL OR isReconciled = :isReconciled)
+          AND (
+                :query IS NULL
+                OR counterpartyName LIKE '%' || :query || '%'
+                OR counterpartyPhone LIKE '%' || :query || '%'
+                OR providerTxnId LIKE '%' || :query || '%'
+                OR note LIKE '%' || :query || '%'
+              )
+        GROUP BY dayEpochMillis
+        ORDER BY dayEpochMillis DESC
+        """,
+    )
+    fun observeDailyTotals(
+        offsetMillis: Long,
+        from: Long?,
+        to: Long?,
+        channel: Channel?,
+        direction: Direction?,
+        categoryId: String?,
+        isReconciled: Boolean?,
+        query: String?,
+    ): Flow<List<DayTotal>>
+
     // --- Aggregates -------------------------------------------------------------
     // COALESCE so an empty period returns 0 rather than null; callers should never
     // have to reason about "no rows" separately from "zero birr".

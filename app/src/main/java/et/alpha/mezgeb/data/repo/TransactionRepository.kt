@@ -6,6 +6,7 @@ import androidx.paging.PagingData
 import androidx.paging.map
 import et.alpha.mezgeb.data.local.dao.CategoryTotal
 import et.alpha.mezgeb.data.local.dao.ChannelTotal
+import et.alpha.mezgeb.data.local.dao.DayTotal
 import et.alpha.mezgeb.data.local.dao.RawMessageDao
 import et.alpha.mezgeb.data.local.dao.TransactionDao
 import et.alpha.mezgeb.data.mapper.toDomain
@@ -18,6 +19,8 @@ import et.alpha.mezgeb.domain.model.Transaction
 import et.alpha.mezgeb.domain.model.UnmatchedGroup
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.Instant
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -65,6 +68,24 @@ class TransactionRepository @Inject constructor(
             )
         },
     ).flow.map { paging -> paging.map { it.toDomain() } }
+
+    /**
+     * Per-day subtotals for the same filter the paged list is showing.
+     *
+     * @param zone the day boundary to cut on. Resolved to a fixed offset here so the
+     *   query and [et.alpha.mezgeb.util.MezgebDates] agree by construction.
+     */
+    fun observeDailyTotals(filter: TransactionFilter, zone: ZoneId): Flow<List<DayTotal>> =
+        transactionDao.observeDailyTotals(
+            offsetMillis = zone.rules.getOffset(Instant.now()).totalSeconds * 1000L,
+            from = filter.from,
+            to = filter.to,
+            channel = filter.channel,
+            direction = filter.direction,
+            categoryId = filter.categoryId,
+            isReconciled = filter.isReconciled,
+            query = filter.query?.takeIf { it.isNotBlank() },
+        )
 
     suspend fun listTransactions(filter: TransactionFilter): List<Transaction> =
         transactionDao.listFiltered(

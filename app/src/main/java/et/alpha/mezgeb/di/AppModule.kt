@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import java.time.Clock
+import java.time.ZoneId
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
@@ -40,6 +41,14 @@ object AppModule {
     @Provides
     @Singleton
     fun provideClock(): Clock = Clock.systemUTC()
+
+    /**
+     * The device's time zone, injected for the same reason as the clock: a day
+     * boundary is a local decision, and a test that has to run in Addis to pass is
+     * not a test. See [et.alpha.mezgeb.util.MezgebDates].
+     */
+    @Provides
+    fun provideZoneId(): ZoneId = ZoneId.systemDefault()
 
     @Provides
     @IoDispatcher

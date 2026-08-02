@@ -45,6 +45,23 @@ sealed interface CaptureOutcome {
     data class Duplicate(val tier: DedupTier) : CaptureOutcome
 }
 
+/**
+ * What a re-parse of the review queue changed.
+ *
+ * Counted so the ledger can say "7 messages could now be read" rather than
+ * refreshing and looking like it did nothing.
+ */
+data class ReparseSummary(
+    val scanned: Int = 0,
+    val recorded: Int = 0,
+    /** Parsed, but the payment was already in the ledger from the other source. */
+    val duplicates: Int = 0,
+    /** Now recognised as not a transaction at all. */
+    val ignored: Int = 0,
+) {
+    val changed: Int get() = recorded + duplicates + ignored
+}
+
 /** Why a message is waiting in the review queue. */
 enum class QueueReason {
     /** No rule's sender pattern matched, or no body pattern matched. */

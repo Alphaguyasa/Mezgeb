@@ -11,8 +11,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import et.alpha.mezgeb.ui.cash.CashEntryRoute
 import et.alpha.mezgeb.ui.customers.CustomersScreen
-import et.alpha.mezgeb.ui.ledger.LedgerScreen
+import et.alpha.mezgeb.ui.detail.TransactionDetailRoute
+import et.alpha.mezgeb.ui.ledger.LedgerRoute
 import et.alpha.mezgeb.ui.onboarding.OnboardingRoute
 import et.alpha.mezgeb.ui.reconcile.ReconcileScreen
 import et.alpha.mezgeb.ui.reports.ReportsScreen
@@ -59,9 +61,13 @@ fun MezgebNavHost(
                     onOpenReview = { navController.navigate(MezgebDestination.Review) },
                     onOpenReconcile = { navController.navigate(MezgebDestination.Reconcile) },
                     onOpenSettings = { navController.navigate(MezgebDestination.Settings) },
+                    onOpenTransaction = { navController.navigateToTransaction(it) },
+                    onRecordCashSale = { navController.navigate(MezgebDestination.CashEntry) },
                 )
             }
-            composable<MezgebDestination.Ledger> { LedgerScreen() }
+            composable<MezgebDestination.Ledger> {
+                LedgerRoute(onOpenTransaction = { navController.navigateToTransaction(it) })
+            }
             composable<MezgebDestination.Customers> { CustomersScreen() }
             composable<MezgebDestination.Reports> { ReportsScreen() }
 
@@ -73,6 +79,13 @@ fun MezgebNavHost(
             }
             composable<MezgebDestination.Settings> {
                 SettingsScreen(onBack = { navController.navigateUp() })
+            }
+
+            composable<MezgebDestination.TransactionDetail> {
+                TransactionDetailRoute(onBack = { navController.navigateUp() })
+            }
+            composable<MezgebDestination.CashEntry> {
+                CashEntryRoute(onBack = { navController.navigateUp() })
             }
         }
 
@@ -89,6 +102,11 @@ fun MezgebNavHost(
  * Single-instance tab switching: pop back to the graph's start, keep each tab's own
  * state, and never stack duplicate copies of a tab.
  */
+/** Both Today and the Ledger open the same detail screen; only the route knows how. */
+private fun NavHostController.navigateToTransaction(transactionId: String) {
+    navigate(MezgebDestination.TransactionDetail(transactionId))
+}
+
 private fun NavHostController.navigateToTopLevel(destination: TopLevelDestination) {
     navigate(destination.route) {
         popUpTo(graph.findStartDestination().id) { saveState = true }

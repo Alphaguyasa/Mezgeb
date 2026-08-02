@@ -1,6 +1,7 @@
 package et.alpha.mezgeb
 
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -22,6 +23,17 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // FLAG_SECURE for the whole window rather than per screen.
+        //
+        // 03-ARCHITECTURE.md section 8 asks for it on every screen showing amounts,
+        // which in a single-activity app where every screen shows amounts is the same
+        // set. Setting it once cannot be defeated by a navigation race, and there is no
+        // moment during a transition where a screenshot would succeed. It also blocks
+        // the recents-screen thumbnail, which is where a ledger is most likely to be
+        // read over someone's shoulder.
+        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+
         enableEdgeToEdge()
         setContent {
             MezgebTheme {

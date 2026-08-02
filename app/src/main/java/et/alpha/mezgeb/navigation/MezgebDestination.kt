@@ -45,6 +45,14 @@ sealed interface MezgebDestination {
 
     @Serializable
     data object Settings : MezgebDestination
+
+    /** One transaction, with the message it was parsed from. */
+    @Serializable
+    data class TransactionDetail(val transactionId: String) : MezgebDestination
+
+    /** The keypad for takings no message will ever describe. */
+    @Serializable
+    data object CashEntry : MezgebDestination
 }
 
 /**

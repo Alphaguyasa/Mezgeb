@@ -462,7 +462,7 @@ that compiles and passes tests, not a capture layer known to work.
   instrumentation runner and a device, and it is worth writing in the same sitting as
   the device verification below rather than blind.
 
-### Outstanding device verification
+### Outstanding device verification (still open)
 
 The session's own verify step, none of which an emulator can answer:
 
@@ -475,3 +475,121 @@ The session's own verify step, none of which an emulator can answer:
    truncated in `EXTRA_TEXT`. This assumption underpins the whole capture path.
 4. Fill in the banking-app package list from what actually posts notifications.
 5. Reboot and confirm the listener rebinds.
+
+---
+
+## Session 5 — Today, Ledger, detail and manual cash (2026-08-02)
+
+### Verification results
+
+| Check | Result |
+|---|---|
+| `:app:assemblePlayDebug` / `:app:assembleDirectDebug` | pass |
+| `:app:testPlayDebugUnitTest` | **164 tests, 0 failures** |
+| `:app:testDirectDebugUnitTest` | **171 tests, 0 failures** |
+| `:parser:test` | 43 tests, 0 failures — parser untouched, accuracy unchanged at 100% |
+
+New suites: TodayViewModel 8, LedgerViewModel 8, TransactionDetailViewModel 9,
+CashEntryViewModel 9, TransactionDayTotals 5, plus 3 re-parse tests on
+CaptureCoordinator.
+
+**Not verified on a device.** Every screen here has been compiled, previewed and
+unit-tested, and none of it has been touched by a finger. The Session 4 device list
+below still stands and this session adds to it: the filter bar, the keypad and the
+day headers are all things a preview flatters.
+
+### The bug the day-header test caught
+
+The first version grouped days in SQL with `strftime(..., 'localtime')`. The test
+asserting that SQLite and `MezgebDates` agree on the same instant failed by exactly
+three hours: SQLite's `localtime` reads the *process* time zone, which under the test
+runner was UTC while the JVM was on +03:00.
+
+Left alone, that is a day header whose subtotal belongs to a different day than the
+rows beneath it — a wrong number that looks entirely plausible. The zone offset is now
+passed into the query as a parameter, so the two compute the same boundary by
+construction rather than by coincidence. It assumes a zone with no daylight saving,
+which Ethiopia has none of; a build for anywhere that does needs the offset resolved
+per row.
+
+### Design decisions
+
+1. **`FLAG_SECURE` is set on the window, not per screen.** 03-ARCHITECTURE.md asks for
+   it on every screen showing amounts, which in a single-activity app where every
+   screen shows amounts is the same set. Setting it once cannot be defeated by a
+   navigation race, leaves no frame during a transition where a screenshot would
+   succeed, and covers the recents thumbnail — which is where a ledger is most likely
+   to be read over someone's shoulder.
+
+2. **`LedgerViewModel` exposes two flows, against .md's one-StateFlow rule.**
+   `PagingData` is a stream of diffs that must be collected once and cached in the
+   ViewModel scope; putting it inside the UI state would make a keystroke in the search
+   box look like a new list to Paging. Events still go one way through `onEvent`. This
+   is the only screen that does it and the reason is written above the class.
+
+3. **The cash keypad has no decimal key.** Digits accumulate as santim, the way a till
+   does: 4, 5, 0 is four birr fifty. A decimal key can be pressed twice or forgotten,
+   and either mistake is an amount wrong by a factor of a hundred.
+
+4. **Hand-typed amounts go through the parser's `AmountNormalizer`.** The edit screen
+   and the message parser interpret "450.5" with one piece of code, so they cannot
+   drift apart.
+
+5. **`editedAt` is set only when a *parsed* field changes.** Adding a note leaves it
+   null: the ledger's "edited" marker means the number may no longer be what the
+   message said, and a note does not touch the number. See the flag below — this
+   collides with what Session 3 decided for categories.
+
+6. **Pull to refresh re-parses the review queue.** There is nothing to fetch in an
+   offline app, so refresh means "try again on the things you could not read". A rule
+   taught since the last look now applies to the messages already waiting, which is
+   what makes teaching a rule feel worth doing. It lives in `CaptureCoordinator`
+   alongside capture, because it is the same funnel with a different source of
+   messages. Rule *induction* is still Session 6.
+
+7. **"Always use this category" writes a visible `CategoryRule`**, not an invisible
+   learned preference — a name matched loosely because providers render names
+   inconsistently, a phone matched exactly because it either is the number or is not.
+   The user can read and delete it later, which an inferred preference does not allow.
+
+8. **Two empty states everywhere it matters.** The ledger distinguishes "no transaction
+   matches these filters — your ledger is not empty, the filters are hiding it" from a
+   genuinely empty ledger; Today distinguishes a quiet morning from "capture has never
+   worked once". Same layout, completely different meaning.
+
+9. **DAO tests now run Room on the calling thread** (`setQueryExecutor { it.run() }`).
+   Room was resuming suspend functions on its own executor, so a ViewModel test could
+   land a coroutine on `Dispatchers.Main` after the test had reset it — failing
+   intermittently, as "Main is used concurrently with setting it", nowhere near the
+   code responsible.
+
+### Flagged — a collision worth resolving in Session 8
+
+`editedAt` is being asked to mean two different things.
+
+- The **ledger badge** wants "a parsed value no longer matches the message", which is
+  what this session's edit path writes.
+- **Reconciliation** (03-ARCHITECTURE.md section 7, item 4) wants "a human touched this
+  row inside the period", which is what Session 3's `setCategory` writes — so
+  categorising a transaction currently marks it as edited.
+
+One column cannot honestly carry both. Session 8 owns reconciliation and should split
+them, most likely into `editedAt` for parsed-value edits and a separate `touchedAt`.
+Not decided unilaterally here, because the reconciliation requirement is real and
+guessing at it would break the feature that depends on it.
+
+### Deferred
+
+- **The date filter offers presets, not an arbitrary range** — today, 7 days, 30 days,
+  any. A two-ended date picker is more UI than the shop-owner case needs, and Session 9
+  needs a real range picker for reports anyway; better built once, there.
+- **The day-header grouping is not tested at the list level.** The daily totals and the
+  day boundary both are; the `insertSeparators` logic that turns them into headers is
+  not, because reading items back out of a `PagingData` needs
+  `androidx.paging:paging-testing`, which is not in the version catalog. Worth adding
+  when the review queue's list arrives in Session 6.
+- **Only the date is editable, not the time of day.** Changing the date preserves the
+  original time. Editing a time on a captured payment is a strange thing to want; if it
+  turns out to be needed, it is a picker away.
+- **No UI tests yet.** .md wants them for permission flows and rule induction —
+  the second of those does not exist until Session 6, and both want a device.

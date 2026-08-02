@@ -38,6 +38,13 @@ abstract class DatabaseTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         db = Room.inMemoryDatabaseBuilder(context, MezgebDatabase::class.java)
             .allowMainThreadQueries()
+            // Run queries on the calling thread. Without this, Room resumes suspend
+            // functions and emits flows from its own executor, so a ViewModel test can
+            // still have a coroutine landing on Dispatchers.Main after the test has
+            // reset it — which fails as "Main is used concurrently with setting it",
+            // intermittently and nowhere near the code that caused it.
+            .setQueryExecutor { it.run() }
+            .setTransactionExecutor { it.run() }
             .build()
     }
 

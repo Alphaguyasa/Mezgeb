@@ -9,7 +9,7 @@ import javax.inject.Singleton
  * statically so a capture test can assert on the id it expects instead of on
  * "something that looks like a UUID".
  */
-interface IdGenerator {
+fun interface IdGenerator {
     fun newId(): String
 }
 

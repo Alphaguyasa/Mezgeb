@@ -13,6 +13,7 @@ import et.alpha.mezgeb.domain.model.Direction
 import et.alpha.mezgeb.domain.model.MatchField
 import et.alpha.mezgeb.domain.model.MatchType
 import et.alpha.mezgeb.domain.model.ParseState
+import et.alpha.mezgeb.domain.model.RawMessage
 import et.alpha.mezgeb.parser.MessageParser
 import et.alpha.mezgeb.parser.model.Channel
 import et.alpha.mezgeb.parser.model.SemanticField
@@ -207,6 +208,71 @@ class CaptureCoordinatorTest : DatabaseTest() {
         // Declined is not queued. A review queue full of adverts is a review queue
         // nobody reads.
         assertEquals(0, transactions.observeUnmatchedCount().first())
+    }
+
+    // --- Re-parsing the review queue -------------------------------------------------
+
+    @Test
+    fun `re-parsing picks up messages a newly taught rule can now read`() = runTest {
+        // Queued while no rule matched it — the state the review screen shows.
+        transactions.insertRawMessage(
+            RawMessage(
+                id = "queued",
+                sender = "CBE",
+                body = CBE_CREDIT,
+                contentHash = "hash_queued",
+                receivedAt = NOW,
+                source = CaptureSource.NOTIFICATION,
+                parseState = ParseState.UNMATCHED,
+                matchedRuleId = null,
+            ),
+        )
+
+        val summary = coordinator.reparseUnmatched()
+
+        assertEquals(1, summary.scanned)
+        assertEquals(1, summary.recorded)
+        assertEquals(1, allTransactions().size)
+        assertEquals(ParseState.PARSED, transactions.getRawMessage("queued")?.parseState)
+    }
+
+    @Test
+    fun `re-parsing does not record a payment that is already in the ledger`() = runTest {
+        coordinator.capture(notification(TELEBIRR_NOTIFICATION))
+        // The same payment, worded differently, still sitting in the queue.
+        transactions.insertRawMessage(
+            RawMessage(
+                id = "queued",
+                sender = "127",
+                body = TELEBIRR_FULL_SMS,
+                contentHash = "hash_queued",
+                receivedAt = NOW,
+                source = CaptureSource.SMS_IMPORT,
+                parseState = ParseState.UNMATCHED,
+                matchedRuleId = null,
+            ),
+        )
+
+        val summary = coordinator.reparseUnmatched()
+
+        assertEquals(1, summary.duplicates)
+        assertEquals(0, summary.recorded)
+        assertEquals(1, allTransactions().size)
+    }
+
+    @Test
+    fun `a message no rule can still read stays exactly where it was`() = runTest {
+        val queued = coordinator.capture(
+            notification("Dear customer, beware of fraud.", sender = "CBE"),
+        ) as CaptureOutcome.Queued
+
+        val summary = coordinator.reparseUnmatched()
+
+        assertEquals(0, summary.changed)
+        assertEquals(
+            ParseState.UNMATCHED,
+            transactions.getRawMessage(queued.rawMessageId)?.parseState,
+        )
     }
 
     // --- Capture health --------------------------------------------------------------

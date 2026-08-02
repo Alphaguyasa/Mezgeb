@@ -112,13 +112,63 @@ class CaptureCoordinator @Inject constructor(
                 reason = QueueReason.AMBIGUOUS,
             )
 
-            is ParseOutcome.Success -> record(rawMessageId, message, outcome)
+            is ParseOutcome.Success -> record(rawMessageId, message.body, outcome)
         }
+    }
+
+    /**
+     * Runs the parser again over everything sitting in the review queue.
+     *
+     * A rule taught in the review screen, or shipped by an app update, applies to the
+     * messages that are already waiting — otherwise teaching a rule fixes the next
+     * message and leaves the fifty identical ones the shop was complaining about.
+     *
+     * Nothing is deleted and nothing is re-hashed: a message that still matches no
+     * rule stays exactly where it was.
+     */
+    suspend fun reparseUnmatched(): ReparseSummary = mutex.withLock {
+        val queued = transactions.getByParseState(ParseState.UNMATCHED)
+        if (queued.isEmpty()) return@withLock ReparseSummary()
+
+        val parser = parserProvider.current()
+        var recorded = 0
+        var duplicates = 0
+        var ignored = 0
+
+        for (message in queued) {
+            when (
+                val outcome = parser.parse(message.sender, message.body, message.receivedAt)
+            ) {
+                ParseOutcome.Ignored -> {
+                    transactions.markRawMessageResolved(message.id, ParseState.IGNORED, null)
+                    ignored++
+                }
+
+                is ParseOutcome.Success -> {
+                    val result = record(
+                        rawMessageId = message.id,
+                        body = message.body,
+                        outcome = outcome,
+                    )
+                    if (result is CaptureOutcome.Recorded) recorded++ else duplicates++
+                }
+
+                // Still nothing, or still contested. Leave it for the user.
+                is ParseOutcome.Unmatched, is ParseOutcome.Ambiguous -> Unit
+            }
+        }
+
+        ReparseSummary(
+            scanned = queued.size,
+            recorded = recorded,
+            duplicates = duplicates,
+            ignored = ignored,
+        )
     }
 
     private suspend fun record(
         rawMessageId: String,
-        message: CapturedMessage,
+        body: String,
         outcome: ParseOutcome.Success,
     ): CaptureOutcome {
         val fields = outcome.fields
@@ -137,7 +187,7 @@ class CaptureCoordinator @Inject constructor(
         }
 
         val transactionId = ids.newId()
-        transactions.insert(fields.toTransaction(transactionId, rawMessageId, message.body))
+        transactions.insert(fields.toTransaction(transactionId, rawMessageId, body))
         transactions.markRawMessageResolved(rawMessageId, ParseState.PARSED, outcome.ruleId)
         rules.recordParserRuleMatch(outcome.ruleId)
         return CaptureOutcome.Recorded(rawMessageId, transactionId)

@@ -30,6 +30,8 @@ class RuleRepository @Inject constructor(
     fun observeCategories(kind: CategoryKind): Flow<List<Category>> =
         categoryDao.observeByKind(kind).map { list -> list.map { it.toDomain() } }
 
+    suspend fun getCategories(): List<Category> = categoryDao.getAll().map { it.toDomain() }
+
     suspend fun getCategory(id: String): Category? = categoryDao.getById(id)?.toDomain()
 
     suspend fun insertCategory(category: Category) = categoryDao.insert(category.toEntity())

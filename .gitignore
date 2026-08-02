@@ -1,12 +1,9 @@
 *.iml
 .gradle
 /local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+# The whole IDE directory, not the wizard's selection of it. Studio writes JDK
+# paths and SDK locations in there that are specific to one machine.
+/.idea/
 .DS_Store
 /build
 /captures

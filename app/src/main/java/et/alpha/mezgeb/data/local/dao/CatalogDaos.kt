@@ -32,6 +32,10 @@ interface CategoryDao {
     @Query("SELECT * FROM categories ORDER BY isSystem DESC, name ASC")
     fun observeAll(): Flow<List<CategoryEntity>>
 
+    /** One-shot read, for the form screens that only need the list once. */
+    @Query("SELECT * FROM categories ORDER BY isSystem DESC, name ASC")
+    suspend fun getAll(): List<CategoryEntity>
+
     @Query("SELECT * FROM categories WHERE kind = :kind ORDER BY name ASC")
     fun observeByKind(kind: CategoryKind): Flow<List<CategoryEntity>>
 

@@ -73,6 +73,87 @@
     <string name="onboarding_import_failed">Could not read past messages.</string>
     <string name="onboarding_done">Done</string>
 
+    <!-- Shared actions -->
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+
+    <!-- Days -->
+    <string name="day_today">Today</string>
+    <string name="day_yesterday">Yesterday</string>
+
+    <!-- Transaction rows -->
+    <string name="transaction_no_counterparty">No name given</string>
+    <string name="transaction_edited">edited</string>
+
+    <!-- Today -->
+    <string name="today_total_in">Received today</string>
+    <string name="today_total_out">Paid out today</string>
+    <string name="today_net">Net</string>
+    <string name="today_record_cash">Record cash sale</string>
+    <!-- 1: number of messages waiting -->
+    <string name="today_review_queue">%1$d messages need your help to read</string>
+    <string name="today_empty_title">Nothing yet today</string>
+    <string name="today_empty_body_quiet_day">Payments will appear here as they arrive. Cash sales you record appear here too.</string>
+    <string name="today_empty_body_nothing_yet">No payment has been recorded yet. If you have been paid since installing Mezgeb, check that reading payment messages is still switched on.</string>
+
+    <!-- Capture health -->
+    <string name="capture_health_no_access_title">Payments are not being recorded</string>
+    <string name="capture_health_no_access_body">Mezgeb can no longer read payment messages. Nothing will be added to your ledger until this is switched back on.</string>
+    <string name="capture_health_no_access_action">Switch it back on</string>
+    <string name="capture_health_silent_title">No payments for two days</string>
+    <string name="capture_health_silent_body">This can happen when your phone stops Mezgeb running in the background. If you have been paid in the last two days, check your battery settings.</string>
+    <string name="capture_health_silent_action">Check battery settings</string>
+
+    <!-- Ledger -->
+    <string name="ledger_search_hint">Search name, phone, reference or note</string>
+    <string name="ledger_search_clear">Clear search</string>
+    <string name="ledger_filter_clear">Clear filters</string>
+    <string name="ledger_filter_date_all">Any date</string>
+    <string name="ledger_filter_date_today">Today</string>
+    <string name="ledger_filter_date_7_days">Last 7 days</string>
+    <string name="ledger_filter_date_30_days">Last 30 days</string>
+    <string name="ledger_filter_direction_any">In and out</string>
+    <string name="ledger_filter_channel_any">Any channel</string>
+    <string name="ledger_filter_category_any">Any category</string>
+    <string name="ledger_filter_reconciled">Reconciled</string>
+    <string name="ledger_empty_filtered_title">Nothing matches</string>
+    <string name="ledger_empty_filtered_body">No transaction matches these filters. Your ledger is not empty — the filters are hiding it.</string>
+    <!-- 1: transactions now readable -->
+    <string name="ledger_reparse_changed">%1$d more messages could be read</string>
+    <string name="ledger_reparse_unchanged">Nothing new could be read</string>
+
+    <!-- Transaction detail -->
+    <string name="detail_title">Transaction</string>
+    <string name="detail_edit">Edit this transaction</string>
+    <string name="detail_not_found">This transaction no longer exists.</string>
+    <string name="detail_edited_notice">You changed this record after it was captured.</string>
+    <string name="detail_field_amount">Amount</string>
+    <string name="detail_field_direction">Direction</string>
+    <string name="detail_field_channel">Paid through</string>
+    <string name="detail_field_when">When</string>
+    <string name="detail_field_counterparty">Name</string>
+    <string name="detail_field_phone">Phone</string>
+    <string name="detail_field_reference">Reference</string>
+    <string name="detail_field_balance">Balance after</string>
+    <string name="detail_field_note">Note</string>
+    <string name="detail_field_category">Category</string>
+    <string name="detail_category_none">No category</string>
+    <string name="detail_category_always">Always use this category for this name</string>
+    <string name="detail_reconciled">Reconciled</string>
+    <!-- 1: sender the message came from -->
+    <string name="detail_original_message">Message from %1$s</string>
+    <string name="detail_amount_invalid">Enter an amount greater than zero</string>
+    <string name="detail_delete">Delete</string>
+    <string name="detail_delete_title">Delete this transaction?</string>
+    <string name="detail_delete_body">It will be removed from your ledger and your totals. Nothing is erased permanently.</string>
+    <string name="detail_delete_confirm">Delete</string>
+
+    <!-- Cash entry -->
+    <string name="cash_title">Cash</string>
+    <string name="cash_counterparty">Name (optional)</string>
+    <string name="cash_save_failed">Could not save. Try again.</string>
+    <string name="keypad_backspace">Delete last digit</string>
+
     <!-- Content descriptions -->
     <string name="cd_open_review">Open review queue</string>
     <string name="cd_open_reconcile">Open reconciliation</string>
