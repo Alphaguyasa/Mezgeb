@@ -103,6 +103,8 @@ class TransactionDetailViewModelTest : DatabaseTest() {
             val saved = awaitItemWhere { it.editor == null && it.transaction!!.isEdited }
             assertEquals(46_050L, saved.transaction?.amountMinor)
             assertEquals(now, saved.transaction?.editedAt)
+            // A real edit is both: the marker, and something reconciliation must see.
+            assertEquals(now, saved.transaction?.touchedAt)
             assertFalse(loaded.transaction!!.isEdited)
             cancelAndIgnoreRemainingEvents()
         }
@@ -126,6 +128,9 @@ class TransactionDetailViewModelTest : DatabaseTest() {
             val saved = awaitItemWhere { it.editor == null && it.transaction?.note != null }
             assertEquals("market day", saved.transaction?.note)
             assertNull(saved.transaction?.editedAt)
+            // But it is still a touch. A note written inside an open period is a human
+            // reaching into it, and reconciliation is entitled to know.
+            assertEquals(now, saved.transaction?.touchedAt)
             cancelAndIgnoreRemainingEvents()
         }
     }

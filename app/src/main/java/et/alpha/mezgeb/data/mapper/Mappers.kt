@@ -73,6 +73,7 @@ fun TransactionEntity.toDomain(): Transaction = Transaction(
     reconciliationSessionId = reconciliationSessionId,
     isDeleted = isDeleted,
     editedAt = editedAt,
+    touchedAt = touchedAt,
 )
 
 fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
@@ -93,6 +94,7 @@ fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     reconciliationSessionId = reconciliationSessionId,
     isDeleted = isDeleted,
     editedAt = editedAt,
+    touchedAt = touchedAt,
 )
 
 // --- Customer & credit ----------------------------------------------------------

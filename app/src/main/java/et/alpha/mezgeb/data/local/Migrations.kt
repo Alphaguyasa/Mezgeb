@@ -43,6 +43,30 @@ object Migrations {
         }
     }
 
+    /**
+     * v3 → v4: "a human edited a parsed value" and "a human touched this row" stop
+     * sharing a column.
+     *
+     * `editedAt` was carrying both meanings, so filing a transaction under a category
+     * marked it as edited and the ledger showed the marker on a row nobody had edited.
+     *
+     * The backfill copies `editedAt` into `touchedAt` rather than the other way round,
+     * because every old timestamp is known to be a touch — an edit, a categorisation, a
+     * delete or a restore — while only some of them were edits. Which ones is not
+     * recoverable: the column that would have said is the one being split.
+     *
+     * So `editedAt` is left as it stands. Existing rows keep a marker some of them have
+     * not earned, and it clears the first time each is genuinely edited. The choice is
+     * the same one [MIGRATION_2_3] made — over-report rather than quietly erase
+     * something a shop might have been relying on.
+     */
+    val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE transactions ADD COLUMN touchedAt INTEGER")
+            db.execSQL("UPDATE transactions SET touchedAt = editedAt")
+        }
+    }
+
     /** Everything, in order, for the database builder. */
-    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
+    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
 }

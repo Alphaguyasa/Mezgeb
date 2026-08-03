@@ -180,7 +180,7 @@ class ReconcilePeriodUseCaseTest : DatabaseTest() {
                     amountMinor = 5_000,
                     categoryId = "cat_sales",
                     occurredAt = T0 + HOUR,
-                    editedAt = openedAt + HOUR,
+                    touchedAt = openedAt + HOUR,
                 ),
             ),
         )
@@ -199,13 +199,29 @@ class ReconcilePeriodUseCaseTest : DatabaseTest() {
                 amountMinor = 5_000,
                 categoryId = "cat_sales",
                 occurredAt = T0 + HOUR,
-                editedAt = openedAt - HOUR,
+                touchedAt = openedAt - HOUR,
             ),
         )
 
         val explanations = useCase()(periodStart, periodEnd, openedAt).explanations
 
         assertTrue(explanations.none { it is GapExplanation.EditedSincePeriodOpened })
+    }
+
+    @Test
+    fun `filing a transaction inside an open period still explains the gap`() = runTest {
+        db.transactionDao().insert(
+            transaction("t1", amountMinor = 5_000, categoryId = null, occurredAt = T0 + HOUR),
+        )
+
+        // The narrower editedAt would miss this entirely, and a reconciliation that
+        // under-explains a gap sends a shop owner counting notes for no reason.
+        db.transactionDao().setCategory("t1", "cat_sales", now = openedAt + HOUR)
+
+        val explanations = useCase()(periodStart, periodEnd, openedAt).explanations
+
+        assertTrue(explanations.any { it is GapExplanation.EditedSincePeriodOpened })
+        assertNull("and it is still not an edit", db.transactionDao().getById("t1")?.editedAt)
     }
 
     @Test

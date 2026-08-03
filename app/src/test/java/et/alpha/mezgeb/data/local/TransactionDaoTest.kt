@@ -194,29 +194,39 @@ class TransactionDaoTest : DatabaseTest() {
         assertTrue(ids().none { it == "t1" })
         val stored = dao.getById("t1")
         assertEquals(true, stored?.isDeleted)
-        assertEquals(T0 + 9 * DAY, stored?.editedAt)
+        assertEquals(T0 + 9 * DAY, stored?.touchedAt)
+        assertNull("deleting changes no parsed value", stored?.editedAt)
     }
 
     @Test
-    fun `restore brings a soft-deleted row back`() = runTest {
+    fun `restore brings a soft-deleted row back without marking it edited`() = runTest {
         dao.restore("t6", now = T0 + 9 * DAY)
+
         assertTrue(ids().contains("t6"))
+        val stored = dao.getById("t6")
+        assertEquals(T0 + 9 * DAY, stored?.touchedAt)
+        // A row that goes away and comes back says exactly what it always said.
+        assertNull("restoring changes no parsed value", stored?.editedAt)
     }
 
     @Test
-    fun `setCategory records an edit timestamp`() = runTest {
+    fun `filing under a category is a touch, not an edit`() = runTest {
         dao.setCategory("t4", "cat_sales", now = T0 + 9 * DAY)
 
         val stored = dao.getById("t4")
         assertEquals("cat_sales", stored?.categoryId)
-        assertEquals(T0 + 9 * DAY, stored?.editedAt)
-        assertEquals(1, dao.countEditedSince(T0, T0, T0 + 10 * DAY))
+        assertEquals(T0 + 9 * DAY, stored?.touchedAt)
+        // The bug this split exists for: the ledger showed an "edited" marker on a
+        // transaction whose every parsed value still matched its message.
+        assertNull("categorising must not mark a row as edited", stored?.editedAt)
+        // Reconciliation still sees it, because the figures did move.
+        assertEquals(1, dao.countTouchedSince(T0, T0, T0 + 10 * DAY))
     }
 
     @Test
-    fun `countEditedSince ignores edits made before the cutoff`() = runTest {
+    fun `countTouchedSince ignores touches made before the cutoff`() = runTest {
         dao.setCategory("t4", "cat_sales", now = T0 + DAY)
-        assertEquals(0, dao.countEditedSince(T0 + 5 * DAY, T0, T0 + 10 * DAY))
+        assertEquals(0, dao.countTouchedSince(T0 + 5 * DAY, T0, T0 + 10 * DAY))
     }
 
     @Test

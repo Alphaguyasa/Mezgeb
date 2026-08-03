@@ -171,7 +171,7 @@ class ReconcilePeriodUseCase @Inject constructor(
             explanations += GapExplanation.OutstandingCredit(inDebt, outstanding)
         }
 
-        val edited = transactions.countEditedSince(openedAt, periodStart, periodEnd)
+        val edited = transactions.countTouchedSince(openedAt, periodStart, periodEnd)
         if (edited > 0) {
             explanations += GapExplanation.EditedSincePeriodOpened(edited)
         }

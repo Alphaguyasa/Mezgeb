@@ -41,6 +41,8 @@ data class Transaction(
     val reconciliationSessionId: String?,
     val isDeleted: Boolean,
     val editedAt: Long?,
+    /** Any human change at all — an edit, a categorisation, a delete, a restore. */
+    val touchedAt: Long? = null,
 ) {
     /** True when the user has hand-edited a parsed field. Surfaced in the UI. */
     val isEdited: Boolean get() = editedAt != null

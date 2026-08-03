@@ -282,9 +282,10 @@ class CaptureCoordinator @Inject constructor(
         isReconciled = false,
         reconciliationSessionId = null,
         isDeleted = false,
-        // Null, not "now": editedAt means a human changed a parsed value, and the
-        // ledger shows an "edited" marker based on it.
+        // Both null, not "now". No human has been near this row: the parser wrote it
+        // from the message, which is neither an edit nor a touch.
         editedAt = null,
+        touchedAt = null,
     )
 }
 

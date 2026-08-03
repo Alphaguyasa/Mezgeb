@@ -99,6 +99,7 @@ internal fun transaction(
     reconciliationSessionId: String? = null,
     isDeleted: Boolean = false,
     editedAt: Long? = null,
+    touchedAt: Long? = null,
 ) = TransactionEntity(
     id = id,
     rawMessageId = rawMessageId,
@@ -117,6 +118,7 @@ internal fun transaction(
     reconciliationSessionId = reconciliationSessionId,
     isDeleted = isDeleted,
     editedAt = editedAt,
+    touchedAt = touchedAt,
 )
 
 internal fun customer(

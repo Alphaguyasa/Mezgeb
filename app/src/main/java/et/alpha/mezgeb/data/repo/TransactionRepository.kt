@@ -166,8 +166,9 @@ class TransactionRepository @Inject constructor(
     suspend fun getUnmatchedBetween(from: Long, to: Long): List<RawMessage> =
         rawMessageDao.getUnmatchedBetween(from, to).map { it.toDomain() }
 
-    suspend fun countEditedSince(since: Long, from: Long, to: Long): Int =
-        transactionDao.countEditedSince(since, from, to)
+    /** Rows a human touched since [since] — edited, categorised, deleted or restored. */
+    suspend fun countTouchedSince(since: Long, from: Long, to: Long): Int =
+        transactionDao.countTouchedSince(since, from, to)
 
     // --- Raw messages -------------------------------------------------------------
     // Raw messages live here rather than in their own repository because every

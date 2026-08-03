@@ -95,7 +95,26 @@ data class TransactionEntity(
     val reconciliationSessionId: String?,
     /** Soft delete only — a shop's ledger never loses rows outright. */
     val isDeleted: Boolean = false,
+    /**
+     * When a human last changed a value the parser extracted — the amount, direction,
+     * channel, counterparty or time. Drives the "edited" marker in the ledger, which
+     * means "this no longer says what the message said".
+     *
+     * Filing a transaction under a category does not qualify, and neither does adding
+     * a note: both leave every parsed value exactly as the message had it. Use
+     * [touchedAt] for "a human did something to this row".
+     */
     val editedAt: Long?,
+    /**
+     * When a human last did anything to this row: edited a parsed value, filed it
+     * under a category, deleted it or restored it.
+     *
+     * Reconciliation asks this rather than [editedAt], because a period whose figures
+     * moved after it was opened moved for any of those reasons, not only the first.
+     *
+     * Defaulted so a backup written before this column existed still restores.
+     */
+    val touchedAt: Long? = null,
 )
 
 @Entity(tableName = "customers")

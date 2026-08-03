@@ -194,7 +194,9 @@ class ReconcileViewModelTest : DatabaseTest() {
 
             // Someone corrects a captured amount after the fact.
             val edited = transactions.getTransaction("captured")!!
-            transactions.update(edited.copy(amountMinor = 99_000, editedAt = now + 1))
+            transactions.update(
+                edited.copy(amountMinor = 99_000, editedAt = now + 1, touchedAt = now + 1),
+            )
 
             val after = firstClosedSession()
             assertEquals(before.capturedInMinor, after.capturedInMinor)
@@ -208,7 +210,9 @@ class ReconcileViewModelTest : DatabaseTest() {
         closeTodayExpecting("400.00")
 
         val edited = transactions.getTransaction("captured")!!
-        transactions.update(edited.copy(amountMinor = 99_000, editedAt = now + 1))
+        transactions.update(
+            edited.copy(amountMinor = 99_000, editedAt = now + 1, touchedAt = now + 1),
+        )
 
         // The next period covers the same day and is opened after the edit.
         viewModel.state.test {

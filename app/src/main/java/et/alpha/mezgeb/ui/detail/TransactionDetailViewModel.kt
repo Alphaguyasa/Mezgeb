@@ -228,10 +228,16 @@ class TransactionDetailViewModel @Inject constructor(
             updated.counterpartyPhone != original.counterpartyPhone ||
             updated.occurredAt != original.occurredAt
 
+        val now = clock.millis()
+
         viewModelScope.launch {
             transactions.update(
                 updated.copy(
-                    editedAt = if (parsedFieldsChanged) clock.millis() else original.editedAt,
+                    editedAt = if (parsedFieldsChanged) now else original.editedAt,
+                    // Unconditional, unlike the marker above: saving this form is a
+                    // human touching the row whether or not a parsed value moved, and
+                    // reconciliation has to see a note added inside an open period.
+                    touchedAt = now,
                 ),
             )
             local.update { it.copy(editor = null) }

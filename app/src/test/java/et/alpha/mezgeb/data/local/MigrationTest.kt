@@ -14,6 +14,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -133,6 +134,38 @@ class MigrationTest {
         // The point of the whole no-destructive-migration rule.
         assertEquals(45_000L, migrated.transactionDao().getById("t1")?.amountMinor)
         assertEquals("PARSED", migrated.rawMessageDao().getById("m1")?.parseState?.name)
+        migrated.close()
+    }
+
+    @Test
+    fun `v3 to v4 carries every old timestamp across as a touch`() = runTest {
+        createVersionOne { db ->
+            db.execSQL(
+                """
+                INSERT INTO transactions
+                    (id, rawMessageId, direction, amountMinor, currency, channel, counterpartyName,
+                     counterpartyPhone, providerTxnId, balanceAfterMinor, occurredAt, categoryId,
+                     note, isReconciled, reconciliationSessionId, isDeleted, editedAt)
+                VALUES ('edited', NULL, 'IN', 45000, 'ETB', 'BANK', NULL, NULL, NULL, NULL,
+                        1782950400000, NULL, NULL, 0, NULL, 0, 1782950500000),
+                       ('untouched', NULL, 'IN', 20000, 'ETB', 'BANK', NULL, NULL, NULL, NULL,
+                        1782950400000, NULL, NULL, 0, NULL, 0, NULL)
+                """.trimIndent(),
+            )
+        }
+
+        val migrated = openAtCurrentVersion()
+        val dao = migrated.transactionDao()
+
+        // Every pre-split timestamp is known to be a touch, so it becomes one.
+        assertEquals(1782950500000L, dao.getById("edited")?.touchedAt)
+        // And is left in editedAt, because which old rows were really edits is exactly
+        // the information the single column failed to keep. Over-report, never erase.
+        assertEquals(1782950500000L, dao.getById("edited")?.editedAt)
+
+        // A row nobody ever touched does not acquire a timestamp from the migration.
+        assertNull(dao.getById("untouched")?.touchedAt)
+        assertNull(dao.getById("untouched")?.editedAt)
         migrated.close()
     }
 

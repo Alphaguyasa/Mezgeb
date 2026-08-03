@@ -301,25 +301,42 @@ interface TransactionDao {
     )
     suspend fun countUncategorised(from: Long, to: Long): Int
 
+    /**
+     * Rows a human touched after the period was opened, for whatever reason.
+     *
+     * `touchedAt`, not `editedAt`: a period's figures move when a transaction is filed
+     * under a category or restored from deleted, not only when a parsed value is
+     * changed. Asking the narrower column would under-report the reason a period does
+     * not balance, which is the one direction a reconciliation explanation must not err.
+     */
     @Query(
         """
         SELECT COUNT(*) FROM transactions
-        WHERE isDeleted = 0 AND editedAt IS NOT NULL AND editedAt >= :since
+        WHERE isDeleted = 0 AND touchedAt IS NOT NULL AND touchedAt >= :since
           AND occurredAt >= :from AND occurredAt <= :to
         """,
     )
-    suspend fun countEditedSince(since: Long, from: Long, to: Long): Int
+    suspend fun countTouchedSince(since: Long, from: Long, to: Long): Int
 
     // --- Mutations --------------------------------------------------------------
 
-    /** Soft delete. Rows are never removed; the ledger keeps its history. */
-    @Query("UPDATE transactions SET isDeleted = 1, editedAt = :now WHERE id = :id")
+    /**
+     * Soft delete. Rows are never removed; the ledger keeps its history.
+     *
+     * Touched, not edited: nothing the parser extracted has changed, so a row that
+     * comes back through [restore] must not wear the ledger's edited marker.
+     */
+    @Query("UPDATE transactions SET isDeleted = 1, touchedAt = :now WHERE id = :id")
     suspend fun softDelete(id: String, now: Long)
 
-    @Query("UPDATE transactions SET isDeleted = 0, editedAt = :now WHERE id = :id")
+    @Query("UPDATE transactions SET isDeleted = 0, touchedAt = :now WHERE id = :id")
     suspend fun restore(id: String, now: Long)
 
-    @Query("UPDATE transactions SET categoryId = :categoryId, editedAt = :now WHERE id = :id")
+    /**
+     * Filing, not editing. The category is the shop's own annotation; every value the
+     * message carried survives it untouched, so this sets [touchedAt] alone.
+     */
+    @Query("UPDATE transactions SET categoryId = :categoryId, touchedAt = :now WHERE id = :id")
     suspend fun setCategory(id: String, categoryId: String?, now: Long)
 
     @Query("UPDATE transactions SET isReconciled = :isReconciled, reconciliationSessionId = :sessionId WHERE id = :id")
