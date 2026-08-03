@@ -39,6 +39,22 @@ class CorpusValidationTest {
     private val ethiopianLocal = Regex("""(?<!\d)0[79]\d{8}(?!\d)""")
     private val longDigitRun = Regex("""(?<!\d)\d{10,}(?!\d)""")
 
+    /**
+     * A purely numeric transaction reference in redacted form.
+     *
+     * Some providers number their references with digits alone, which is
+     * indistinguishable from an account number by shape — so the corpus cannot simply
+     * allow "whatever the sample declared", which is what it used to do and how fifteen
+     * real-shaped references reached the repository.
+     *
+     * They redact the way phone numbers do: into a range nothing real occupies. A
+     * reference is the sample's sequence number left-padded with zeros to the original
+     * length, so the length the parser learns is preserved, leading zeros still get
+     * exercised, and the underlying value is small enough that no real twelve-digit
+     * reference could collide with it.
+     */
+    private val redactedNumericReference = Regex("""0{4,}\d{1,3}""")
+
     @Test
     @DisplayName("no message body contains an unredacted phone number")
     fun `bodies carry no real phone numbers`() {
@@ -77,15 +93,19 @@ class CorpusValidationTest {
 
         forEachSample { path, sample ->
             // Some providers use a purely numeric transaction reference, which is
-            // indistinguishable from an account number by shape alone. A run is
-            // therefore allowed only when the sample declares it as the reference the
-            // parser is expected to extract; everything else must be zeroed.
+            // indistinguishable from an account number by shape alone.
+            //
+            // Declaring it as `providerTxnId` used to be enough on its own. That is a
+            // guard which cannot fail: a real, unredacted reference is declared exactly
+            // the same way a redacted one is, so the check blessed whatever it was
+            // shown. It has to be *and* — declared as the reference, and in redacted
+            // form.
             val declaredReference = sample.expected?.providerTxnId
             longDigitRun.findAll(sample.body).forEach { match ->
                 val digits = match.value
                 val allowed = digits.all { it == '0' } ||
                     redactedPhone.matches("+$digits") ||
-                    digits == declaredReference
+                    (digits == declaredReference && redactedNumericReference.matches(digits))
                 if (!allowed) {
                     leaks += "$path/${sample.id}: '$digits' (${digits.length} digits)"
                 }
@@ -95,10 +115,11 @@ class CorpusValidationTest {
         if (leaks.isNotEmpty()) {
             fail(
                 buildString {
-                    appendLine("Possible unredacted account numbers in the corpus.")
+                    appendLine("Possible unredacted account numbers or references in the corpus.")
                     appendLine("Account numbers redact to same-length zeros; amounts keep their")
-                    appendLine("separators; a numeric reference is allowed only when the sample")
-                    appendLine("declares it as providerTxnId.")
+                    appendLine("separators; a purely numeric transaction reference must both be")
+                    appendLine("declared as providerTxnId and be in redacted form — the sample's")
+                    appendLine("sequence number, left-padded with zeros to the original length.")
                     leaks.forEach { appendLine("  - $it") }
                 },
             )

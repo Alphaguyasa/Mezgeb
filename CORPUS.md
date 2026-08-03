@@ -82,7 +82,8 @@ hand because no pattern detects them reliably.
 | Personal names | Consistent token: `Abebe K.` → `NAME_01` |
 | Phone numbers | `+251912345678` → `+251900000001`, one stable token per real number |
 | Account numbers | Same-length zeros |
-| Transaction ids | Same length, same character class per position |
+| Transaction ids (alphanumeric) | Same length, same character class per position |
+| Transaction ids (purely numeric) | Sequence number, zero-padded to the original length |
 | Amounts | **Kept real** — not identifying, and the parser depends on real formatting |
 | Dates and times | Format kept real; actual dates may be shifted |
 | Balance after | Format kept, digits randomised |
@@ -115,6 +116,37 @@ from the first commit onward.
 number or account number, so a leak cannot reach a commit unnoticed. It also enforces
 labelling discipline: unique ids, valid channel and direction values, required fields
 on financial samples, `"expected": null` on noise, parseable timestamps.
+
+### The guard that did not guard (found and fixed 2026-08-03)
+
+Fifteen twelve-digit EBIRR transaction references reached the committed corpus
+unredacted. Two independent failures had to line up, and both are now closed.
+
+**The tool had a hole.** The account-number rule was
+`(?<![\d,.])\d{10,}(?![\d,.])`. The lookarounds exist to avoid mangling a formatted
+amount, but they exempt *any* run merely adjacent to a comma or full stop — and EBIRR
+writes its references as `Id: 000000000001,`. A run ending a sentence escaped the same
+way. The rule now excludes a separator only when it has a digit on its far side, which
+is what "part of an amount" actually means.
+
+**The validator could not fail.** It allowed a long digit run whenever the run equalled
+the sample's declared `providerTxnId` — but a real reference is declared exactly the
+same way a redacted one is, so the check blessed whatever it was shown. Being declared
+is now necessary and not sufficient: the value must *also* be in redacted form.
+
+Purely numeric references therefore redact the way phone numbers already did, into a
+range nothing real occupies. Length is preserved, so the shape the parser learns is
+unchanged, and leading zeros are still exercised — which matters, because a reference
+parsed as a number rather than a string loses them.
+
+Replacing the fifteen values changed no accuracy figure: 95/95 train and 23/23 holdout
+before and after, `providerTxnId` at 100% precision and recall in both. The rules match
+digit patterns, not particular digits, which is the point of preserving shape.
+
+**The working tree is clean; the history is not.** These values are in every commit that
+touched those files. Nothing has ever been pushed — there is no remote — so removing
+them means rewriting local history, which is the repository owner's call and is not done
+here.
 
 ## Train / holdout split
 

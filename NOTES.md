@@ -1237,8 +1237,22 @@ permits them, because it allows a long digit run when it equals the sample's dec
 
 Whether those 15 values are real or were faked by hand is not determinable from the
 repository. If they are real they are transaction references from the author's own
-account in a public portfolio repo. **Open, and the author's call** — editing the corpus
-changes what every accuracy figure was measured against.
+account in a public portfolio repo.
+
+**Resolved 2026-08-03.** The tool's lookaround now excludes a separator only when it has
+a digit on its far side; the validator now requires a declared numeric reference to also
+be in redacted form, because "the sample said it was a reference" is a check that cannot
+fail; and the fifteen values are replaced with zero-padded sequence numbers of the same
+length. Accuracy is unchanged at 95/95 and 23/23 — the rules match digit patterns, not
+particular digits. Full write-up in CORPUS.md.
+
+The guard was verified by re-introducing one of the old values and watching the build
+fail, then restoring it. A privacy test that has never been seen to fail is a privacy
+test nobody has checked.
+
+**Still open: git history.** The values are in every commit that touched those files.
+There is no remote and nothing has been pushed, so a rewrite is safe but destructive —
+every SHA changes. The repository owner's call.
 
 ### Coverage — and the number that was wrong first
 

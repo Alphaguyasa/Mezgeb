@@ -89,8 +89,17 @@ foreach ($line in $lines) {
     $redacted = [regex]::Replace($redacted, '(?<!\d)0[79]\d{8}(?!\d)', { param($m) Get-PhoneToken $m.Value })
 
     # 2. Account numbers: long digit runs that are not part of an amount.
-    #    Amounts carry a separator or decimal, so require a bare run of 10+ digits.
-    $redacted = [regex]::Replace($redacted, '(?<![\d,.])\d{10,}(?![\d,.])', { param($m) Get-AccountToken $m.Value })
+    #
+    #    The lookarounds must exclude a separator only when it is *inside* a number.
+    #    An earlier version used (?<![\d,.]) ... (?![\d,.]), which also exempted any
+    #    run merely followed by a comma or a full stop — so "Id: 000000000001," and
+    #    any run ending a sentence passed through unredacted. Fifteen real-shaped
+    #    transaction references reached the committed corpus that way.
+    #
+    #    Now: not touching a digit on either side, and not sitting next to a separator
+    #    that has a digit on its far side (1,234 / 1234.56), which is what "part of an
+    #    amount" actually means.
+    $redacted = [regex]::Replace($redacted, '(?<!\d)(?<![\d][.,])\d{10,}(?!\d)(?![.,]\d)', { param($m) Get-AccountToken $m.Value })
 
     # 3. Transaction references: 6+ char alphanumeric tokens containing both a letter
     #    and a digit. Pure words and pure numbers are left alone.
