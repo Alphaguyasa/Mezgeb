@@ -1353,3 +1353,22 @@ exists for a device that will not release the file, which is not reachable under
 Robolectric without faking the Context. The class doc already says a stale demo file is a
 few hundred kilobytes and not a problem, and the flag is cleared before the delete is
 attempted, so the branch has nothing to get wrong. Left at 72% on that lambda deliberately.
+
+### Third instance of the same mistake (2026-08-03)
+
+A real CBE receipt URL was the worked example in two places: this file, and a doc
+comment in `RuleInducer` — shipped source in the parser module, sitting there since the
+rule-induction session. The comment explains why the documented `^...$` anchoring cannot
+work, and the example it reached for was a genuine receipt link off the author's device.
+The point being made needs the *shape* of a random token, never the token. It now reads
+`i0-<random token>`.
+
+That is three times in two days, twice by me: a privacy problem gets written up, and the
+write-up quotes the data. A leak explained with a real value is a leak documented into
+permanence. A sweep of every tracked file across all history for provider receipt hosts
+outside the corpus directory found this one and nothing else.
+
+The commit that made this change no longer exists. The history rewrite applied the same
+substitution to every commit, so the commit whose only content *was* that substitution
+became empty and `--prune-empty` dropped it — correctly, but it takes the reasoning with
+it, which is why the reasoning is written down here instead.
