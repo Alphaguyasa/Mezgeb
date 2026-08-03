@@ -92,7 +92,7 @@ foreach ($line in $lines) {
     #
     #    The lookarounds must exclude a separator only when it is *inside* a number.
     #    An earlier version used (?<![\d,.]) ... (?![\d,.]), which also exempted any
-    #    run merely followed by a comma or a full stop — so "Id: 000000000001," and
+    #    run merely followed by a comma or a full stop — so "Id: <twelve digits>," and
     #    any run ending a sentence passed through unredacted. Fifteen real-shaped
     #    transaction references reached the committed corpus that way.
     #

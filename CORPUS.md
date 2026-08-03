@@ -125,7 +125,7 @@ unredacted. Two independent failures had to line up, and both are now closed.
 **The tool had a hole.** The account-number rule was
 `(?<![\d,.])\d{10,}(?![\d,.])`. The lookarounds exist to avoid mangling a formatted
 amount, but they exempt *any* run merely adjacent to a comma or full stop — and EBIRR
-writes its references as `Id: 000000000001,`. A run ending a sentence escaped the same
+writes its references as `Id: <twelve digits>,`. A run ending a sentence escaped the same
 way. The rule now excludes a separator only when it has a digit on its far side, which
 is what "part of an amount" actually means.
 

@@ -1227,7 +1227,7 @@ phone number across all commits is a synthetic placeholder.
 **But `tools/redact-samples.ps1` has a hole.** Its account-number rule is
 `(?<![\d,.])\d{10,}(?![\d,.])`. The trailing `(?![\d,.])` exists to avoid mangling
 formatted amounts, and it also exempts any digit run followed by a comma. EBIRR writes
-transaction ids as `Id: 000000000001,` — comma immediately after. The transaction-reference
+transaction ids as `Id: <twelve digits>,` — comma immediately after. The transaction-reference
 rule does not catch them either, because it requires both a letter and a digit.
 
 So **15 distinct 12-digit EBIRR transaction ids passed through neither rule**, in
