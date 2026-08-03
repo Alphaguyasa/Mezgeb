@@ -1438,6 +1438,13 @@ different and more uncomfortable thing to write down.
   real low-end device is still unknown, and was never claimed otherwise.
 - **The teach-a-rule flow has not been timed by a human**, against the 90-second target,
   and the README's GIF is a placeholder until it is recorded.
+- **The App Bundle's split dimensions have not been decoded.** `bundle { language {
+  enableSplit = false } }` is set and AGP's own `AppBundleLocaleChanges` check no longer
+  fires, which is good evidence but indirect. `bundletool` is not installed here and
+  `BundleConfig.pb` stores split dimensions as protobuf enums that do not survive a text
+  scan, so the setting has been verified by its effect on lint rather than by reading
+  it. Confirm with `bundletool build-apks` before a real release: the fix it represents
+  is one that only shows up on a Play install.
 - **`PdfExporter` (2.1%) and `AppLockRepository` (0%)** stay effectively untested off
   the device: `PdfDocument` is native and returns a closed document under Robolectric,
   and the Keystore does not exist there at all. Both were verified by hand on the phone.
@@ -1451,6 +1458,39 @@ different and more uncomfortable thing to write down.
   a debug-signed APK installs, runs and looks exactly like a release, signed with a key
   every Android SDK on earth has the private half of. There is no installable release
   artifact until a real key exists.
+
+### Two lint warnings left open on purpose
+
+Lint reports 0 errors and 28 warnings. Most are unused resources, KTX suggestions,
+available dependency upgrades, and two API-level notes that are correctly guarded. Two
+are worth more than a warning line and are deliberately not fixed yet, because both
+want a device to confirm the diagnosis rather than a plausible patch.
+
+- **`QueryPermissionsNeeded` — `BatteryOptimizationHelper.kt:47`. No `<queries>`
+  declaration in either manifest.** From API 30 package visibility filtering hides
+  packages an app has not declared, so a query for the vendor battery-settings
+  activities may come back empty on Android 11 and up and the helper silently does
+  nothing. The failure is the invisible kind again: no crash, the feature just never
+  fires, and every device old enough to be unaffected behaves correctly. What is *not*
+  yet established is whether the helper resolves through the package manager at all or
+  simply tries `startActivity` and catches — the second needs no `<queries>`. Read the
+  code path first; the fix is trivial and the wrong fix would be a manifest declaration
+  that quietly does nothing.
+  Worth checking the credit reminder at the same time: it opens the default messaging
+  app by intent, which is the other place visibility filtering bites.
+
+- **`DataExtractionRules` — manifest:47. `allowBackup="false"` is deprecated from
+  Android 12.** The manifest comment presents `allowBackup=false` and the absence of
+  `dataExtractionRules` as the complete story. That was true before Android 12; on 12
+  and up cloud backup and device-to-device transfer are governed by
+  `dataExtractionRules` instead, and the old attribute may stop being honoured. For an
+  app whose entire claim is that a shop's ledger never leaves the device, that deserves
+  an explicit rules file rather than a deprecated attribute and a comment that has
+  quietly gone out of date. The comment needs correcting either way.
+
+Both were found by reading the full lint report rather than the build result. "Lint
+clean" appears in several commit messages above and means only that `lintVital` passed:
+0 errors. The 28 warnings had not been looked at until now.
 
 ### Honest gaps that no amount of building fixes
 
@@ -1479,3 +1519,33 @@ different and more uncomfortable thing to write down.
   short by exactly the cash it took.
 - **`WorkManagerBacklogReprocessor` is left at 0%** on purpose: it is the seam that
   exists so ViewModels can be tested without WorkManager.
+
+---
+
+## The language switch never worked on Play (2026-08-03)
+
+Found by reading the lint report rather than by any test, and fixed the same day.
+
+An App Bundle splits by language by default and Play delivers only the locale the device
+is already set to. Session 11 added a language override in settings, so a shop owner on
+an English phone choosing Amharic would have been choosing resources that were never
+installed on the device. The usual remedy is Play Core's split installer, which needs
+the network and the Play libraries — both ruled out by .md constraint #1 — so the
+alternative is not to split at all. Both languages now ship in the base module, at a
+cost of a few hundred kilobytes on a 3 MB APK.
+
+**Why it survived twelve sessions.** It is invisible in every debug build and every
+sideloaded APK, because neither is a bundle. It appears for the first time on a real
+Play install — the one distribution path never exercised here, and the path the entire
+`play` flavor exists to serve. No unit test could have caught it, no lint *error* was
+raised, and the app behaves perfectly on every device it has ever been run on.
+
+That is the second bug of this shape in two days. The first was `editedAt` meaning two
+things; both were found by reading rather than by running, both were invisible to a
+green build, and both had been sitting in the repository for many sessions looking
+correct. The pattern worth taking from it is that the checks with the best coverage here
+— unit tests, lint errors, a passing build — are all blind to a whole class of defect
+that only a different *kind* of examination finds.
+
+Two strings the Session 11 plurals pass missed were fixed in the same commit. Lint went
+from 31 warnings to 28, still 0 errors.
