@@ -9,8 +9,20 @@
     only in app/src/direct/AndroidManifest.xml. The offline guarantee is likewise a
     product feature, not an oversight. See .md hard constraints #1 and #2.
 
-    allowBackup is false and there are no dataExtractionRules: a shop's ledger
-    must not be auto-backed-up off device. See 03-ARCHITECTURE.md section 8.
+    A shop's ledger must not be auto-backed-up off device, and that takes two
+    declarations rather than one: allowBackup="false" governs API 26-30, and from
+    Android 12 it is deprecated in favour of dataExtractionRules, which excludes every
+    domain from both cloud backup and device-to-device transfer. Either alone leaves
+    half the supported range uncovered. See res/xml/data_extraction_rules.xml for why
+    device transfer is excluded too, and 03-ARCHITECTURE.md section 8.
+
+    The tools:ignore is narrow and earned. Lint asks for a fullBackupContent resource
+    alongside, on the grounds that dataExtractionRules is ignored below Android 12 —
+    true, and irrelevant here. Its own explanation says that resource is wanted "if the
+    default behavior is not right for your app"; with allowBackup="false" the default
+    is exactly right, because no backup runs at all and there is nothing for a rules
+    file to select. The check does not read allowBackup. Adding a resource that is
+    never consulted would look like diligence and be dead configuration.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
@@ -76,6 +88,8 @@
     <application
         android:name=".MezgebApplication"
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        tools:ignore="DataExtractionRules"
         android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"

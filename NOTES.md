@@ -1461,10 +1461,10 @@ different and more uncomfortable thing to write down.
 
 ### The lint warnings worth more than a warning line
 
-Lint reports 0 errors and 27 warnings. Most are unused resources, KTX suggestions,
+Lint reports 0 errors and 26 warnings. Most are unused resources, KTX suggestions,
 available dependency upgrades, and two API-level notes that are correctly guarded. Two
-were worth more than a warning line. One turned out to be a live bug and is fixed; the
-other is still open.
+were worth more than a warning line. Both are now fixed — one was a live bug, the
+other a real gap in the offline guarantee on Android 12 and up.
 
 Both were found by reading the full report rather than the build result — "lint clean"
 in the commit messages above meant only that `lintVital` passed with 0 errors, and the
@@ -1484,14 +1484,27 @@ warnings had never been read.
   `ACTION_SENDTO` with an `smsto:` URI and never queries. Visibility filtering restricts
   querying, not launching an implicit intent.
 
-- **`DataExtractionRules` — manifest:47. `allowBackup="false"` is deprecated from
-  Android 12.** The manifest comment presents `allowBackup=false` and the absence of
-  `dataExtractionRules` as the complete story. That was true before Android 12; on 12
-  and up cloud backup and device-to-device transfer are governed by
-  `dataExtractionRules` instead, and the old attribute may stop being honoured. For an
-  app whose entire claim is that a shop's ledger never leaves the device, that deserves
-  an explicit rules file rather than a deprecated attribute and a comment that has
-  quietly gone out of date. The comment needs correcting either way.
+- ~~**`DataExtractionRules` — manifest:47.**~~ **Fixed 2026-08-03.** `allowBackup="false"`
+  is deprecated from Android 12, where cloud backup and device-to-device transfer are
+  governed by `dataExtractionRules` instead. Keeping only the old attribute left API 31+
+  uncovered on the one guarantee the app is built around. Both now ship:
+  `allowBackup="false"` for API 26–30, and `res/xml/data_extraction_rules.xml` excluding
+  every domain from both `cloud-backup` and `device-transfer`.
+  **Device transfer was the real decision, not cloud backup.** Excluding cloud backup is
+  obvious — a ledger copied into a Google account is precisely what the missing INTERNET
+  permission exists to prevent, and letting the platform do it on the app's behalf would
+  make that guarantee a technicality. Device transfer is harder: it is user-initiated,
+  local, and moving to a new phone is something shop owners actually do. It is excluded
+  anyway because the app already answers that need better — an AES-256-GCM backup with a
+  passphrase the user chooses and the app never stores. The consequence is real and is
+  stated in the rules file rather than left to be discovered: a shop that changes phone
+  without taking a backup first loses its ledger.
+  Lint then asked for a `fullBackupContent` resource alongside. That one is declined,
+  with a narrow `tools:ignore` and the reasoning in the manifest: lint's own explanation
+  wants it "if the default behavior is not right for your app", and with
+  `allowBackup="false"` no backup runs at all, so there is nothing for a rules file to
+  select. The check does not read `allowBackup`. A resource that is never consulted
+  would look like diligence and be dead configuration.
 
 The `QueryPermissionsNeeded` one is worth keeping in mind as a pattern rather than an
 incident. It is the third defect in two days that a green build could not see — after

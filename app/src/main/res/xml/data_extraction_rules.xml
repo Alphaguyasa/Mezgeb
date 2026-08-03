@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Nothing leaves the device, by either route Android offers.
+
+    `android:allowBackup="false"` still governs API 26–30 and stays in the manifest.
+    From Android 12 it is deprecated and these rules govern instead, which splits the
+    old single switch into two questions that deserve different answers on their face
+    and happen to get the same one here.
+
+    `cloud-backup` is Google Drive backup. A shop's ledger — every amount, every
+    customer's name and phone number, every message body — being copied to a Google
+    account is exactly what this app exists not to do. There is no INTERNET permission
+    in the manifest precisely so that nothing in the app can send this data anywhere;
+    letting the platform do it on the app's behalf would make that guarantee a
+    technicality.
+
+    `device-transfer` is the new-phone copy, and it is a genuinely harder call: it is
+    user-initiated, local, and moving to a new phone is a real thing shop owners do.
+    It is excluded anyway, because the app already has a first-class answer for it —
+    an AES-256-GCM backup with a passphrase the user chooses and the app never stores.
+    That path asks for consent explicitly, encrypts with a key derived from something
+    only the owner knows, and refuses a wrong passphrase. Device transfer asks nobody
+    and encrypts with nothing the owner controls. Given both exist, the one that can be
+    described honestly in a sentence is the one to keep.
+
+    The practical consequence, and it should be stated rather than discovered: a shop
+    that moves to a new phone without taking a backup first loses its ledger. That is
+    the cost of the guarantee, it is the same cost `allowBackup="false"` has carried
+    since Session 1, and the settings screen is where the backup lives.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="device_root" />
+        <exclude domain="device_file" />
+        <exclude domain="device_database" />
+        <exclude domain="device_sharedpref" />
+    </cloud-backup>
+
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="device_root" />
+        <exclude domain="device_file" />
+        <exclude domain="device_database" />
+        <exclude domain="device_sharedpref" />
+    </device-transfer>
+</data-extraction-rules>
