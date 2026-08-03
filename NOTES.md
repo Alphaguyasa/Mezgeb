@@ -1257,16 +1257,36 @@ tests for layout, and those numbers are Compose screen bodies.
 
 **The three least-tested areas that should be tested:**
 
-1. **Background execution.** `ReprocessBacklogWorker` at **0%**, `ReconcileReminderWorker`
-   at **9.9%**. `androidx.work.testing` is already on the classpath and
-   `SmsImportWorkerTest` shows the pattern; these two simply never got one. The reprocess
-   worker is what makes a newly induced rule apply to the backlog, which is half the value
-   of teach-a-rule.
-2. **`DemoModeController` at 0%** — see Session 11 above.
+1. ~~**Background execution.** `ReprocessBacklogWorker` at **0%**, `ReconcileReminderWorker`
+   at **9.9%**.~~ **Done** — both at 100%, 15 tests, see below.
+2. **`DemoModeController` at 0%** — see Session 11 above. Still open.
 3. **`PdfExporter` at 2.1%** and **`AppLockRepository` at 0%** — both blocked by native or
    Keystore dependencies that do not exist off-device, both verified on hardware instead.
    Named here so the number is not mistaken for negligence, and so nobody "fixes" it with
    a mock that asserts the mock.
+
+### The workers, tested (2026-08-03)
+
+Both now at 100%. `androidx.work.testing` was already on the classpath and
+`SmsImportWorkerTest` already showed the pattern; these two had simply never got one.
+
+**A boundary I got backwards.** The first version of the reminder test asserted that
+exactly seven days does *not* fire. It does. The worker returns early on
+`elapsed < REMIND_AFTER_DAYS * DAY`, so the window closes the instant the seventh day is
+reached rather than a day later. The code was right and the test was wrong; the test now
+pins the real behaviour from both sides, at exactly seven days and one millisecond short.
+"After a week" is ambiguous by a day, which is invisible in review and obvious to whoever
+receives the notification.
+
+What the reprocess tests are really for: a message no rule can read has to **stay** in the
+queue. "We still cannot read this" and "this was never ours to keep" are different
+answers, and the review queue depends on the first one existing. Also covered — a re-run
+over an already-cleared queue not duplicating the ledger, which is a real path because
+`APPEND_OR_REPLACE` queues a second pass behind the first.
+
+`WorkManagerBacklogReprocessor` stays at **0%** and should. It is the thin seam whose own
+doc says it exists so ViewModels can be tested without WorkManager; testing it would mean
+initialising WorkManager per process, which is what the seam was built to avoid.
 
 ### Still open
 
