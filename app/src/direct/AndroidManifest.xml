@@ -2,25 +2,30 @@
 <!--
     `direct` flavor manifest — sideloaded distribution only. Never shipped to Play.
 
-    This is the one and only file in the project permitted to declare the restricted
-    messaging-read permissions. They exist so a shop can backfill the payment history
+    This is the one and only file in the project permitted to declare a restricted
+    messaging-read permission. It exists so a shop can backfill the payment history
     already sitting in its inbox, which the notification listener cannot reach
     because it only ever sees messages posted while it is running.
 
-    READ_SMS is used by SmsImportWorker and is requested at runtime before any
-    import runs. RECEIVE_SMS is declared here per the Session 4 brief and is not yet
-    used by anything: live capture goes through the notification listener in both
-    flavors. An unused restricted permission is worth removing if no live SMS
-    receiver ever ships — flagged in NOTES.md rather than left to be discovered.
+    READ_SMS is used by SmsImportWorker and is requested at runtime before any import
+    runs. That is the whole list, deliberately.
+
+    RECEIVE_SMS was declared here through Session 11 because the Session 4 brief asked
+    for both. Nothing ever called for it: live capture goes through the notification
+    listener in both flavors, so no broadcast receiver was ever registered and the
+    permission sat granted-but-unused. Device verification confirmed it — it stayed
+    `granted=false` for the whole session while the import worked. A restricted
+    permission an app does not use is one it has to justify anyway, to a reviewer or
+    to whoever reads the install prompt, and "we asked for it in case" is not a
+    justification. Removed rather than carried.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.READ_SMS" />
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
 
     <!--
-        Declared not-required so the messaging permissions above do not silently
+        Declared not-required so the messaging permission above does not silently
         restrict the app to devices with telephony hardware. A tablet with no SIM has
         no inbox to import, but everything else — the notification listener, the
         ledger, credit, reconciliation — works exactly the same.

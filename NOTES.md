@@ -437,6 +437,9 @@ that compiles and passes tests, not a capture layer known to work.
   because live capture goes through the notification listener in both flavors. An
   unused restricted permission on a sideloaded APK is worth removing unless a live
   SMS receiver actually ships. Not removed unilaterally — it is what the brief says.
+  **Resolved 2026-08-03: removed.** The author overruled the brief. Four sessions of
+  evidence backed it — no receiver was ever registered, and device verification
+  recorded it `granted=false` for an entire session while the import worked.
 - **Rule `confidence` is not persisted.** `ParserRuleEntity` has no column for it, so
   every rule reports 1.0 in the app even where the bundled JSON says otherwise. The
   accuracy harness reads the JSON directly and is unaffected. Needs a schema bump;
@@ -1297,8 +1300,12 @@ initialising WorkManager per process, which is what the seam was built to avoid.
   instrumentation runner and a device.
 - Rule `confidence` is still not persisted — flagged in Sessions 4 and 6, now needing a
   v5 schema bump.
-- `RECEIVE_SMS` is still declared and unused. Removing it is right for a sideloaded APK;
-  the Session 4 brief explicitly asked for it. Not resolved unilaterally.
+- ~~`RECEIVE_SMS` is still declared and unused.~~ **Removed 2026-08-03**, on the author's
+  call. The `direct` release manifest now merges to `READ_SMS` and nothing else; the
+  `play` one still merges to zero SMS permissions and zero `INTERNET`. This is the one
+  place the project knowingly departs from a written session brief, and the departure is
+  recorded in both the manifest comment and the Session 4 entry above rather than left
+  for someone to discover as a discrepancy.
 
 ### The demo switch, tested (2026-08-03)
 

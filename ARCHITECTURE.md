@@ -17,8 +17,11 @@ shapes the whole app.
 Capture therefore runs through a `NotificationListenerService`, which needs no restricted
 permission — the user grants notification access in system settings and can revoke it
 there. The `direct` flavor adds a one-time SMS inbox import for historical backfill, which
-notification capture cannot do; the `play` flavor ships without it. The permissions appear
-in `app/src/direct/AndroidManifest.xml` and nowhere else.
+notification capture cannot do; the `play` flavor ships without it. The permission appears
+in `app/src/direct/AndroidManifest.xml` and nowhere else — and it is `READ_SMS` alone.
+`RECEIVE_SMS` was declared for several sessions on the strength of the original brief,
+never had a caller, and has been removed: an unused restricted permission still costs an
+explanation to a reviewer and to whoever reads the install prompt.
 
 **Both paths converge on one funnel.** `CaptureCoordinator` applies the sender allowlist
 and the credential filter *before* any insert:

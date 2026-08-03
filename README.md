@@ -38,10 +38,17 @@ why there are two flavors:
 | Distribution | Play Store | Sideloaded APK |
 | Live capture | Notification listener | Notification listener |
 | Historical backfill | — | One-time SMS inbox import |
-| SMS permissions | **None** | `READ_SMS`, `RECEIVE_SMS` |
+| SMS permissions | **None** | `READ_SMS` only |
 
-The SMS permissions exist in exactly one file, `app/src/direct/AndroidManifest.xml`, and
-nothing in `src/main` mentions them — not in code, not in a comment, not as placeholder
+`direct` declares `READ_SMS` and nothing else. `RECEIVE_SMS` was carried for several
+sessions and then removed: live capture goes through the notification listener in both
+flavors, so no broadcast receiver ever existed to need it, and device verification
+confirmed it stayed ungranted for a whole session while the import worked. A restricted
+permission an app does not use still has to be justified — to a reviewer, or to whoever
+reads the install prompt — and "we asked for it in case" is not a justification.
+
+The SMS permission exists in exactly one file, `app/src/direct/AndroidManifest.xml`, and
+nothing in `src/main` mentions it — not in code, not in a comment, not as placeholder
 text. The merged `play` release manifest is checked to contain zero SMS permissions:
 
 ```
