@@ -70,7 +70,11 @@ class PdfExporter @Inject constructor(
         y = drawRow(canvas, context.getString(R.string.today_total_out), report.totalOutMinor, y, body)
         y = drawRow(canvas, context.getString(R.string.today_net), report.netMinor, y, body)
         canvas.drawText(
-            context.getString(R.string.report_transaction_count, report.transactionCount),
+            context.resources.getQuantityString(
+                R.plurals.report_transaction_count,
+                report.transactionCount,
+                report.transactionCount,
+            ),
             MARGIN,
             y,
             body,

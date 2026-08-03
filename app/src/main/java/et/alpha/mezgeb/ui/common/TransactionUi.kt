@@ -11,6 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -184,21 +185,48 @@ fun DayHeader(
 /** "Today", "Yesterday", or a date. Localised through resources, not through code. */
 @Composable
 fun rememberDayLabel(epochMillis: Long, nowMillis: Long = System.currentTimeMillis()): String {
-    val zone = ZoneId.systemDefault()
-    return when (MezgebDates.relativeDay(epochMillis, nowMillis, zone)) {
+    val zone = rememberZone()
+    val locale = currentLocale()
+    val relative = remember(epochMillis, nowMillis, zone) {
+        MezgebDates.relativeDay(epochMillis, nowMillis, zone)
+    }
+    return when (relative) {
         RelativeDay.TODAY -> stringResource(R.string.day_today)
         RelativeDay.YESTERDAY -> stringResource(R.string.day_yesterday)
-        RelativeDay.EARLIER -> MezgebDates.formatDay(epochMillis, zone, currentLocale())
+        RelativeDay.EARLIER -> remember(epochMillis, zone, locale) {
+            MezgebDates.formatDay(epochMillis, zone, locale)
+        }
     }
 }
 
+/**
+ * These two earn their `remember` prefix rather than only carrying it.
+ *
+ * Both are called once per visible row. Formatting an instant is not free — it walks a
+ * zone rules table and builds a string — and doing it on every recomposition of a list
+ * that recomposes on every scroll frame is the difference between a smooth ledger and a
+ * stuttering one on the cheap phones this app is for.
+ */
 @Composable
-fun rememberTimeLabel(epochMillis: Long): String =
-    MezgebDates.formatTime(epochMillis, ZoneId.systemDefault(), currentLocale())
+fun rememberTimeLabel(epochMillis: Long): String {
+    val zone = rememberZone()
+    val locale = currentLocale()
+    return remember(epochMillis, zone, locale) {
+        MezgebDates.formatTime(epochMillis, zone, locale)
+    }
+}
 
+/** `ZoneId.systemDefault()` reads a system property and parses it on every call. */
 @Composable
-private fun currentLocale(): Locale =
-    LocalConfiguration.current.locales.get(0) ?: Locale.getDefault()
+private fun rememberZone(): ZoneId = remember { ZoneId.systemDefault() }
+
+/**
+ * No `Locale.getDefault()` fallback: reading it here would be a read Compose cannot
+ * observe, so a language change would leave already-composed rows formatted in the old
+ * one. `LocalConfiguration` is observable and its locale list is never empty.
+ */
+@Composable
+private fun currentLocale(): Locale = LocalConfiguration.current.locales[0]
 
 @Preview(name = "TransactionRow", showBackground = true)
 @Composable

@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -317,10 +318,18 @@ private fun ImportCard(status: SmsImportStatus, onStartImport: () -> Unit) {
                 is SmsImportStatus.Finished -> Column(
                     verticalArrangement = Arrangement.spacedBy(spacing.xs),
                 ) {
+                    // Two sentences rather than one, because each half counts something
+                    // different and a single plurals entry can only agree with one of
+                    // them. "1 payment added. 3 were already in your ledger." needs both
+                    // to be chosen independently.
                     Text(
-                        text = stringResource(
-                            R.string.onboarding_import_finished,
+                        text = pluralStringResource(
+                            R.plurals.onboarding_import_finished_added,
                             status.imported,
+                            status.imported,
+                        ) + " " + pluralStringResource(
+                            R.plurals.onboarding_import_finished_existing,
+                            status.duplicates,
                             status.duplicates,
                         ),
                         style = MaterialTheme.typography.bodyMedium,
@@ -329,8 +338,9 @@ private fun ImportCard(status: SmsImportStatus, onStartImport: () -> Unit) {
                         // Where the missing ones went. Silence here would look like a
                         // bug, and the reason is one the shop should hear.
                         Text(
-                            text = stringResource(
-                                R.string.onboarding_import_skipped_credentials,
+                            text = pluralStringResource(
+                                R.plurals.onboarding_import_skipped_credentials,
+                                status.skippedCredentials,
                                 status.skippedCredentials,
                             ),
                             style = MaterialTheme.typography.bodySmall,

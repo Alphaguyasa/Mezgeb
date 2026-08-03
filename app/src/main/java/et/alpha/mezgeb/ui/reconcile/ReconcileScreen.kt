@@ -36,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -386,17 +387,29 @@ private fun ExplanationRow(explanation: GapExplanation, onClick: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Text(
                 text = when (explanation) {
-                    is GapExplanation.UnmatchedMessages ->
-                        stringResource(R.string.reconcile_explain_unmatched, explanation.count)
+                    is GapExplanation.UnmatchedMessages -> pluralStringResource(
+                        R.plurals.reconcile_explain_unmatched,
+                        explanation.count,
+                        explanation.count,
+                    )
 
-                    is GapExplanation.UncategorizedTransactions ->
-                        stringResource(R.string.reconcile_explain_uncategorised, explanation.count)
+                    is GapExplanation.UncategorizedTransactions -> pluralStringResource(
+                        R.plurals.reconcile_explain_uncategorised,
+                        explanation.count,
+                        explanation.count,
+                    )
 
-                    is GapExplanation.OutstandingCredit ->
-                        stringResource(R.string.reconcile_explain_credit, explanation.customerCount)
+                    is GapExplanation.OutstandingCredit -> pluralStringResource(
+                        R.plurals.reconcile_explain_credit,
+                        explanation.customerCount,
+                        explanation.customerCount,
+                    )
 
-                    is GapExplanation.EditedSincePeriodOpened ->
-                        stringResource(R.string.reconcile_explain_edited, explanation.count)
+                    is GapExplanation.EditedSincePeriodOpened -> pluralStringResource(
+                        R.plurals.reconcile_explain_edited,
+                        explanation.count,
+                        explanation.count,
+                    )
                 },
                 style = MaterialTheme.typography.bodyLarge,
             )

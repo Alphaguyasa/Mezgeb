@@ -62,9 +62,7 @@
     <string name="onboarding_import_body">ከዛሬ በፊት የደረሱ ክፍያዎች በዚህ ስልክ ውስጥ አሉ። መዝገብ አንድ ጊዜ አንብቦ ወደ መዝገብዎ ሊጨምራቸው ይችላል።</string>
     <string name="onboarding_import_action">ያለፉ መልእክቶችን አንብብ</string>
     <string name="onboarding_import_running">ከ%2$d ውስጥ %1$d ተመርምሯል</string>
-    <string name="onboarding_import_finished">%1$d ክፍያዎች ተጨመሩ። %2$d ቀደም ብለው በመዝገብዎ ውስጥ ነበሩ።</string>
     <string name="onboarding_import_failed">ያለፉ መልእክቶችን ማንበብ አልተቻለም።</string>
-    <string name="onboarding_import_skipped_credentials">%1$d መልእክቶች የይለፍ ቃል ወይም ኮድ ይዘዋል። መዝገብ አላስቀመጣቸውም።</string>
     <string name="onboarding_done">ተጠናቀቀ</string>
 
     <!-- Shared actions -->
@@ -84,7 +82,6 @@
     <string name="today_total_out">ዛሬ የወጣ</string>
     <string name="today_net">ተጣራ</string>
     <string name="today_record_cash">ጥሬ ገንዘብ መዝግብ</string>
-    <string name="today_review_queue">%1$d መልእክቶች ለማንበብ እርስዎን ይጠብቃሉ</string>
     <string name="today_empty_title">ዛሬ እስካሁን ምንም የለም</string>
     <string name="today_empty_body_quiet_day">ክፍያዎች እንደደረሱ እዚህ ይታያሉ። የመዘገቡት ጥሬ ገንዘብም እዚሁ ይታያል።</string>
     <string name="today_empty_body_nothing_yet">እስካሁን ምንም ክፍያ አልተመዘገበም። መዝገብን ከጫኑ በኋላ ክፍያ ደርሶዎት ከሆነ የክፍያ መልእክቶችን ማንበብ አሁንም መብራቱን ያረጋግጡ።</string>
@@ -109,6 +106,9 @@
     <string name="ledger_filter_channel_any">ማንኛውም መንገድ</string>
     <string name="ledger_filter_category_any">ማንኛውም ምድብ</string>
     <string name="ledger_filter_reconciled">የተስተካከለ</string>
+    <string name="ledger_error_title">መዝገብዎን መክፈት አልተቻለም</string>
+    <string name="ledger_error_body">መዝገብዎን በማንበብ ላይ ችግር ተፈጥሯል። መረጃዎ አሁንም በዚህ ስልክ ላይ ነው፤ ምንም አልጠፋም።</string>
+    <string name="action_try_again">እንደገና ሞክር</string>
     <string name="ledger_empty_filtered_title">የሚዛመድ የለም</string>
     <string name="ledger_empty_filtered_body">በእነዚህ ማጣሪያዎች የሚዛመድ ግብይት የለም። መዝገብዎ ባዶ አይደለም፤ ማጣሪያዎቹ ናቸው የሚደብቁት።</string>
     <string name="ledger_reparse_changed">%1$d ተጨማሪ መልእክቶች ተነበቡ</string>
@@ -147,14 +147,12 @@
     <string name="keypad_backspace">የመጨረሻውን ቁጥር አጥፋ</string>
 
     <!-- Review queue -->
-    <string name="review_intro">%1$d መልእክቶች ሊነበቡ አልቻሉም። ለእያንዳንዱ ላኪ አንድ ሕግ ካስተማሩ ከዚህ በኋላ ይነበባሉ — አሁን የሚጠብቁትንም ጨምሮ።</string>
-    <string name="review_group_summary">%1$d መልእክቶች፣ የቅርቡ %2$s</string>
     <string name="review_teach_rule">ሕግ አስተምር</string>
     <string name="review_try_again">እንደገና ሞክር</string>
     <string name="review_empty_title">ሁሉም መልእክት ተነቧል</string>
     <string name="review_empty_body">የሚጠብቅ ነገር የለም። መዝገብ ማንበብ የማይችለው መልእክት ሲደርስ እንዲያስተምሩት እዚህ ይታያል።</string>
     <string name="review_reprocessing">ከ%2$d ውስጥ %1$d በመመርመር ላይ</string>
-    <string name="review_reprocessed">%1$d መልእክቶች አሁን ተነበቡ</string>
+    <string name="review_reprocess_failed">አልተጠናቀቀም። ምንም አልጠፋም — መልእክቶቹ አሁንም እዚህ አሉ፣ እንደገና መሞከር ይችላሉ።</string>
 
     <!-- Rule builder -->
     <string name="rule_title">ለ%1$s ሕግ አስተምር</string>
@@ -187,8 +185,6 @@
     <string name="customers_phone">ስልክ</string>
     <string name="customers_search_hint">በስም ወይም በስልክ ይፈልጉ</string>
     <string name="customers_outstanding_label">የሚፈልጉት</string>
-    <string name="customers_in_debt">%1$d ደንበኞች ገንዘብ ይፈልጉብዎታል</string>
-    <string name="customers_days_outstanding">%1$d ቀናት</string>
     <string name="customers_overdue">ጊዜው አልፎበታል</string>
     <string name="customers_shop_owes">እርስዎ ይፈለጉባቸዋል</string>
     <string name="customers_no_match_title">ደንበኛ አልተገኘም</string>
@@ -242,11 +238,7 @@
     <string name="reconcile_close_period">ይህን ጊዜ ዝጋ</string>
     <string name="reconcile_history">የዘጓቸው ጊዜያት</string>
     <string name="reconcile_snapshot_note">እነዚህ ቁጥሮች ጊዜው ሲዘጋ ተቀምጠዋል። ከዚያ በኋላ የተደረጉ ለውጦች አይነኩዋቸውም።</string>
-    <string name="reconcile_explain_unmatched">%1$d መልእክቶች ሊነበቡ አልቻሉም</string>
     <string name="reconcile_explain_roughly">በአጠቃላይ በግምት %1$s</string>
-    <string name="reconcile_explain_uncategorised">%1$d ግብይቶች ምድብ የላቸውም</string>
-    <string name="reconcile_explain_credit">%1$d ደንበኞች ገንዘብ ይፈልጉብዎታል</string>
-    <string name="reconcile_explain_edited">መመርመር ከጀመሩ በኋላ %1$d ግብይቶች ተለውጠዋል</string>
     <string name="reconcile_reminder_channel">የማስታረቅ ማስታወሻዎች</string>
     <string name="reconcile_reminder_channel_description">ገቢዎን ከመዝገብዎ ጋር እንዲያመሳክሩ ሳምንታዊ ማስታወሻ።</string>
     <string name="reconcile_reminder_title">ገቢዎን የሚያመሳክሩበት ጊዜ ደርሷል</string>
@@ -258,7 +250,6 @@
     <string name="report_by_channel">በመንገድ</string>
     <string name="report_by_category">በምድብ</string>
     <string name="report_top_debtors">በብዛት የሚፈለጉብዎት</string>
-    <string name="report_transaction_count">%1$d ግብይቶች</string>
     <string name="report_insufficient_body">ለማጠቃለል በቂ መረጃ የለም። ጥቂት ግብይቶች ሲጨመሩ ይህ ጠቃሚ ይሆናል።</string>
     <string name="report_export">ላክ</string>
     <string name="report_export_ledger">መዝገብ (CSV)</string>
@@ -273,8 +264,6 @@
     <string name="lock_title">የይለፍ ቁጥርዎን ያስገቡ</string>
     <string name="lock_unlock">ክፈት</string>
     <string name="lock_wrong">ይህ የይለፍ ቁጥር ትክክል አይደለም።</string>
-    <string name="lock_wrong_with_tries">ይህ የይለፍ ቁጥር ትክክል አይደለም። %1$d ሙከራዎች ቀርተዋል።</string>
-    <string name="lock_locked_out">በጣም ብዙ ሙከራ። ከ%1$d ሰከንድ በኋላ ይሞክሩ።</string>
     <string name="lock_biometric_title">መዝገብን ክፈት</string>
     <string name="lock_use_pin">የይለፍ ቁጥር ተጠቀም</string>
 
@@ -293,7 +282,6 @@
     <string name="settings_biometric_body">የይለፍ ቁጥርዎ አሁንም ይሠራል፤ አሻራው ካልታወቀ ይጠየቃል።</string>
     <string name="settings_timeout">እንደገና የሚጠየቅበት ጊዜ</string>
     <string name="settings_timeout_immediately">ወዲያውኑ</string>
-    <string name="settings_timeout_seconds">%1$d ሰከንድ</string>
     <string name="settings_message_pin_set">የይለፍ ቁጥር ተቀምጧል።</string>
     <string name="settings_message_pin_removed">የይለፍ ቁጥር ተወግዷል።</string>
     <string name="settings_message_pin_rejected">ይህ የይለፍ ቁጥር ሊቀመጥ አልቻለም።</string>
@@ -306,9 +294,31 @@
     <string name="settings_restore_action">ከምትኬ መልስ</string>
     <string name="settings_restore_warning">መመለስ በዚህ መተግበሪያ ውስጥ ያለውን ሁሉ በፋይሉ ውስጥ ባለው ይተካል። ከዚያ ምትኬ በኋላ የተመዘገበው ይጠፋል።</string>
     <string name="settings_restore_confirm">ሁሉንም ተካ</string>
+
+    <!-- Language -->
+    <string name="settings_language">ቋንቋ</string>
+    <string name="settings_language_system">የስልኩ ቋንቋ</string>
+
+    <!-- Shop identity -->
+    <string name="settings_shop">የእርስዎ ሱቅ</string>
+    <string name="settings_shop_name">የሱቁ ስም</string>
+    <string name="settings_shop_name_body">በሚያወጡት ማጠቃለያ አናት ላይ ይታተማል። ባዶ ከተውት “መዝገብ” ይጠቀማል።</string>
+
+    <!-- Demo mode -->
+    <string name="settings_demo">የናሙና መረጃ</string>
+    <string name="settings_demo_title">ናሙና</string>
+    <string name="settings_demo_body">መተግበሪያውን በናሙና ሱቅ ሞልተው ይመልከቱ። የእርስዎ መዝገብ ተለይቶ ይቀመጣል እንጂ አይለወጥም።</string>
+    <string name="settings_demo_enable_title">የናሙና መረጃ ይታይ?</string>
+    <string name="settings_demo_enable_body">መዝገብ እንደገና ተጀምሮ የሦስት ወር ክፍያ፣ ደንበኞችና ዱቤ ያለው የናሙና ሱቅ ያሳያል። የእርስዎ መዝገብ አይነካም፤ ይህን ሲያጠፉ ይመለሳል።</string>
+    <string name="settings_demo_enable_confirm">ናሙናውን አሳይ</string>
+    <string name="settings_demo_disable_title">ወደ መዝገብዎ ይመለሱ?</string>
+    <string name="settings_demo_disable_body">መዝገብ እንደገና ተጀምሮ የእርስዎን መዝገብ ያሳያል። የናሙናው ሱቅ ይሰረዛል።</string>
+    <string name="settings_demo_disable_confirm">ወደ መዝገቤ ተመለስ</string>
+    <string name="settings_demo_failed">ናሙናውን ማዘጋጀት አልተቻለም። ምንም አልተለወጠም።</string>
+    <string name="demo_banner">የናሙና መረጃ — የእርስዎ መዝገብ አይደለም</string>
+    <string name="demo_banner_content_description">የናሙና መረጃ እየተመለከቱ ነው። ይህ የእርስዎ መዝገብ አይደለም።</string>
     <string name="settings_message_backup_written">ምትኬ ተቀምጧል።</string>
     <string name="settings_message_backup_failed">ምትኬውን መጻፍ አልተቻለም።</string>
-    <string name="settings_message_restored">%1$d መዝገቦች ተመልሰዋል።</string>
     <string name="settings_restore_not_a_backup">ይህ ፋይል የመዝገብ ምትኬ አይደለም።</string>
     <string name="settings_restore_too_new">ይህ ምትኬ በአዲስ የመዝገብ ስሪት የተሠራ ነው።</string>
     <string name="settings_restore_wrong_passphrase">የይለፍ ሐረጉ ትክክል አይደለም፣ ወይም ፋይሉ ተበላሽቷል።</string>
@@ -319,4 +329,78 @@
     <string name="cd_open_reconcile">ማስታረቅን ክፈት</string>
     <string name="cd_open_settings">ቅንብሮችን ክፈት</string>
     <string name="cd_navigate_back">ተመለስ</string>
+
+    <!-- Counted things. Amharic's CLDR rules put 0 and 1 in "one". -->
+    <plurals name="onboarding_import_finished_added">
+        <item quantity="one">%1$d ክፍያ ተጨመረ።</item>
+        <item quantity="other">%1$d ክፍያዎች ተጨመሩ።</item>
+    </plurals>
+    <plurals name="onboarding_import_finished_existing">
+        <item quantity="one">%1$d ቀደም ብሎ በመዝገብዎ ውስጥ ነበረ።</item>
+        <item quantity="other">%1$d ቀደም ብለው በመዝገብዎ ውስጥ ነበሩ።</item>
+    </plurals>
+    <plurals name="onboarding_import_skipped_credentials">
+        <item quantity="one">%1$d መልእክት የይለፍ ቃል ወይም ኮድ ይዟል። መዝገብ አላስቀመጠውም።</item>
+        <item quantity="other">%1$d መልእክቶች የይለፍ ቃል ወይም ኮድ ይዘዋል። መዝገብ አላስቀመጣቸውም።</item>
+    </plurals>
+    <plurals name="today_review_queue">
+        <item quantity="one">%1$d መልእክት ለማንበብ እርስዎን ይጠብቃል</item>
+        <item quantity="other">%1$d መልእክቶች ለማንበብ እርስዎን ይጠብቃሉ</item>
+    </plurals>
+    <plurals name="review_intro">
+        <item quantity="one">%1$d መልእክት ሊነበብ አልቻለም። ለላኪው አንድ ሕግ ካስተማሩ ከዚህ በኋላ ይነበባል።</item>
+        <item quantity="other">%1$d መልእክቶች ሊነበቡ አልቻሉም። ለእያንዳንዱ ላኪ አንድ ሕግ ካስተማሩ ከዚህ በኋላ ይነበባሉ — አሁን የሚጠብቁትንም ጨምሮ።</item>
+    </plurals>
+    <plurals name="review_group_summary">
+        <item quantity="one">%1$d መልእክት፣ የቅርቡ %2$s</item>
+        <item quantity="other">%1$d መልእክቶች፣ የቅርቡ %2$s</item>
+    </plurals>
+    <plurals name="review_reprocessed">
+        <item quantity="one">%1$d መልእክት አሁን ተነበበ</item>
+        <item quantity="other">%1$d መልእክቶች አሁን ተነበቡ</item>
+    </plurals>
+    <plurals name="customers_in_debt">
+        <item quantity="one">%1$d ደንበኛ ገንዘብ ይፈልግብዎታል</item>
+        <item quantity="other">%1$d ደንበኞች ገንዘብ ይፈልጉብዎታል</item>
+    </plurals>
+    <plurals name="customers_days_outstanding">
+        <item quantity="one">%1$d ቀን</item>
+        <item quantity="other">%1$d ቀናት</item>
+    </plurals>
+    <plurals name="reconcile_explain_unmatched">
+        <item quantity="one">%1$d መልእክት ሊነበብ አልቻለም</item>
+        <item quantity="other">%1$d መልእክቶች ሊነበቡ አልቻሉም</item>
+    </plurals>
+    <plurals name="reconcile_explain_uncategorised">
+        <item quantity="one">%1$d ግብይት ምድብ የለውም</item>
+        <item quantity="other">%1$d ግብይቶች ምድብ የላቸውም</item>
+    </plurals>
+    <plurals name="reconcile_explain_credit">
+        <item quantity="one">%1$d ደንበኛ ገንዘብ ይፈልግብዎታል</item>
+        <item quantity="other">%1$d ደንበኞች ገንዘብ ይፈልጉብዎታል</item>
+    </plurals>
+    <plurals name="reconcile_explain_edited">
+        <item quantity="one">መመርመር ከጀመሩ በኋላ %1$d ግብይት ተለውጧል</item>
+        <item quantity="other">መመርመር ከጀመሩ በኋላ %1$d ግብይቶች ተለውጠዋል</item>
+    </plurals>
+    <plurals name="report_transaction_count">
+        <item quantity="one">%1$d ግብይት</item>
+        <item quantity="other">%1$d ግብይቶች</item>
+    </plurals>
+    <plurals name="lock_wrong_with_tries">
+        <item quantity="one">ይህ የይለፍ ቁጥር ትክክል አይደለም። %1$d ሙከራ ቀርቷል።</item>
+        <item quantity="other">ይህ የይለፍ ቁጥር ትክክል አይደለም። %1$d ሙከራዎች ቀርተዋል።</item>
+    </plurals>
+    <plurals name="lock_locked_out">
+        <item quantity="one">በጣም ብዙ ሙከራ። ከ%1$d ሰከንድ በኋላ ይሞክሩ።</item>
+        <item quantity="other">በጣም ብዙ ሙከራ። ከ%1$d ሰከንዶች በኋላ ይሞክሩ።</item>
+    </plurals>
+    <plurals name="settings_timeout_seconds">
+        <item quantity="one">%1$d ሰከንድ</item>
+        <item quantity="other">%1$d ሰከንዶች</item>
+    </plurals>
+    <plurals name="settings_message_restored">
+        <item quantity="one">%1$d መዝገብ ተመልሷል።</item>
+        <item quantity="other">%1$d መዝገቦች ተመልሰዋል።</item>
+    </plurals>
 </resources>

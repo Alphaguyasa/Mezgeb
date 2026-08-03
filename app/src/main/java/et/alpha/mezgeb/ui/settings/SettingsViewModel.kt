@@ -3,6 +3,10 @@ package et.alpha.mezgeb.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import et.alpha.mezgeb.data.demo.DemoModeController
+import et.alpha.mezgeb.data.settings.AppLanguage
+import et.alpha.mezgeb.data.settings.LanguagePreference
+import et.alpha.mezgeb.data.settings.SettingsRepository
 import et.alpha.mezgeb.domain.backup.BackupRepository
 import et.alpha.mezgeb.domain.backup.RestoreException
 import et.alpha.mezgeb.domain.backup.RestoreFailure
@@ -24,12 +28,24 @@ sealed interface SettingsDialog {
     data object RemovePin : SettingsDialog
     data object BackupPassphrase : SettingsDialog
     data class RestorePassphrase(val uri: String) : SettingsDialog
+    data object EnableDemo : SettingsDialog
+    data object DisableDemo : SettingsDialog
 }
 
 data class SettingsUiState(
     val isLockEnabled: Boolean = false,
     val isBiometricEnabled: Boolean = false,
     val lockTimeoutSeconds: Int = 60,
+    val isDemoMode: Boolean = false,
+    val language: AppLanguage = AppLanguage.SYSTEM,
+    /** What the shop calls itself, for the header of an exported summary. */
+    val shopName: String = "",
+    /**
+     * Set once the database file the app should open has changed. The route restarts
+     * the process; the flag lives in state rather than in a one-shot channel so that a
+     * restart interrupted by a configuration change still happens.
+     */
+    val restartRequired: Boolean = false,
     val dialog: SettingsDialog? = null,
     val isBusy: Boolean = false,
     val message: SettingsMessage? = null,
@@ -44,6 +60,7 @@ sealed interface SettingsMessage {
     data class Restored(val rows: Int) : SettingsMessage
     data class RestoreFailed(val reason: RestoreFailure) : SettingsMessage
     data object BackupFailed : SettingsMessage
+    data object DemoFailed : SettingsMessage
 }
 
 sealed interface SettingsEvent {
@@ -58,10 +75,16 @@ sealed interface SettingsEvent {
     data class RestoreFileChosen(val uri: String) : SettingsEvent
     data object DialogDismissed : SettingsEvent
     data object MessageShown : SettingsEvent
+
+    data class DemoModeToggled(val enabled: Boolean) : SettingsEvent
+    data object DemoModeConfirmed : SettingsEvent
+
+    data class LanguageChosen(val language: AppLanguage) : SettingsEvent
+    data class ShopNameChanged(val name: String) : SettingsEvent
 }
 
 /**
- * Security and backup. Everything else in settings arrives in Session 11.
+ * Language, the shop name, security, backup and demo mode.
  *
  * The backup passphrase is never stored — not in DataStore, not in
  * `EncryptedSharedPreferences`, not in this state beyond the moment it is used. A
@@ -72,6 +95,9 @@ class SettingsViewModel @Inject constructor(
     private val lockRepository: AppLockRepository,
     private val lockState: AppLockState,
     private val backups: BackupRepository,
+    private val demoMode: DemoModeController,
+    private val languages: LanguagePreference,
+    private val settings: SettingsRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
@@ -79,9 +105,20 @@ class SettingsViewModel @Inject constructor(
             isLockEnabled = lockRepository.isLockEnabled(),
             isBiometricEnabled = lockRepository.isBiometricEnabled(),
             lockTimeoutSeconds = lockRepository.timeoutSeconds(),
+            isDemoMode = demoMode.isEnabled(),
+            language = languages.current(),
         ),
     )
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
+
+    init {
+        // Read once rather than collected: the only writer is this screen, and a flow
+        // that echoed back what the user just typed would fight the text field.
+        viewModelScope.launch {
+            val stored = settings.shopName().orEmpty()
+            if (stored.isNotEmpty()) _state.update { it.copy(shopName = stored) }
+        }
+    }
 
     fun onEvent(event: SettingsEvent) {
         when (event) {
@@ -111,6 +148,54 @@ class SettingsViewModel @Inject constructor(
 
             SettingsEvent.DialogDismissed -> _state.update { it.copy(dialog = null) }
             SettingsEvent.MessageShown -> _state.update { it.copy(message = null) }
+
+            is SettingsEvent.DemoModeToggled -> _state.update {
+                it.copy(
+                    dialog = if (event.enabled) {
+                        SettingsDialog.EnableDemo
+                    } else {
+                        SettingsDialog.DisableDemo
+                    },
+                )
+            }
+
+            SettingsEvent.DemoModeConfirmed -> switchDemoMode()
+
+            // Written synchronously, not in a coroutine: the caller recreates the
+            // Activity immediately afterwards and has to read back what was just set.
+            is SettingsEvent.LanguageChosen -> {
+                languages.set(event.language)
+                _state.update { it.copy(language = event.language) }
+            }
+
+            // Echoed to the field immediately and persisted behind it. A name that
+            // lagged a keystroke behind what was typed would be unusable.
+            is SettingsEvent.ShopNameChanged -> {
+                _state.update { it.copy(shopName = event.name) }
+                viewModelScope.launch { settings.setShopName(event.name) }
+            }
+        }
+    }
+
+    /**
+     * The real ledger is not copied, exported or restored here. Enabling demo mode
+     * points the app at a different file; disabling points it back. Whichever way it
+     * goes, the process restarts, because the database is a singleton chosen at startup.
+     */
+    private fun switchDemoMode() {
+        val turningOn = !demoMode.isEnabled()
+        _state.update { it.copy(isBusy = true, dialog = null) }
+
+        viewModelScope.launch {
+            val result = if (turningOn) demoMode.enable() else runCatching { demoMode.disable() }
+            _state.update {
+                it.copy(
+                    isBusy = false,
+                    isDemoMode = demoMode.isEnabled(),
+                    restartRequired = result.isSuccess,
+                    message = if (result.isSuccess) null else SettingsMessage.DemoFailed,
+                )
+            }
         }
     }
 

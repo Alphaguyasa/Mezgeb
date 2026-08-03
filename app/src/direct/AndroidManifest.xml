@@ -19,6 +19,16 @@
     <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
 
+    <!--
+        Declared not-required so the messaging permissions above do not silently
+        restrict the app to devices with telephony hardware. A tablet with no SIM has
+        no inbox to import, but everything else — the notification listener, the
+        ledger, credit, reconciliation — works exactly the same.
+    -->
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+
     <!-- The import runs as a foreground service so a long backfill is not killed. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />

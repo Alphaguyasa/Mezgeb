@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -45,6 +46,12 @@ fun LockRoute(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    // Resolved in composition rather than inside the effect. `context.getString` is a
+    // read Compose cannot observe, so a language change would leave the prompt in the
+    // previous language until the process restarted.
+    val promptTitle = stringResource(R.string.lock_biometric_title)
+    val promptNegative = stringResource(R.string.lock_use_pin)
 
     // Offered the moment the screen appears when it is available, because a shop
     // owner unlocking forty times a day should not have to tap a prompt first.
@@ -67,10 +74,10 @@ fun LockRoute(
             },
         ).authenticate(
             BiometricPrompt.PromptInfo.Builder()
-                .setTitle(context.getString(R.string.lock_biometric_title))
+                .setTitle(promptTitle)
                 // The PIN is always the fallback: a fingerprint that stops being
                 // recognised must not be a way of losing a ledger.
-                .setNegativeButtonText(context.getString(R.string.lock_use_pin))
+                .setNegativeButtonText(promptNegative)
                 .build(),
         )
     }
@@ -112,8 +119,9 @@ fun LockScreen(
 
             when {
                 state.isLockedOut -> Text(
-                    text = stringResource(
-                        R.string.lock_locked_out,
+                    text = pluralStringResource(
+                        R.plurals.lock_locked_out,
+                        (state.lockedOutForMillis / 1000.0).roundToInt(),
                         (state.lockedOutForMillis / 1000.0).roundToInt(),
                     ),
                     style = MaterialTheme.typography.bodyMedium,
@@ -123,7 +131,11 @@ fun LockScreen(
 
                 state.showWrong -> Text(
                     text = if (state.attemptsBeforeLockout > 0) {
-                        stringResource(R.string.lock_wrong_with_tries, state.attemptsBeforeLockout)
+                        pluralStringResource(
+                            R.plurals.lock_wrong_with_tries,
+                            state.attemptsBeforeLockout,
+                            state.attemptsBeforeLockout,
+                        )
                     } else {
                         stringResource(R.string.lock_wrong)
                     },

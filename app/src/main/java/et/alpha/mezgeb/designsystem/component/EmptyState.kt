@@ -18,9 +18,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import et.alpha.mezgeb.R
 import et.alpha.mezgeb.designsystem.MezgebTheme
 
 /**
@@ -84,15 +86,17 @@ fun EmptyState(
     }
 }
 
-@Preview(name = "EmptyState", showBackground = true, heightDp = 420)
+// Rendered in Amharic on purpose: Ethiopic is the taller script and the one that
+// wraps, so a preview in English would not show the layout that has to hold.
+@Preview(name = "EmptyState (አማርኛ)", showBackground = true, heightDp = 420, locale = "am")
 @Composable
 private fun EmptyStatePreview() {
     MezgebTheme {
         Surface {
             EmptyState(
-                title = "ገና ምንም ክፍያ የለም",
-                body = "የክፍያ መልእክቶች ሲደርሱ እዚህ ይታያሉ።",
-                actionLabel = "ማስታወቂያ ፍቀድ",
+                title = stringResource(R.string.today_empty_title),
+                body = stringResource(R.string.today_empty_body_nothing_yet),
+                actionLabel = stringResource(R.string.onboarding_grant_action),
                 onAction = {},
             )
         }

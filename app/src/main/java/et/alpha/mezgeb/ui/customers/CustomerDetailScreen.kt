@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -308,7 +309,7 @@ private fun BalanceHeadline(credit: CustomerCredit, modifier: Modifier = Modifie
             )
             credit.daysOutstanding?.let { days ->
                 Text(
-                    text = stringResource(R.string.customers_days_outstanding, days),
+                    text = pluralStringResource(R.plurals.customers_days_outstanding, days, days),
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (credit.isOverdue) {
                         MaterialTheme.colorScheme.error

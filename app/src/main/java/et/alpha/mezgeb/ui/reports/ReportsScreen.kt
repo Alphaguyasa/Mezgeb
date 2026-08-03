@@ -36,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.net.toUri
@@ -307,7 +308,11 @@ private fun Summary(report: Report, modifier: Modifier = Modifier) {
             AmountLine(R.string.today_total_out, report.totalOutMinor)
             AmountLine(R.string.today_net, report.netMinor, emphasise = true)
             Text(
-                text = stringResource(R.string.report_transaction_count, report.transactionCount),
+                text = pluralStringResource(
+                    R.plurals.report_transaction_count,
+                    report.transactionCount,
+                    report.transactionCount,
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

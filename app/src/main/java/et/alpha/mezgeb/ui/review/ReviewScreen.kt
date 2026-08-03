@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -97,7 +98,11 @@ fun ReviewScreen(
                 else -> LazyColumn(Modifier.fillMaxSize()) {
                     item("intro") {
                         Text(
-                            text = stringResource(R.string.review_intro, state.totalWaiting),
+                            text = pluralStringResource(
+                                R.plurals.review_intro,
+                                state.totalWaiting,
+                                state.totalWaiting,
+                            ),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(MezgebTheme.spacing.screenGutter),
@@ -136,7 +141,11 @@ private fun ReprocessBanner(status: ReprocessStatus) {
 
         is ReprocessStatus.Finished -> if (status.scanned > 0) {
             Text(
-                text = stringResource(R.string.review_reprocessed, status.recorded),
+                text = pluralStringResource(
+                    R.plurals.review_reprocessed,
+                    status.recorded,
+                    status.recorded,
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(
@@ -146,7 +155,21 @@ private fun ReprocessBanner(status: ReprocessStatus) {
             )
         }
 
-        ReprocessStatus.Failed, ReprocessStatus.Idle -> Unit
+        // Said out loud rather than folded in with Idle. Someone who tapped "try these
+        // again" and is shown nothing at all cannot tell whether it ran and found
+        // nothing or never ran — and the queue looking unchanged is consistent with
+        // both. Nothing was lost either way, and the message says so.
+        ReprocessStatus.Failed -> Text(
+            text = stringResource(R.string.review_reprocess_failed),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.padding(
+                horizontal = spacing.screenGutter,
+                vertical = spacing.sm,
+            ),
+        )
+
+        ReprocessStatus.Idle -> Unit
     }
 }
 
@@ -173,8 +196,9 @@ private fun SenderGroupRow(group: UnmatchedGroup, onClick: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = stringResource(
-                    R.string.review_group_summary,
+                text = pluralStringResource(
+                    R.plurals.review_group_summary,
+                    group.messageCount,
                     group.messageCount,
                     rememberDayLabel(group.latestReceivedAt),
                 ),

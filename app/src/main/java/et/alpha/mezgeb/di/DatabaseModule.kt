@@ -7,6 +7,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import et.alpha.mezgeb.data.demo.DemoModeStore
 import et.alpha.mezgeb.data.local.MezgebDatabase
 import et.alpha.mezgeb.data.local.Migrations
 import et.alpha.mezgeb.data.local.dao.CategoryDao
@@ -27,11 +28,18 @@ object DatabaseModule {
      * No `fallbackToDestructiveMigration` anywhere in this builder, deliberately. A
      * missing migration should fail loudly in development rather than quietly wipe a
      * shop's ledger in the field.
+     *
+     * The file name is asked for once, here, at process start. That is what makes demo
+     * mode safe: with the demo flag set, the real ledger's file is never named, never
+     * opened, and so cannot be written to by anything the demo does.
      */
     @Provides
     @Singleton
-    fun provideDatabase(@ApplicationContext context: Context): MezgebDatabase =
-        Room.databaseBuilder(context, MezgebDatabase::class.java, MezgebDatabase.NAME)
+    fun provideDatabase(
+        @ApplicationContext context: Context,
+        demoMode: DemoModeStore,
+    ): MezgebDatabase =
+        Room.databaseBuilder(context, MezgebDatabase::class.java, demoMode.databaseName())
             .addMigrations(*Migrations.ALL)
             .build()
 

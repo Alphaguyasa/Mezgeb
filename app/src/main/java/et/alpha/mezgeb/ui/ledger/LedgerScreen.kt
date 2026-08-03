@@ -112,7 +112,8 @@ private fun LedgerList(
     onClearFilters: () -> Unit,
 ) {
     val isLoadingFirstPage = rows.loadState.refresh is LoadState.Loading
-    val isEmpty = rows.itemCount == 0 && !isLoadingFirstPage
+    val hasFailed = rows.loadState.refresh is LoadState.Error
+    val isEmpty = rows.itemCount == 0 && !isLoadingFirstPage && !hasFailed
 
     when {
         rows.itemCount == 0 && isLoadingFirstPage -> Box(
@@ -121,6 +122,17 @@ private fun LedgerList(
         ) {
             CircularProgressIndicator()
         }
+
+        // Checked before either empty state, and deliberately so. A read that failed
+        // and a ledger with nothing in it are indistinguishable by row count, and
+        // telling a shop owner their ledger is empty when the query threw is the worst
+        // thing this screen could say.
+        rows.itemCount == 0 && hasFailed -> EmptyState(
+            title = stringResource(R.string.ledger_error_title),
+            body = stringResource(R.string.ledger_error_body),
+            actionLabel = stringResource(R.string.action_try_again),
+            onAction = { rows.retry() },
+        )
 
         // Two empty states, because they mean different things and only one of them is
         // something the user did.

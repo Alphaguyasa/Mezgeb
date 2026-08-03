@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -176,7 +177,11 @@ private fun OutstandingHeader(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = stringResource(R.string.customers_in_debt, customersInDebt),
+                text = pluralStringResource(
+                    R.plurals.customers_in_debt,
+                    customersInDebt,
+                    customersInDebt,
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -205,7 +210,7 @@ private fun CustomerRow(credit: CustomerCredit, onClick: () -> Unit) {
             val days = credit.daysOutstanding
             if (days != null) {
                 Text(
-                    text = stringResource(R.string.customers_days_outstanding, days),
+                    text = pluralStringResource(R.plurals.customers_days_outstanding, days, days),
                     style = MaterialTheme.typography.bodySmall,
                     // Overdue is stated in words as well as colour: a red number alone
                     // is invisible to a colour-blind reader and to a bright screen.

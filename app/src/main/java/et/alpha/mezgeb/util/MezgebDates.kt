@@ -5,6 +5,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * The one place epoch millis become a day, and the one place a day boundary is
@@ -64,12 +65,29 @@ object MezgebDates {
     fun localDate(epochMillis: Long, zone: ZoneId): LocalDate =
         Instant.ofEpochMilli(epochMillis).atZone(zone).toLocalDate()
 
-    private fun dayFormatter(locale: Locale) = DateTimeFormatter.ofPattern("EEE, d MMM", locale)
+    /**
+     * Formatters are built once per pattern and locale, then reused.
+     *
+     * `DateTimeFormatter.ofPattern` parses its pattern string and builds a printer
+     * every time it is called, which is fine once and expensive once per row: the
+     * ledger asks for a time label for every visible transaction on every scroll frame.
+     * Found by reading the scroll path rather than by profiling — the number this costs
+     * on a real low-end device has not been measured.
+     *
+     * A map rather than a single cached value because the app can change language at
+     * runtime, and a one-entry cache would thrash on the frame after it did. Bounded in
+     * practice by the number of locales the app ships, which is two.
+     */
+    private val formatters = ConcurrentHashMap<Pair<String, Locale>, DateTimeFormatter>()
 
-    private fun fullDateFormatter(locale: Locale) =
-        DateTimeFormatter.ofPattern("EEE, d MMM yyyy", locale)
+    private fun formatter(pattern: String, locale: Locale): DateTimeFormatter =
+        formatters.getOrPut(pattern to locale) { DateTimeFormatter.ofPattern(pattern, locale) }
 
-    private fun timeFormatter(locale: Locale) = DateTimeFormatter.ofPattern("HH:mm", locale)
+    private fun dayFormatter(locale: Locale) = formatter("EEE, d MMM", locale)
+
+    private fun fullDateFormatter(locale: Locale) = formatter("EEE, d MMM yyyy", locale)
+
+    private fun timeFormatter(locale: Locale) = formatter("HH:mm", locale)
 
     const val DAY_MILLIS: Long = 24 * 60 * 60 * 1000L
 }

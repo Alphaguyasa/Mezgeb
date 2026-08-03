@@ -1,15 +1,20 @@
 package et.alpha.mezgeb
 
+import android.content.Context
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
+import et.alpha.mezgeb.data.demo.DemoModeStore
+import et.alpha.mezgeb.data.settings.LanguagePreference
 import et.alpha.mezgeb.designsystem.MezgebTheme
+import et.alpha.mezgeb.designsystem.component.LocalDemoMode
 import et.alpha.mezgeb.domain.lock.AppLockState
 import et.alpha.mezgeb.navigation.MezgebNavHost
 import et.alpha.mezgeb.ui.lock.LockRoute
@@ -29,6 +34,20 @@ class MainActivity : FragmentActivity() {
     private val viewModel: MainViewModel by viewModels()
 
     @Inject lateinit var lockState: AppLockState
+
+    @Inject lateinit var demoMode: DemoModeStore
+
+    /**
+     * Applies the language override before any resource is resolved.
+     *
+     * [LanguagePreference] is constructed here rather than injected because this runs
+     * before `super.onCreate`, which is where Hilt performs field injection. It holds a
+     * Context and a SharedPreferences file and nothing else, so a second instance is
+     * not a second source of truth.
+     */
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LanguagePreference(newBase).wrap(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,16 +71,23 @@ class MainActivity : FragmentActivity() {
                 val state by viewModel.state.collectAsStateWithLifecycle()
                 val isLocked by lockState.isLocked.collectAsStateWithLifecycle()
 
-                // The lock is drawn *instead of* the graph, not on top of it. A ledger
-                // composed behind a lock screen is one that a transition, a resize or a
-                // recents thumbnail can still show.
-                when {
-                    isLocked -> LockRoute()
+                // Read once, here. The flag cannot change while the process lives —
+                // switching demo mode restarts the app precisely because the database
+                // singleton is chosen from it at startup.
+                CompositionLocalProvider(LocalDemoMode provides demoMode.isEnabled()) {
+                    // The lock is drawn *instead of* the graph, not on top of it. A
+                    // ledger composed behind a lock screen is one that a transition, a
+                    // resize or a recents thumbnail can still show.
+                    when {
+                        isLocked -> LockRoute()
 
-                    // Nothing is drawn until the start destination is known — one
-                    // DataStore read. Showing Today first and swapping it for onboarding
-                    // would be a visible flicker on exactly the launch that matters most.
-                    state.isResolved -> MezgebNavHost(startDestination = state.startDestination)
+                        // Nothing is drawn until the start destination is known — one
+                        // DataStore read. Showing Today first and swapping it for
+                        // onboarding would be a visible flicker on exactly the launch
+                        // that matters most.
+                        state.isResolved ->
+                            MezgebNavHost(startDestination = state.startDestination)
+                    }
                 }
             }
         }

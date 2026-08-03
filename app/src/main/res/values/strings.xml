@@ -69,10 +69,8 @@
     <!-- 1: messages checked so far, 2: messages to check -->
     <string name="onboarding_import_running">Checked %1$d of %2$d</string>
     <!-- 1: payments added, 2: payments already in the ledger -->
-    <string name="onboarding_import_finished">%1$d payments added. %2$d were already in your ledger.</string>
     <string name="onboarding_import_failed">Could not read past messages.</string>
     <!-- 1: how many messages carried a PIN or code and were not kept -->
-    <string name="onboarding_import_skipped_credentials">%1$d messages contained a PIN or code. Mezgeb did not keep them.</string>
     <string name="onboarding_done">Done</string>
 
     <!-- Shared actions -->
@@ -93,7 +91,6 @@
     <string name="today_net">Net</string>
     <string name="today_record_cash">Record cash sale</string>
     <!-- 1: number of messages waiting -->
-    <string name="today_review_queue">%1$d messages need your help to read</string>
     <string name="today_empty_title">Nothing yet today</string>
     <string name="today_empty_body_quiet_day">Payments will appear here as they arrive. Cash sales you record appear here too.</string>
     <string name="today_empty_body_nothing_yet">No payment has been recorded yet. If you have been paid since installing Mezgeb, check that reading payment messages is still switched on.</string>
@@ -118,6 +115,9 @@
     <string name="ledger_filter_channel_any">Any channel</string>
     <string name="ledger_filter_category_any">Any category</string>
     <string name="ledger_filter_reconciled">Reconciled</string>
+    <string name="ledger_error_title">Could not open your ledger</string>
+    <string name="ledger_error_body">Something went wrong reading your records. They are still on this phone — nothing has been lost.</string>
+    <string name="action_try_again">Try again</string>
     <string name="ledger_empty_filtered_title">Nothing matches</string>
     <string name="ledger_empty_filtered_body">No transaction matches these filters. Your ledger is not empty — the filters are hiding it.</string>
     <!-- 1: transactions now readable -->
@@ -159,9 +159,7 @@
 
     <!-- Review queue -->
     <!-- 1: total messages waiting -->
-    <string name="review_intro">%1$d messages could not be read. Teach Mezgeb one rule per sender and they will be read from now on — including the ones already waiting.</string>
     <!-- 1: message count, 2: newest message day -->
-    <string name="review_group_summary">%1$d messages, newest %2$s</string>
     <string name="review_teach_rule">Teach a rule</string>
     <string name="review_try_again">Try again</string>
     <string name="review_empty_title">Every message was read</string>
@@ -169,7 +167,7 @@
     <!-- 1: messages checked, 2: total -->
     <string name="review_reprocessing">Checking %1$d of %2$d</string>
     <!-- 1: transactions recorded -->
-    <string name="review_reprocessed">%1$d messages could now be read</string>
+    <string name="review_reprocess_failed">That did not finish. Nothing was lost — the messages are still here to try again.</string>
 
     <!-- Rule builder -->
     <!-- 1: the sender the rule is for -->
@@ -207,9 +205,7 @@
     <string name="customers_search_hint">Search by name or phone</string>
     <string name="customers_outstanding_label">Owed to you</string>
     <!-- 1: number of customers who owe something -->
-    <string name="customers_in_debt">%1$d customers owe you money</string>
     <!-- 1: days since the oldest unpaid credit -->
-    <string name="customers_days_outstanding">%1$d days</string>
     <string name="customers_overdue">Overdue</string>
     <string name="customers_shop_owes">You owe them</string>
     <string name="customers_no_match_title">No customer found</string>
@@ -268,15 +264,11 @@
     <string name="reconcile_history">Periods you have closed</string>
     <string name="reconcile_snapshot_note">These figures were saved when the period closed. Later changes do not affect them.</string>
     <!-- 1: number of messages -->
-    <string name="reconcile_explain_unmatched">%1$d messages could not be read</string>
     <!-- 1: a money amount -->
     <string name="reconcile_explain_roughly">roughly %1$s between them</string>
     <!-- 1: number of transactions -->
-    <string name="reconcile_explain_uncategorised">%1$d transactions have no category</string>
     <!-- 1: number of customers -->
-    <string name="reconcile_explain_credit">%1$d customers owe you money</string>
     <!-- 1: number of transactions changed -->
-    <string name="reconcile_explain_edited">%1$d transactions changed since you started checking</string>
     <string name="reconcile_reminder_channel">Reconciliation reminders</string>
     <string name="reconcile_reminder_channel_description">A weekly nudge to check your takings against your records.</string>
     <string name="reconcile_reminder_title">Time to check your takings</string>
@@ -289,7 +281,6 @@
     <string name="report_by_category">By category</string>
     <string name="report_top_debtors">Who owes you most</string>
     <!-- 1: how many transactions are in the period -->
-    <string name="report_transaction_count">%1$d transactions</string>
     <string name="report_insufficient_body">There is not enough here to summarise yet. A few more transactions and this becomes useful.</string>
     <string name="report_export">Export</string>
     <string name="report_export_ledger">Ledger (CSV)</string>
@@ -307,9 +298,7 @@
     <string name="lock_unlock">Unlock</string>
     <string name="lock_wrong">That PIN is not right.</string>
     <!-- 1: tries left before waiting starts -->
-    <string name="lock_wrong_with_tries">That PIN is not right. %1$d tries left.</string>
     <!-- 1: seconds to wait -->
-    <string name="lock_locked_out">Too many attempts. Try again in %1$d seconds.</string>
     <string name="lock_biometric_title">Unlock Mezgeb</string>
     <string name="lock_use_pin">Use PIN</string>
 
@@ -329,7 +318,6 @@
     <string name="settings_timeout">Ask again after</string>
     <string name="settings_timeout_immediately">Straight away</string>
     <!-- 1: seconds of background before the PIN is asked for again -->
-    <string name="settings_timeout_seconds">%1$d seconds</string>
     <string name="settings_message_pin_set">PIN set.</string>
     <string name="settings_message_pin_removed">PIN removed.</string>
     <string name="settings_message_pin_rejected">That PIN could not be set.</string>
@@ -342,10 +330,37 @@
     <string name="settings_restore_action">Restore from a backup</string>
     <string name="settings_restore_warning">Restoring replaces everything in this app with what is in the file. Anything recorded since that backup will be gone.</string>
     <string name="settings_restore_confirm">Replace everything</string>
+
+    <!-- Language. The two language names are written in their own language and are
+         deliberately not translatable: a reader looking for አማርኛ will not find
+         "Amharic", and someone stuck in a language they cannot read needs the way out
+         to be legible to them. -->
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">Phone language</string>
+    <string name="settings_language_english" translatable="false">English</string>
+    <string name="settings_language_amharic" translatable="false">አማርኛ</string>
+
+    <!-- Shop identity -->
+    <string name="settings_shop">Your shop</string>
+    <string name="settings_shop_name">Shop name</string>
+    <string name="settings_shop_name_body">Printed at the top of a summary you export. Leave it empty to use “Mezgeb”.</string>
+
+    <!-- Demo mode -->
+    <string name="settings_demo">Demo data</string>
+    <string name="settings_demo_title">Demo</string>
+    <string name="settings_demo_body">Fill the app with an example shop so you can look around. Your own ledger is set aside, not changed.</string>
+    <string name="settings_demo_enable_title">Show demo data?</string>
+    <string name="settings_demo_enable_body">Mezgeb will restart and show an example shop with three months of payments, customers and credit. Your own records are untouched and come back when you turn this off.</string>
+    <string name="settings_demo_enable_confirm">Show the demo</string>
+    <string name="settings_demo_disable_title">Return to your ledger?</string>
+    <string name="settings_demo_disable_body">Mezgeb will restart with your own records. The example shop is deleted.</string>
+    <string name="settings_demo_disable_confirm">Back to my ledger</string>
+    <string name="settings_demo_failed">The demo could not be prepared. Nothing was changed.</string>
+    <string name="demo_banner">Demo data — not your ledger</string>
+    <string name="demo_banner_content_description">You are looking at demo data. This is not your own ledger.</string>
     <string name="settings_message_backup_written">Backup saved.</string>
     <string name="settings_message_backup_failed">Could not write the backup.</string>
     <!-- 1: how many records were restored -->
-    <string name="settings_message_restored">Restored %1$d records.</string>
     <string name="settings_restore_not_a_backup">That file is not a Mezgeb backup.</string>
     <string name="settings_restore_too_new">That backup was made by a newer version of Mezgeb.</string>
     <string name="settings_restore_wrong_passphrase">Wrong passphrase, or the file has been damaged.</string>
@@ -356,4 +371,81 @@
     <string name="cd_open_reconcile">Open reconciliation</string>
     <string name="cd_open_settings">Open settings</string>
     <string name="cd_navigate_back">Go back</string>
+
+    <!-- Counted things.
+         Every count in the UI is a plurals resource, not a string with %1$d in it.
+         English needs it for "1 messages"; Amharic's CLDR rules put 0 and 1 together
+         in "one", which a hand-written English-shaped string cannot express at all. -->
+    <plurals name="onboarding_import_finished_added">
+        <item quantity="one">%1$d payment added.</item>
+        <item quantity="other">%1$d payments added.</item>
+    </plurals>
+    <plurals name="onboarding_import_finished_existing">
+        <item quantity="one">%1$d was already in your ledger.</item>
+        <item quantity="other">%1$d were already in your ledger.</item>
+    </plurals>
+    <plurals name="onboarding_import_skipped_credentials">
+        <item quantity="one">%1$d message contained a PIN or code. Mezgeb did not keep it.</item>
+        <item quantity="other">%1$d messages contained a PIN or code. Mezgeb did not keep them.</item>
+    </plurals>
+    <plurals name="today_review_queue">
+        <item quantity="one">%1$d message needs your help to read</item>
+        <item quantity="other">%1$d messages need your help to read</item>
+    </plurals>
+    <plurals name="review_intro">
+        <item quantity="one">%1$d message could not be read. Teach Mezgeb one rule per sender and it will be read from now on.</item>
+        <item quantity="other">%1$d messages could not be read. Teach Mezgeb one rule per sender and they will be read from now on — including the ones already waiting.</item>
+    </plurals>
+    <plurals name="review_group_summary">
+        <item quantity="one">%1$d message, newest %2$s</item>
+        <item quantity="other">%1$d messages, newest %2$s</item>
+    </plurals>
+    <plurals name="review_reprocessed">
+        <item quantity="one">%1$d message could now be read</item>
+        <item quantity="other">%1$d messages could now be read</item>
+    </plurals>
+    <plurals name="customers_in_debt">
+        <item quantity="one">%1$d customer owes you money</item>
+        <item quantity="other">%1$d customers owe you money</item>
+    </plurals>
+    <plurals name="customers_days_outstanding">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <plurals name="reconcile_explain_unmatched">
+        <item quantity="one">%1$d message could not be read</item>
+        <item quantity="other">%1$d messages could not be read</item>
+    </plurals>
+    <plurals name="reconcile_explain_uncategorised">
+        <item quantity="one">%1$d transaction has no category</item>
+        <item quantity="other">%1$d transactions have no category</item>
+    </plurals>
+    <plurals name="reconcile_explain_credit">
+        <item quantity="one">%1$d customer owes you money</item>
+        <item quantity="other">%1$d customers owe you money</item>
+    </plurals>
+    <plurals name="reconcile_explain_edited">
+        <item quantity="one">%1$d transaction changed since you started checking</item>
+        <item quantity="other">%1$d transactions changed since you started checking</item>
+    </plurals>
+    <plurals name="report_transaction_count">
+        <item quantity="one">%1$d transaction</item>
+        <item quantity="other">%1$d transactions</item>
+    </plurals>
+    <plurals name="lock_wrong_with_tries">
+        <item quantity="one">That PIN is not right. %1$d try left.</item>
+        <item quantity="other">That PIN is not right. %1$d tries left.</item>
+    </plurals>
+    <plurals name="lock_locked_out">
+        <item quantity="one">Too many attempts. Try again in %1$d second.</item>
+        <item quantity="other">Too many attempts. Try again in %1$d seconds.</item>
+    </plurals>
+    <plurals name="settings_timeout_seconds">
+        <item quantity="one">%1$d second</item>
+        <item quantity="other">%1$d seconds</item>
+    </plurals>
+    <plurals name="settings_message_restored">
+        <item quantity="one">Restored %1$d record.</item>
+        <item quantity="other">Restored %1$d records.</item>
+    </plurals>
 </resources>

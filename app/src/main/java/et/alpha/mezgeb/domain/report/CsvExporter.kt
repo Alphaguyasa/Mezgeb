@@ -27,8 +27,14 @@ import java.time.format.DateTimeFormatter
  */
 object CsvExporter {
 
-    /** Excel needs this to read the file as UTF-8. */
-    const val BYTE_ORDER_MARK = "﻿"
+    /**
+     * Excel needs this to read the file as UTF-8.
+     *
+     * Written as an escape rather than as the character itself: a literal BOM sitting
+     * in the middle of a source file is invisible in every editor and is the kind of
+     * thing a later reformat silently deletes.
+     */
+    const val BYTE_ORDER_MARK: String = "\uFEFF"
 
     val LEDGER_COLUMNS = listOf(
         "date", "direction", "amount", "currency", "channel",

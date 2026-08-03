@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
@@ -36,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -43,6 +45,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import et.alpha.mezgeb.R
+import et.alpha.mezgeb.data.settings.AppLanguage
 import et.alpha.mezgeb.designsystem.MezgebTheme
 import et.alpha.mezgeb.designsystem.component.BackButton
 import et.alpha.mezgeb.designsystem.component.MezgebScaffold
@@ -74,6 +77,13 @@ fun SettingsRoute(
         if (uri != null) viewModel.onEvent(SettingsEvent.RestoreFileChosen(uri.toString()))
     }
 
+    // Switching demo mode changes which database file the app opens, and that choice is
+    // made once at process start. Relaunching is not a shortcut around wiring it up
+    // properly; it is the only honest way to apply it.
+    LaunchedEffect(state.restartRequired) {
+        if (state.restartRequired) restartApp(context)
+    }
+
     SettingsScreen(
         state = state,
         onEvent = viewModel::onEvent,
@@ -88,6 +98,14 @@ fun SettingsRoute(
                 context.contentResolver.openInputStream(Uri.parse(uri))
             }
         },
+        onLanguageChosen = { language ->
+            viewModel.onEvent(SettingsEvent.LanguageChosen(language))
+            // On API 33 and up the platform recreates the Activity itself when the
+            // applied locales change; doing it again here would restart it twice.
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                (context as? Activity)?.recreate()
+            }
+        },
         modifier = modifier,
     )
 }
@@ -100,6 +118,7 @@ fun SettingsScreen(
     onBackupConfirmed: (String) -> Unit,
     onRestoreRequested: () -> Unit,
     onRestoreConfirmed: (uri: String, passphrase: String) -> Unit,
+    onLanguageChosen: (AppLanguage) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val spacing = MezgebTheme.spacing
@@ -127,6 +146,38 @@ fun SettingsScreen(
                 .padding(spacing.screenGutter),
             verticalArrangement = Arrangement.spacedBy(spacing.md),
         ) {
+            Text(
+                text = stringResource(R.string.settings_language),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                AppLanguage.entries.forEach { language ->
+                    FilterChip(
+                        selected = state.language == language,
+                        onClick = { onLanguageChosen(language) },
+                        label = { Text(languageLabel(language)) },
+                        modifier = Modifier.heightIn(min = spacing.touchTarget),
+                    )
+                }
+            }
+
+            HorizontalDivider(Modifier.padding(vertical = spacing.sm))
+
+            Text(
+                text = stringResource(R.string.settings_shop),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            OutlinedTextField(
+                value = state.shopName,
+                onValueChange = { onEvent(SettingsEvent.ShopNameChanged(it)) },
+                label = { Text(stringResource(R.string.settings_shop_name)) },
+                supportingText = { Text(stringResource(R.string.settings_shop_name_body)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            HorizontalDivider(Modifier.padding(vertical = spacing.sm))
+
             Text(
                 text = stringResource(R.string.settings_security),
                 style = MaterialTheme.typography.titleSmall,
@@ -195,6 +246,20 @@ fun SettingsScreen(
             ) {
                 Text(stringResource(R.string.settings_restore_action))
             }
+
+            HorizontalDivider(Modifier.padding(vertical = spacing.sm))
+
+            Text(
+                text = stringResource(R.string.settings_demo_title),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            SwitchRow(
+                label = stringResource(R.string.settings_demo),
+                supporting = stringResource(R.string.settings_demo_body),
+                checked = state.isDemoMode,
+                onCheckedChange = { onEvent(SettingsEvent.DemoModeToggled(it)) },
+                enabled = !state.isBusy,
+            )
         }
     }
 
@@ -230,6 +295,22 @@ fun SettingsScreen(
             body = stringResource(R.string.settings_restore_warning),
             confirmLabel = stringResource(R.string.settings_restore_confirm),
             onConfirm = { onRestoreConfirmed(dialog.uri, it) },
+            onDismiss = { onEvent(SettingsEvent.DialogDismissed) },
+        )
+
+        SettingsDialog.EnableDemo -> ConfirmDialog(
+            title = stringResource(R.string.settings_demo_enable_title),
+            body = stringResource(R.string.settings_demo_enable_body),
+            confirmLabel = stringResource(R.string.settings_demo_enable_confirm),
+            onConfirm = { onEvent(SettingsEvent.DemoModeConfirmed) },
+            onDismiss = { onEvent(SettingsEvent.DialogDismissed) },
+        )
+
+        SettingsDialog.DisableDemo -> ConfirmDialog(
+            title = stringResource(R.string.settings_demo_disable_title),
+            body = stringResource(R.string.settings_demo_disable_body),
+            confirmLabel = stringResource(R.string.settings_demo_disable_confirm),
+            onConfirm = { onEvent(SettingsEvent.DemoModeConfirmed) },
             onDismiss = { onEvent(SettingsEvent.DialogDismissed) },
         )
 
@@ -358,6 +439,7 @@ private fun SwitchRow(
     supporting: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean = true,
 ) {
     Row(
         Modifier
@@ -373,7 +455,7 @@ private fun SwitchRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
     }
 }
 
@@ -383,8 +465,10 @@ private fun messageText(message: SettingsMessage): String = when (message) {
     SettingsMessage.PinRemoved -> stringResource(R.string.settings_message_pin_removed)
     SettingsMessage.PinRejected -> stringResource(R.string.settings_message_pin_rejected)
     is SettingsMessage.BackupWritten -> stringResource(R.string.settings_message_backup_written)
-    is SettingsMessage.Restored -> stringResource(R.string.settings_message_restored, message.rows)
+    is SettingsMessage.Restored ->
+        pluralStringResource(R.plurals.settings_message_restored, message.rows, message.rows)
     SettingsMessage.BackupFailed -> stringResource(R.string.settings_message_backup_failed)
+    SettingsMessage.DemoFailed -> stringResource(R.string.settings_demo_failed)
     is SettingsMessage.RestoreFailed -> stringResource(
         when (message.reason) {
             RestoreFailure.NOT_A_BACKUP -> R.string.settings_restore_not_a_backup
@@ -397,10 +481,38 @@ private fun messageText(message: SettingsMessage): String = when (message) {
     )
 }
 
+/**
+ * The two language names are written in their own language, not translated.
+ *
+ * Someone who has the app in a language they cannot read needs to find their way out of
+ * it, and "Amharic" is no help to a reader who is looking for "አማርኛ".
+ */
+@Composable
+private fun languageLabel(language: AppLanguage): String = when (language) {
+    AppLanguage.SYSTEM -> stringResource(R.string.settings_language_system)
+    AppLanguage.ENGLISH -> stringResource(R.string.settings_language_english)
+    AppLanguage.AMHARIC -> stringResource(R.string.settings_language_amharic)
+}
+
 @Composable
 private fun timeoutLabel(seconds: Int): String = when (seconds) {
     0 -> stringResource(R.string.settings_timeout_immediately)
-    else -> stringResource(R.string.settings_timeout_seconds, seconds)
+    else -> pluralStringResource(R.plurals.settings_timeout_seconds, seconds, seconds)
+}
+
+/**
+ * Relaunches the app into its start destination and ends the current process.
+ *
+ * `exit(0)` rather than `finishAffinity()`: the point is to tear down the Hilt
+ * singleton graph so the database is rebuilt against the other file, and an Activity
+ * that finishes leaves the process — and the open database — exactly where it was.
+ */
+private fun restartApp(context: Context) {
+    val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
+        ?: return
+    launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+    context.startActivity(launch)
+    Runtime.getRuntime().exit(0)
 }
 
 /** `ACTION_CREATE_DOCUMENT` with a fixed type; the backup is only ever one thing. */
@@ -432,6 +544,7 @@ private fun SettingsPreview() {
             onBackupConfirmed = {},
             onRestoreRequested = {},
             onRestoreConfirmed = { _, _ -> },
+            onLanguageChosen = {},
         )
     }
 }

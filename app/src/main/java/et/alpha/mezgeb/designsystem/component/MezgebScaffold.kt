@@ -1,6 +1,7 @@
 package et.alpha.mezgeb.designsystem.component
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -15,8 +16,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import et.alpha.mezgeb.R
 import et.alpha.mezgeb.designsystem.MezgebTheme
 
 /**
@@ -42,23 +45,29 @@ fun MezgebScaffold(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = title,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                },
-                navigationIcon = navigationIcon,
-                actions = actions,
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                    actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
-            )
+            Column {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = title,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            style = MaterialTheme.typography.titleLarge,
+                        )
+                    },
+                    navigationIcon = navigationIcon,
+                    actions = actions,
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
+                )
+                // Inside the top bar rather than over the content: it inherits the
+                // status-bar inset the app bar already handles, and it cannot be
+                // scrolled away, which is the point of saying the data is not real.
+                if (LocalDemoMode.current) DemoBanner()
+            }
         },
         bottomBar = bottomBar,
         floatingActionButton = floatingActionButton,
@@ -68,13 +77,13 @@ fun MezgebScaffold(
     )
 }
 
-@Preview(name = "MezgebScaffold", showBackground = true, heightDp = 420)
+@Preview(name = "MezgebScaffold (አማርኛ)", showBackground = true, heightDp = 420, locale = "am")
 @Composable
 private fun MezgebScaffoldPreview() {
     MezgebTheme {
-        MezgebScaffold(title = "መዝገብ") { inner ->
+        MezgebScaffold(title = stringResource(R.string.destination_today)) { inner ->
             Box(Modifier.padding(inner).fillMaxSize()) {
-                EmptyState(title = "ዛሬ ምንም ግብይት የለም")
+                EmptyState(title = stringResource(R.string.today_empty_title))
             }
         }
     }
