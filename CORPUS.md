@@ -127,7 +127,14 @@ against. A number you tuned against measures nothing.
 | Run | Date | Train + noise | Holdout |
 |---|---|---:|---:|
 | End of Session 2 | 2026-08-01 | 100.00% (95 samples) | 100.00% (23 samples) |
-| End of Session 12 | — | — | — |
+| End of Session 12 | 2026-08-03 | 100.00% (95 samples) | 100.00% (23 samples) |
+
+The final run was made against the same rules that ship in the release APK, and nothing
+was changed in response to it. Both figures are unchanged from Session 2 because the
+corpus and the rules are unchanged: Sessions 3–12 built the app around the parser and
+did not touch it. An unchanged number after ten sessions of downstream work is the
+result to want, but it is not a second independent measurement, and quoting it as one
+would be dishonest.
 
 Zero false positives and zero wrong values on both runs; per-field precision and recall
 100% across all seven extracted fields.

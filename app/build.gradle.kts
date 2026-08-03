@@ -1,3 +1,7 @@
+// Imported at the top rather than referenced as `java.util.Properties` inside
+// `android { }`, where `java` resolves to Gradle's own extension instead of the package.
+import java.util.Properties
+
 plugins {
     // AGP 9 ships built-in Kotlin support and registers the `kotlin` extension
     // itself — applying org.jetbrains.kotlin.android here would collide with it.
@@ -44,11 +48,41 @@ android {
         }
     }
 
+    /**
+     * Release signing, read from a gitignored `keystore.properties` beside this file.
+     *
+     * Absent that file the block does not register a signing config at all, and the
+     * release build stays unsigned rather than falling back to the debug key. A debug
+     * fallback is the friendlier default and the wrong one: it produces an APK that
+     * installs, runs, and looks exactly like a release, signed with a key every Android
+     * SDK on earth has the private half of.
+     */
+    val keystoreProperties: Properties? =
+        rootProject.file("keystore.properties").takeIf { it.exists() }?.let { file ->
+            Properties().apply { file.inputStream().use { stream -> load(stream) } }
+        }
+
+    signingConfigs {
+        if (keystoreProperties != null) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             optimization {
-                enable = false
+                enable = true
             }
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            signingConfig = signingConfigs.findByName("release")
         }
     }
     compileOptions {
