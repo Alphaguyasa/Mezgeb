@@ -113,10 +113,12 @@ place for it to be wrong.
 Navigation Compose · Room + KSP · Hilt · WorkManager · DataStore ·
 kotlinx.serialization · MVVM with unidirectional data flow
 
-**Testing** — 337 unit tests on `play`, 344 on `direct`, 83 on `:parser`. DAOs tested
+**Testing** — 350 unit tests on `play`, 357 on `direct`, 83 on `:parser`. DAOs tested
 against in-memory Room, ViewModels with Turbine, migrations against the committed schema
-JSON rather than hand-copied DDL. See [NOTES.md](NOTES.md) for what is deliberately
-untested and why.
+JSON rather than hand-copied DDL. Coverage is 35.2% instruction / 45.1% line, reported
+rather than gated — `./gradlew :app:jacocoPlayDebugReport`. The Compose screen bodies are
+the bulk of what is uncovered, deliberately. See [NOTES.md](NOTES.md) for the three
+least-tested areas that *should* be covered, and why two of the others cannot be.
 
 ## Privacy
 

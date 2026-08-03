@@ -46,6 +46,8 @@ robolectric = "4.16.1"
 # The instrumented android-all jar Robolectric runs tests against. Pinned so Gradle
 # resolves it up front instead of Robolectric fetching it mid-test-run.
 robolectricAndroidAll = "14-robolectric-10818077-i7"
+# Coverage measurement only — never on the runtime or test classpath.
+jacoco = "0.8.13"
 
 [libraries]
 # --- AndroidX core ---

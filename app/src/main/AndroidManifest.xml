@@ -36,9 +36,16 @@
         android:name="android.permission.ACCESS_NETWORK_STATE"
         tools:node="remove" />
 
+    <!--
+        Predictive back is opt-in per app. Without it, Android 13+ runs the legacy
+        back path and the system's back-preview animation never appears — the gesture
+        still works, so the omission is invisible in testing and shows up only as an
+        app that feels a version older than the phone it is on.
+    -->
     <application
         android:name=".MezgebApplication"
         android:allowBackup="false"
+        android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"

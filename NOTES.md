@@ -1145,3 +1145,137 @@ check moves to Session 11.
 - **Chart bars carry no labels.** The dates are implied by the period, and axis labels
   at bar width would be unreadable on a phone. Worth revisiting if anyone asks which
   bar is which.
+
+---
+
+## Sessions 10 and 11 — written up late (2026-08-03)
+
+Both sessions shipped without a NOTES.md entry. These two sections were reconstructed
+from the commits afterwards, so they record decisions accurately but are not a running
+log the way the rest of this file is. The gap itself is the finding: the end-of-session
+write-up is the step that gets skipped when a session runs long, and it is the step that
+makes every earlier section worth having.
+
+### Session 10 — Security and backup (2026-08-02)
+
+Covered by `8bcdcd3`, whose message carries the reasoning in full. In brief: PBKDF2 in
+`EncryptedSharedPreferences`, biometric with the PIN always as fallback, exponential
+backoff after five wrong guesses, and the lock drawn *instead of* the navigation graph
+rather than over it. Backups are AES-256-GCM with a deliberately plaintext header, so
+restore can say why it refused without decrypting first.
+
+**Two iteration counts on purpose** — 210,000 for a backup that runs once, 60,000 for an
+unlock that runs forty times a day. A slow lock screen is one people turn off.
+
+**Deferred / device-gated:**
+
+- `AppLockRepository` sits at **0% coverage** and cannot be tested off-device: it stores
+  the PIN hash behind a Keystore-backed key, and the Keystore does not exist under
+  Robolectric. Verified on the phone instead. This is a real limit, not an oversight,
+  but it means the class with the most security weight has the least automated proof.
+- `PdfExporter` is at **2.1%** for the same shape of reason — `PdfDocument` is native and
+  returns a closed document under Robolectric.
+
+### Session 11 — Demo mode, localization, polish (2026-08-03)
+
+Covered by `75e82dd`. Demo mode is a second database *file*, chosen once at process start
+in `DatabaseModule`, seeded before the flag flips so a failed seed leaves the app pointing
+at the real ledger. Language is applied in `attachBaseContext` — `LocaleManager` on API
+33+, a wrapped configuration below.
+
+**Deviation from .md, deliberate.** `LanguagePreference` and `DemoModeStore` use
+SharedPreferences where the stack section specifies DataStore. Both are read in
+`attachBaseContext`, before any coroutine scope exists, and a language that arrives one
+frame after the first screen is a visible flicker on every launch. Documented in both
+class docs.
+
+**What the brief asked for and did not get:**
+
+- **Predictive back was missed** and only added afterwards, in `docs`-session cleanup.
+  `android:enableOnBackInvokedCallback` was absent, so Android 13+ ran the legacy back
+  path. The gesture still worked, which is exactly why it went unnoticed — the omission
+  shows up as an app that feels a version older than the phone, not as a bug.
+- **`DemoModeController` is at 0% coverage.** `DemoDataTest` covers the generated data
+  thoroughly, because it is pure functions over a seeded `Random`. The controller that
+  actually swaps databases is untested — and it is the one switch in the app that
+  decides which file a shop's data is read from. The seam is testable; nothing tests it.
+- **TalkBack, the slow-device jank pass and the 48dp touch-target audit are device work**
+  and remain open.
+
+---
+
+## Session 12 — Release and portfolio (2026-08-03, partial)
+
+R8, signing, README, ARCHITECTURE and the corpus write-up landed in `7f0c13b`. The
+holdout ran once more at 100.00% (23/23) and nothing was changed in response.
+
+### Release numbers
+
+Both flavors build to **3.07 MB** against a 15 MB target, down from 16.3 MB unminified.
+The merged `play` release manifest carries zero SMS permissions and zero `INTERNET`; the
+`direct` one carries the two SMS permissions and still no `INTERNET`. Neither carries
+`ACCESS_NETWORK_STATE`, which WorkManager contributes and the main manifest removes.
+
+### The git history scan found one thing
+
+Clean on keys, keystores, `local.properties`, raw corpus and hardcoded secrets. Every
+phone number across all commits is a synthetic placeholder.
+
+**But `tools/redact-samples.ps1` has a hole.** Its account-number rule is
+`(?<![\d,.])\d{10,}(?![\d,.])`. The trailing `(?![\d,.])` exists to avoid mangling
+formatted amounts, and it also exempts any digit run followed by a comma. EBIRR writes
+transaction ids as `Id: 000000000001,` — comma immediately after. The transaction-reference
+rule does not catch them either, because it requires both a letter and a digit.
+
+So **15 distinct 12-digit EBIRR transaction ids passed through neither rule**, in
+`corpus/train/ebirr.json` and `corpus/holdout/ebirr.json`. `CorpusValidationTest` then
+permits them, because it allows a long digit run when it equals the sample's declared
+`providerTxnId` — which these do. The guard meant to catch this is structurally unable to.
+
+Whether those 15 values are real or were faked by hand is not determinable from the
+repository. If they are real they are transaction references from the author's own
+account in a public portfolio repo. **Open, and the author's call** — editing the corpus
+changes what every accuracy figure was measured against.
+
+### Coverage — and the number that was wrong first
+
+**35.2% instruction, 45.1% line, 21.9% branch** on `playDebug`.
+
+The first run reported 6.6%, and publishing that would have been worse than publishing
+nothing. Robolectric loads classes through its own instrumenting classloader, which
+strips the debug information JaCoCo maps execution back to; JaCoCo drops those classes
+rather than guess. 30 of this module's 42 test classes run under Robolectric, so the
+report measured the other 12 and looked like a project with no tests instead of one with
+a measurement problem. `isIncludeNoLocationClasses = true` fixes it.
+
+Coverage is reported, not enforced. No threshold, no build failure: a gate is a rule
+about a proxy, satisfied by a test that executes a line without asserting anything about
+it, and the cheapest way past a failing gate is always the least useful test.
+
+The `ui/*` packages sit at 5–25% and that is intentional — .md says not to write UI
+tests for layout, and those numbers are Compose screen bodies.
+
+**The three least-tested areas that should be tested:**
+
+1. **Background execution.** `ReprocessBacklogWorker` at **0%**, `ReconcileReminderWorker`
+   at **9.9%**. `androidx.work.testing` is already on the classpath and
+   `SmsImportWorkerTest` shows the pattern; these two simply never got one. The reprocess
+   worker is what makes a newly induced rule apply to the backlog, which is half the value
+   of teach-a-rule.
+2. **`DemoModeController` at 0%** — see Session 11 above.
+3. **`PdfExporter` at 2.1%** and **`AppLockRepository` at 0%** — both blocked by native or
+   Keystore dependencies that do not exist off-device, both verified on hardware instead.
+   Named here so the number is not mistaken for negligence, and so nobody "fixes" it with
+   a mock that asserts the mock.
+
+### Still open
+
+- The release build has **not been run on hardware**. R8's effect on the notification
+  listener is unverified, and Session 12 names that as the check to make.
+- No signing key, so both release APKs are unsigned.
+- The permission-flow UI test .md asks for still does not exist; it needs the
+  instrumentation runner and a device.
+- Rule `confidence` is still not persisted — flagged in Sessions 4 and 6, now needing a
+  v5 schema bump.
+- `RECEIVE_SMS` is still declared and unused. Removing it is right for a sideloaded APK;
+  the Session 4 brief explicitly asked for it. Not resolved unilaterally.

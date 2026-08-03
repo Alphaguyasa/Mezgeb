@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    jacoco
 }
 
 android {
@@ -173,6 +174,77 @@ tasks.withType<Test>().configureEach {
     systemProperty(
         "robolectric.dependency.dir",
         robolectricJarsDir.get().asFile.absolutePath,
+    )
+
+    /**
+     * Without this, coverage silently measures only the tests that do *not* use
+     * Robolectric — 12 of this module's 42 test classes.
+     *
+     * Robolectric loads classes through its own instrumenting classloader, which
+     * strips the debug information JaCoCo uses to map execution back to a source
+     * line. JaCoCo's default is to discard those classes rather than guess, so 30
+     * test classes' worth of DAO and lock coverage vanishes and the report looks
+     * like a project with no tests instead of one with a measurement problem.
+     */
+    configure<JacocoTaskExtension> {
+        isIncludeNoLocationClasses = true
+        excludes = listOf("jdk.internal.*")
+    }
+}
+
+/**
+ * Coverage, reported rather than enforced.
+ *
+ * There is no minimum threshold and no build failure attached to this number. A
+ * coverage gate is a rule about a proxy: it is satisfied by a test that executes a line
+ * without asserting anything about it, and the cheapest way past a failing gate is
+ * always the least useful test. The number is here to be read alongside the report,
+ * which says *which* code is uncovered — that part is worth acting on.
+ *
+ * Generated and framework code is excluded, because counting Room's and Hilt's
+ * generated implementations measures the code generators, not this project.
+ */
+jacoco {
+    toolVersion = libs.versions.jacoco.get()
+}
+
+tasks.register<JacocoReport>("jacocoPlayDebugReport") {
+    group = "verification"
+    description = "Coverage for the play debug unit tests. Reported, not enforced."
+    dependsOn("testPlayDebugUnitTest")
+
+    reports {
+        html.required.set(true)
+        xml.required.set(true)
+        csv.required.set(false)
+    }
+
+    val generated = listOf(
+        "**/R.class", "**/R$*.class", "**/BuildConfig.*", "**/Manifest*.*",
+        // Room, Hilt and Dagger generated implementations.
+        "**/*_Impl*.*", "**/*_Factory*.*", "**/*_MembersInjector*.*",
+        "**/*_HiltModules*.*", "**/Hilt_*.*", "**/*_Hilt*.*",
+        "**/hilt_aggregated_deps/**", "**/dagger/**",
+        // Compose emits a singleton holder per file for lambdas, and previews are
+        // not code anyone runs in production.
+        "**/ComposableSingletons*.*", "**/*Preview*.*",
+    )
+
+    // AGP 9's built-in Kotlin support compiles to `intermediates/built_in_kotlinc`,
+    // not the `tmp/kotlin-classes` path that every pre-AGP-9 example still shows. A
+    // wrong path here does not fail — it produces a report of nothing, at 0%.
+    classDirectories.setFrom(
+        fileTree(
+            layout.buildDirectory.dir(
+                "intermediates/built_in_kotlinc/playDebug/compilePlayDebugKotlin/classes",
+            ),
+        ) {
+            exclude(generated)
+        },
+    )
+    sourceDirectories.setFrom(files("src/main/java"))
+    executionData.setFrom(
+        fileTree(layout.buildDirectory) { include("**/testPlayDebugUnitTest.exec") },
     )
 }
 
