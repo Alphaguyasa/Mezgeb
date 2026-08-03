@@ -1310,7 +1310,10 @@ over an already-cleared queue not duplicating the ledger, which is a real path b
 doc says it exists so ViewModels can be tested without WorkManager; testing it would mean
 initialising WorkManager per process, which is what the seam was built to avoid.
 
-### Still open
+### Open as of the release-config commit — superseded
+
+*Kept as the record of where things stood mid-session. The current list is
+"What is left" at the end of this file; read that one.*
 
 - The release build has **not been run on hardware**. R8's effect on the notification
   listener is unverified, and Session 12 names that as the check to make.
@@ -1401,3 +1404,78 @@ value reaches the engine rather than being flattened on the way.
 
 `BackupRepository.SCHEMA_VERSION` moves to 5 alongside, per its own doc. The column is
 defaulted so a backup written at schema 4 still restores.
+
+---
+
+## What is left (2026-08-03)
+
+The authoritative list. Everything above this line that reads as open has been
+superseded by it.
+
+The code is finished. All twelve sessions are built, committed and green: 379 app tests
+(386 in direct), 84 parser tests, zero failures, lint clean on both flavors, parser at
+100.00% on train and holdout. What remains is verification that needs hardware, one key,
+and a corpus that is honestly short of its own targets.
+
+### Blocked on a device
+
+Nothing here is a known defect. Each is a check that has not been made, which is a
+different and more uncomfortable thing to write down.
+
+- **The release build has never run on a phone.** R8 is enabled and its effect on the
+  notification listener is unverified. Session 12 names this specifically as the check
+  to make, and it is the failure that would matter most: the listener disappearing under
+  minification does not crash, it just silently stops capturing payments. Everything
+  else in this list is smaller than this one item.
+- **No permission-flow UI test.** .md names exactly two UI tests worth writing.
+  The rule-induction one exists (`RuleBuilderScreenTest`, under Robolectric, runs on
+  every build). The permission flow does not, and there is no `androidTest` source set
+  at all — it needs the instrumentation runner and a device.
+- **Accessibility is unverified.** TalkBack on Today and the keypad, and the 48dp
+  touch-target audit, both from the Session 11 brief.
+- **Ledger scroll has not been profiled.** The formatter cache and the `remember` fixes
+  were found by reading the scroll path, not by measuring it. The number they cost on a
+  real low-end device is still unknown, and was never claimed otherwise.
+- **The teach-a-rule flow has not been timed by a human**, against the 90-second target,
+  and the README's GIF is a placeholder until it is recorded.
+- **`PdfExporter` (2.1%) and `AppLockRepository` (0%)** stay effectively untested off
+  the device: `PdfDocument` is native and returns a closed document under Robolectric,
+  and the Keystore does not exist there at all. Both were verified by hand on the phone.
+  Named so the coverage figures are not mistaken for negligence — and so nobody
+  "fixes" them with a mock that asserts the mock.
+
+### Blocked on a signing key
+
+- **Both release APKs are unsigned.** `keystore.properties` is absent, and the build
+  deliberately registers no signing config rather than falling back to the debug key —
+  a debug-signed APK installs, runs and looks exactly like a release, signed with a key
+  every Android SDK on earth has the private half of. There is no installable release
+  artifact until a real key exists.
+
+### Honest gaps that no amount of building fixes
+
+- **The corpus misses its own targets**: 84 financial samples against 150, 3 senders
+  against 4, and **no Amharic transaction templates at all** — `docs/04` calls those
+  "the ones that break naive parsers". The 100% accuracy figure should never be quoted
+  without the paragraph in CORPUS.md that says what it is worth: a holdout of samples
+  rather than templates, from one person's account, across thirteen message shapes.
+- **Coverage is 36.1% instruction / 46.1% line**, reported and not gated. The `ui/*`
+  packages are the bulk of what is uncovered and that is deliberate — .md says
+  not to write UI tests for layout.
+- **Three privacy leaks were found in the corpus in a single day**, two of them in
+  places an earlier scan of mine had already reported clean. The guards are real now and
+  each was verified by making it fail on purpose. But a scan that has been wrong twice
+  is worth less than a fresh pair of eyes, and that is the single most valuable thing
+  anyone could do to this repository before it goes public.
+
+### Deliberate departures, recorded so they are not rediscovered as bugs
+
+- **`RECEIVE_SMS` removed** against the Session 4 brief, on the author's instruction,
+  after four sessions of evidence that nothing used it.
+- **SharedPreferences instead of DataStore** for `DemoModeStore` and `LanguagePreference`
+  — both are read before any coroutine scope exists.
+- **The reconciliation formula excludes `CASH` from `capturedIn`**, where
+  `03-ARCHITECTURE.md` §7 does not. Implemented literally, the spec tells a shop it is
+  short by exactly the cash it took.
+- **`WorkManagerBacklogReprocessor` is left at 0%** on purpose: it is the seam that
+  exists so ViewModels can be tested without WorkManager.

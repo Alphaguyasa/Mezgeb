@@ -6,7 +6,9 @@ Ethiopia, with no network permission and no account to sign up for.
 
 ![Teach-a-rule flow](docs/media/teach-a-rule.gif)
 
-> _GIF placeholder — the teach-a-rule interaction, recorded on device._
+> **Placeholder.** The real recording needs a phone — capture is the one thing that
+> cannot be verified in an emulator. Replace `docs/media/teach-a-rule.gif` in place,
+> same path and name, and this section needs no other change.
 
 **Read-only with respect to money.** The app never initiates, sends, or authorizes a
 payment.
