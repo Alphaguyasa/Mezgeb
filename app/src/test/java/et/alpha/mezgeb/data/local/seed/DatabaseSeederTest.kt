@@ -91,6 +91,42 @@ class DatabaseSeederTest : DatabaseTest() {
     }
 
     @Test
+    fun `a bundled rule keeps the confidence its author declared`() = runTest {
+        seeder().seed()
+
+        val stored = db.parserRuleDao().getEnabled()
+        // The asset declares 0.9. Before schema 5 there was no column to put it in, so
+        // every rule came back claiming 1.0 — a rule stating its own uncertainty and a
+        // rule stating certainty were indistinguishable once stored.
+        assertTrue(
+            "a bundled rule that declares less than full confidence must keep it",
+            stored.any { it.confidence < 1.0f },
+        )
+        assertTrue("confidence must be a probability", stored.all { it.confidence in 0f..1f })
+    }
+
+    @Test
+    fun `re-seeding repairs a confidence the migration had to default`() = runTest {
+        // Exactly the v4 -> v5 case: rows that existed before the column did were
+        // defaulted to 1.0, because their real figure was not recoverable from the row.
+        // For bundled rules it is recoverable — it is in the asset — and the seeder is
+        // what puts it back.
+        seeder().seed()
+        val id = db.parserRuleDao().getEnabled().first { it.confidence < 1.0f }.id
+        db.parserRuleDao().upsertAll(
+            listOf(db.parserRuleDao().getById(id)!!.copy(confidence = 1.0f)),
+        )
+        assertEquals(1.0f, db.parserRuleDao().getById(id)?.confidence)
+
+        seeder().seed()
+
+        assertTrue(
+            "re-seeding must restore the asset's figure, not leave the default",
+            db.parserRuleDao().getById(id)!!.confidence < 1.0f,
+        )
+    }
+
+    @Test
     fun `a malformed rules asset does not throw`() = runTest {
         // The shop keeps a usable ledger; messages just land in the review queue.
         val broken = DatabaseSeeder(

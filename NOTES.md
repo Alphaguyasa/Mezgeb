@@ -444,6 +444,11 @@ that compiles and passes tests, not a capture layer known to work.
   every rule reports 1.0 in the app even where the bundled JSON says otherwise. The
   accuracy harness reads the JSON directly and is unaffected. Needs a schema bump;
   Session 6 is already opening that file.
+  **Resolved 2026-08-03: schema 5 adds the column.** Flagged in Session 4, restated in
+  Session 6, fixed six sessions later — which is the honest lifetime of a "needs a
+  schema bump" note that nothing forces anyone to act on.
+  **Resolved 2026-08-03: schema 5 adds the column.** Bundled rules keep the figure the
+  asset declares; induced rules keep the inducer's 0.8.
 - **The configurable banking-app package list is empty by default.** The default
   messaging app is the real source, and guessing Ethiopian banking app package names
   would fail invisibly — messages simply never arrive, with nothing to show why. Better
@@ -710,9 +715,9 @@ and silently loses a santim.
   could be loosened automatically rather than left to the trailing-context heuristic.
   Worth doing only if the 100% figure above turns out to be optimistic on senders
   outside this corpus.
-- **The parser rule `confidence` field is still not persisted** (flagged in Session 4).
-  Induced rules report 0.8 in the engine and 1.0 once stored. Still wants the schema
-  change.
+- ~~**The parser rule `confidence` field is still not persisted**~~ **Done 2026-08-03**,
+  schema 5. Induced rules now keep the 0.8 the inducer gave them all the way to the
+  engine, instead of arriving there claiming certainty.
 
 ---
 
@@ -1312,8 +1317,7 @@ initialising WorkManager per process, which is what the seam was built to avoid.
 - No signing key, so both release APKs are unsigned.
 - The permission-flow UI test .md asks for still does not exist; it needs the
   instrumentation runner and a device.
-- Rule `confidence` is still not persisted — flagged in Sessions 4 and 6, now needing a
-  v5 schema bump.
+- ~~Rule `confidence` is still not persisted~~ — **done 2026-08-03**, schema 5.
 - ~~`RECEIVE_SMS` is still declared and unused.~~ **Removed 2026-08-03**, on the author's
   call. The `direct` release manifest now merges to `READ_SMS` and nothing else; the
   `play` one still merges to zero SMS permissions and zero `INTERNET`. This is the one
@@ -1372,3 +1376,28 @@ The commit that made this change no longer exists. The history rewrite applied t
 substitution to every commit, so the commit whose only content *was* that substitution
 became empty and `--prune-empty` dropped it — correctly, but it takes the reasoning with
 it, which is why the reasoning is written down here instead.
+
+### Rule confidence, persisted (2026-08-03)
+
+Schema 5. `ParserRuleEntity` gains a `confidence` column, and it is carried the whole
+way: bundled asset → entity → domain model → engine rule.
+
+Before this, `confidence` existed in the rule JSON and in `RuleInducer` and was silently
+dropped at the database boundary, so a bundled rule declaring 0.9 and an induced rule
+declaring 0.8 both came back reporting 1.0. A confidence figure that only ever rounds up
+to certainty is worse than none — it looks like a measurement.
+
+**The migration defaults existing rows to 1.0, which is knowingly wrong for some of
+them.** Bundled rules get their real figure back on the next launch, because the seeder
+re-asserts it from the asset. An induced rule's 0.8 is not recoverable from a row that
+never stored it, so those rows over-state themselves until the rule is taught again. The
+alternative — guessing 0.8 for anything marked `isUserCreated` — would be inventing data
+during a migration, which is worse than a known-imperfect default that the seeder repairs
+where it can.
+
+Four tests: the migration keeps a user-created rule intact and defaults its confidence;
+a bundled rule keeps the asset's figure; re-seeding repairs a defaulted one; and the
+value reaches the engine rather than being flattened on the way.
+
+`BackupRepository.SCHEMA_VERSION` moves to 5 alongside, per its own doc. The column is
+defaulted so a backup written at schema 4 still restores.

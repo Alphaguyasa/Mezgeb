@@ -160,6 +160,7 @@ internal fun parserRule(
     priority: Int = 0,
     bodyPattern: String = "^you have received (?<amount>[\\d,.]+)$",
     version: Int = 1,
+    confidence: Float = 1.0f,
 ) = ParserRuleEntity(
     id = id,
     name = name,
@@ -175,4 +176,5 @@ internal fun parserRule(
     priority = priority,
     createdAt = T0,
     matchCount = 0,
+    confidence = confidence,
 )

@@ -106,7 +106,7 @@ class BackupRepository @Inject constructor(
          * build can decide whether it understands the file — and, eventually, migrate
          * it. Bump both together.
          */
-        const val SCHEMA_VERSION = 4
+        const val SCHEMA_VERSION = 5
     }
 }
 

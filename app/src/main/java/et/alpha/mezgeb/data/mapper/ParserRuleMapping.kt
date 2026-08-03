@@ -21,9 +21,9 @@ import et.alpha.mezgeb.parser.rule.ParserRule as EngineRule
  * able to stop the capture funnel. The message lands in the review queue instead,
  * which is exactly where a rule problem should surface.
  *
- * `confidence` is not carried: the entity has no column for it, so every rule
- * reports 1.0 here even when the bundled JSON says otherwise. Noted in NOTES.md;
- * it needs a schema change and Session 6 is already opening that file.
+ * `confidence` is carried as of schema 5. Before that the entity had no column for it
+ * and every rule arrived here reporting 1.0 regardless of what its author declared —
+ * a bundled rule saying 0.9 and an induced rule saying 0.8 both claimed certainty.
  */
 fun ParserRule.toEngineRule(json: Json): EngineRule? = runCatching {
     // Compiled eagerly, only to find out here whether they compile at all. The engine
@@ -47,5 +47,6 @@ fun ParserRule.toEngineRule(json: Json): EngineRule? = runCatching {
         version = version,
         isEnabled = isEnabled,
         priority = priority,
+        confidence = confidence,
     )
 }.getOrNull()

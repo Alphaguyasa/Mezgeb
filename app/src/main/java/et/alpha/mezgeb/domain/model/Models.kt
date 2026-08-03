@@ -118,6 +118,8 @@ data class ParserRule(
     val priority: Int,
     val createdAt: Long,
     val matchCount: Long,
+    /** How much the rule's author trusted it. Bundled rules and induced rules differ. */
+    val confidence: Float = 1.0f,
 )
 
 data class ReconciliationSession(

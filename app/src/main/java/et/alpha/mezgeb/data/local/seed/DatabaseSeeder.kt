@@ -74,6 +74,9 @@ class DatabaseSeeder @Inject constructor(
                     createdAt = now,
                     // Reset on re-seed. Match counts are local telemetry, not data.
                     matchCount = 0,
+                    // Re-asserted on every seed, which is what repairs the rows the
+                    // v4 → v5 migration had to default to 1.0.
+                    confidence = rule.confidence,
                 )
             },
         )

@@ -37,7 +37,7 @@ import et.alpha.mezgeb.data.local.entity.TransactionEntity
         ParserRuleEntity::class,
         ReconciliationSessionEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

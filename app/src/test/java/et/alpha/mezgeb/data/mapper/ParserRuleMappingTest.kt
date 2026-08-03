@@ -52,6 +52,19 @@ class ParserRuleMappingTest : DatabaseTest() {
     }
 
     @Test
+    fun `confidence reaches the engine instead of being flattened to certainty`() = runTest {
+        db.parserRuleDao().insert(parserRule("induced", confidence = 0.8f))
+
+        val rules = RuleRepository(db.categoryDao(), db.categoryRuleDao(), db.parserRuleDao())
+            .getEnabledParserRules()
+            .mapNotNull { it.toEngineRule(json) }
+
+        // The whole point of persisting it. A rule generalised from one tagged message
+        // has to arrive at the engine still saying so.
+        assertEquals(0.8f, rules.single { it.id == "induced" }.confidence)
+    }
+
+    @Test
     fun `a rule that cannot be rehydrated is dropped, not thrown`() = runTest {
         // A rule the shop taught itself is user input. A pattern that will not compile
         // must cost that one rule, not the entire capture funnel.

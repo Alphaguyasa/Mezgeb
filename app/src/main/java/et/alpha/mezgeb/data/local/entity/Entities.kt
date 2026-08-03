@@ -218,6 +218,18 @@ data class ParserRuleEntity(
     val createdAt: Long,
     /** Local telemetry only. Never leaves the device. */
     val matchCount: Long,
+    /**
+     * How much the rule's author trusted it, carried from wherever it came from: the
+     * bundled JSON for a shipped rule, [RuleInducer] for one the shop taught itself.
+     *
+     * Stored rather than assumed. Before this column existed every rule reported 1.0
+     * once it reached the database — a bundled rule that said 0.9 and an induced rule
+     * that said 0.8 both came back claiming certainty, which is the one direction a
+     * confidence figure must not err in.
+     *
+     * Defaulted so a backup written at schema 4 still restores.
+     */
+    val confidence: Float = 1.0f,
 )
 
 /**

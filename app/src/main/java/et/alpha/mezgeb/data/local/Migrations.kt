@@ -67,6 +67,35 @@ object Migrations {
         }
     }
 
+    /**
+     * v4 → v5: a parser rule remembers how much it was trusted.
+     *
+     * `confidence` existed in the bundled rule JSON and in the induction engine from the
+     * beginning, and was dropped on the way into the database because there was no
+     * column for it. Every rule therefore reported 1.0 once stored — a bundled rule that
+     * declared 0.9 and an induced rule that declared 0.8 both came back claiming
+     * certainty.
+     *
+     * The default of 1.0 for existing rows is the honest choice rather than the
+     * flattering one. The value each old row *should* have is knowable — the bundled
+     * rules are re-seeded from the asset on next launch, which overwrites them with
+     * their real figures — but an induced rule's 0.8 is gone and cannot be recovered
+     * from the row. Defaulting those to 1.0 over-states them, which is why the seeder
+     * re-asserts the bundled values rather than leaving the default to stand in.
+     */
+    val MIGRATION_4_5 = object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE parser_rules ADD COLUMN confidence REAL NOT NULL DEFAULT 1.0",
+            )
+        }
+    }
+
     /** Everything, in order, for the database builder. */
-    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+    val ALL: Array<Migration> = arrayOf(
+        MIGRATION_1_2,
+        MIGRATION_2_3,
+        MIGRATION_3_4,
+        MIGRATION_4_5,
+    )
 }

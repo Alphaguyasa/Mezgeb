@@ -214,6 +214,7 @@ fun ParserRuleEntity.toDomain(): ParserRule = ParserRule(
     priority = priority,
     createdAt = createdAt,
     matchCount = matchCount,
+    confidence = confidence,
 )
 
 fun ParserRule.toEntity(): ParserRuleEntity = ParserRuleEntity(
@@ -231,6 +232,7 @@ fun ParserRule.toEntity(): ParserRuleEntity = ParserRuleEntity(
     priority = priority,
     createdAt = createdAt,
     matchCount = matchCount,
+    confidence = confidence,
 )
 
 // --- Reconciliation -------------------------------------------------------------

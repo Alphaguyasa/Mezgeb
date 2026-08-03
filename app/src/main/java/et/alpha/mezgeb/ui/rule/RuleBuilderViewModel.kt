@@ -280,6 +280,10 @@ class RuleBuilderViewModel @Inject constructor(
         priority = priority,
         createdAt = clock.millis(),
         matchCount = 0,
+        // The inducer's own figure, not 1.0. A rule generalised from a single tagged
+        // message is a guess that happens to work on that message, and the ledger has
+        // no business presenting it with the same certainty as a rule that shipped.
+        confidence = confidence,
     )
 
     private companion object {

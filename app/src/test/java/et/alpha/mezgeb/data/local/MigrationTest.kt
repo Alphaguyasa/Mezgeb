@@ -199,6 +199,39 @@ class MigrationTest {
         migrated.close()
     }
 
+    @Test
+    fun `v4 to v5 gives every existing rule a confidence, and keeps the rule`() = runTest {
+        createVersionOne { db ->
+            db.execSQL(
+                """
+                INSERT INTO parser_rules
+                    (id, name, senderPattern, channel, bodyPattern, fieldMapJson,
+                     directionStrategy, directionKeywordsJson, version, isUserCreated,
+                     isEnabled, priority, createdAt, matchCount)
+                VALUES ('taught', 'A rule the shop taught itself', 'CBE', 'BANK',
+                        'credited with ETB (?<amount>[0-9.,]+)', '{"amount":"AMOUNT"}',
+                        'FIXED_IN', NULL, 1, 1, 1, 0, 1782950400000, 47)
+                """.trimIndent(),
+            )
+        }
+
+        val migrated = openAtCurrentVersion()
+        val rule = migrated.parserRuleDao().getById("taught")
+
+        // The rule a shop taught itself is the one thing in this table that cannot be
+        // regenerated from the bundled asset. Losing it to a migration would mean
+        // teaching it again.
+        assertNotNull("the migration lost a user-created rule", rule)
+        assertEquals(true, rule?.isUserCreated)
+        assertEquals(47L, rule?.matchCount)
+
+        // 1.0 by default, and knowingly wrong for this row: it was induced, so its real
+        // figure was 0.8, and that is not recoverable from a row that never stored it.
+        // Bundled rules get theirs back on the next seed; induced ones cannot.
+        assertEquals(1.0f, rule?.confidence)
+        migrated.close()
+    }
+
     // --- Building version 1 from what version 1 actually was ---------------------------
 
     /**
