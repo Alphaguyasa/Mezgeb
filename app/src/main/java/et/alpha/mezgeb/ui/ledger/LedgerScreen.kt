@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -66,7 +67,11 @@ fun LedgerScreen(
     val reparse = state.lastReparse
     val reparseMessage = when {
         reparse == null -> null
-        reparse.changed > 0 -> stringResource(R.string.ledger_reparse_changed, reparse.recorded)
+        reparse.changed > 0 -> pluralStringResource(
+            R.plurals.ledger_reparse_changed,
+            reparse.recorded,
+            reparse.recorded,
+        )
         else -> stringResource(R.string.ledger_reparse_unchanged)
     }
     LaunchedEffect(reparse) {

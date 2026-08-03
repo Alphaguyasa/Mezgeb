@@ -33,6 +33,26 @@ android {
         localeFilters += listOf("en", "am")
     }
 
+    /**
+     * Both languages ship in the base APK, never as downloadable splits.
+     *
+     * An App Bundle splits by language by default and Play delivers only the locale the
+     * device is already set to. This app lets a shop pick its language in settings, so
+     * an owner on an English phone choosing Amharic would be choosing resources that
+     * were never installed. The usual remedy is Play Core's split installer, which
+     * needs the network and the Play libraries — both ruled out by .md constraint
+     * #1 — so the alternative is to not split at all.
+     *
+     * The cost is a few hundred kilobytes on an APK that is 3 MB. The bug it avoids is
+     * invisible in every debug build and every sideloaded APK, because neither is a
+     * bundle: it appears for the first time on a real Play install.
+     */
+    bundle {
+        language {
+            enableSplit = false
+        }
+    }
+
     // Two distribution channels, one codebase. `play` is the Play-policy-compliant
     // build (notification capture only); `direct` is the sideloaded build that may
     // additionally read the SMS inbox. See 03-ARCHITECTURE.md section 1.

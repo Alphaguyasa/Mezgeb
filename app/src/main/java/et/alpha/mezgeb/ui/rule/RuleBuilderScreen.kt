@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -382,7 +383,13 @@ private fun ReportCard(
             verticalArrangement = Arrangement.spacedBy(spacing.sm),
         ) {
             Text(
-                text = stringResource(R.string.rule_report_matches, report.matched, total),
+                // Quantified on the total, which is the number "messages" agrees with.
+                text = pluralStringResource(
+                    R.plurals.rule_report_matches,
+                    total,
+                    report.matched,
+                    total,
+                ),
                 style = MaterialTheme.typography.titleSmall,
             )
 
