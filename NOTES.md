@@ -1259,7 +1259,7 @@ tests for layout, and those numbers are Compose screen bodies.
 
 1. ~~**Background execution.** `ReprocessBacklogWorker` at **0%**, `ReconcileReminderWorker`
    at **9.9%**.~~ **Done** — both at 100%, 15 tests, see below.
-2. **`DemoModeController` at 0%** — see Session 11 above. Still open.
+2. ~~**`DemoModeController` at 0%**~~ **Done** — 96.7%, 10 tests, see below.
 3. **`PdfExporter` at 2.1%** and **`AppLockRepository` at 0%** — both blocked by native or
    Keystore dependencies that do not exist off-device, both verified on hardware instead.
    Named here so the number is not mistaken for negligence, and so nobody "fixes" it with
@@ -1299,3 +1299,36 @@ initialising WorkManager per process, which is what the seam was built to avoid.
   v5 schema bump.
 - `RECEIVE_SMS` is still declared and unused. Removing it is right for a sideloaded APK;
   the Session 4 brief explicitly asked for it. Not resolved unilaterally.
+
+### The demo switch, tested (2026-08-03)
+
+`DemoModeController` 0% → 96.7%, `DemoModeStore` → 100%, across 10 tests.
+
+This one does not use the in-memory `DatabaseTest` helper, and could not: the whole
+mechanism under test is *which file gets opened*, and an in-memory database has no file.
+So it builds a real `mezgeb.db` on Robolectric's filesystem, seeds it, and asserts what
+is still in it afterwards.
+
+**The assertions that matter are the negatives.** A real ledger with two transactions
+survives demo mode being switched on and off with both rows intact, and after enabling —
+which writes several hundred demo rows — the real database still contains exactly one.
+"Disabling restores the real database untouched" is not a restore at all: the real file
+is never named while the flag is set, and these tests are what makes that claim checkable
+rather than a comment.
+
+**The failure ordering is pinned.** A clock that throws is injected so the seed fails
+before it writes anything; the test then asserts the flag is *still false* and
+`databaseName()` still points at the real ledger. That ordering is the entire design of
+`enable()` — had the flag been set first, a failed seed would leave the app opening a
+half-written demo file and calling it the shop's books. It also asserts the failure comes
+back as a `Result` rather than an exception, because the caller is a ViewModel that has
+to put a message on a settings screen.
+
+Idempotence is covered too: enabling twice deletes and rebuilds, so a demo shown twice is
+the same shop both times rather than one with everything in it twice.
+
+**Not covered: the catch branch in `disable()`.** `runCatching { deleteDatabase(...) }`
+exists for a device that will not release the file, which is not reachable under
+Robolectric without faking the Context. The class doc already says a stale demo file is a
+few hundred kilobytes and not a problem, and the flag is cleared before the delete is
+attempted, so the branch has nothing to get wrong. Left at 72% on that lambda deliberately.
