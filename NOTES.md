@@ -1693,3 +1693,74 @@ through it in ninety seconds without instruction. **That needs a person holding 
 phone**, and it is now a better test than it was: six real telebirr messages are queued,
 so a correct rule should clear several at once — which would also be the first time the
 backlog reprocess worker has run on real data.
+
+---
+
+## Device verification, third pass — the remaining feature tests (2026-08-04)
+
+Everything from the "blocked on a device" list that a phone can actually settle, run
+against the `direct` flavor's R8-minified release build with the real captured ledger.
+
+### Results
+
+| Test | Result |
+|---|---|
+| Ledger scroll | **389 frames, 1 janky (0.26%)**, 99th pct 15ms, 0 missed vsyncs |
+| PDF export | 37,908 bytes, valid `%PDF-1.4`, 1 page, **Ethiopic font embedded** |
+| CSV export | **BOM present**, header matches `LEDGER_COLUMNS`, 36 rows, ISO-8601 + offset |
+| Reconciliation | Full breakdown computed, ranked gap explanation, correct signed gap |
+| App lock / Keystore | Set → survived force-stop → wrong PIN refused → correct PIN unlocked |
+| Touch targets | Today 13/13 pass; keypad digits 64dp; Save exactly 48dp |
+
+**The scroll number closes an admission that has been open since Session 11.** The
+formatter cache and the `remember` fixes in `TransactionUi` were found by reading the
+scroll path, and the notes said plainly that the cost on a real device had never been
+measured. It has now: 0.26% janky frames over 389 frames of continuous scrolling, and a
+99th percentile of 15ms against a 16.7ms budget. On this hardware there is no jank to
+find. That is not the low-end device the app is aimed at, so the claim is still narrow.
+
+**`PdfExporter` and `AppLockRepository` are no longer untested, only un-unit-tested.**
+Both sit near 0% coverage because `PdfDocument` is native and the Keystore does not
+exist under Robolectric. Both now have a device result against an R8 build: a valid
+one-page PDF with the bundled Ethiopic font actually embedded, and a full lock cycle —
+PIN set behind the acknowledgement, surviving a force-stop, refusing a wrong PIN with
+"4 tries left", and opening on the right one. The PIN was removed afterwards.
+
+**The CSV cross-checks against the UI.** 36 data rows, and the Reports screen said 36
+transactions for the same period. Amounts are written ungrouped and timestamps carry
+their offset, which is what the exporter's doc claims and what a spreadsheet needs.
+
+**The reconciliation period was deliberately not closed.** Closed periods are immutable
+by design and this is a real ledger, so the engine was exercised up to the gap
+calculation and stopped there.
+
+### One real accessibility finding, and one false alarm
+
+`BackButton` measured **105x105 px = 40dp** against the project's own 48dp floor —
+fixed in `94087fb` and re-measured at 126x126. It was the only control below the line
+and the most-used one in the app.
+
+The false alarm is the more useful entry. The cash-entry Save button measured 85px and
+was nearly reported as a second defect. It is not undersized: the ScrollView was
+clipping it at the bottom of the screen, so the measurement was of the visible fragment.
+**uiautomator reports viewport-clipped bounds, not layout bounds.** That cost time twice
+in one session — it is also why the teach-a-rule character offsets could not be
+anchored — and it is the single most useful thing learned about driving this app from
+adb.
+
+### Still not done, and why
+
+- **Teach-a-rule** — abandoned after several attempts. It needs a precise text-selection
+  drag; `FLAG_SECURE` hides the result and the field's reported bounds are clipped, so
+  the character model cannot be anchored. The builder's machinery is verified — it opens
+  on real messages, tagging registers, and it correctly refuses a non-numeric amount —
+  but the interaction still needs a person. Ten real messages are queued for it.
+- **TalkBack quality** — labels can be confirmed to exist, but whether the screen reads
+  usably needs ears. The unlabelled-node counts collected from dumps are not evidence:
+  Compose nests clickable wrappers above their labelled children, so a wrapper with no
+  text of its own is normal rather than a defect.
+- **`bundletool`** — not installed, so the AAB language-split config remains verified
+  only through AGP's own lint check.
+- **The four API-gated items** — `<queries>` needs API 30, `dataExtractionRules` 31,
+  predictive back and the `POST_NOTIFICATIONS` prompt 33. This phone is API 29. Not a
+  matter of effort or time; the fixes cannot be exercised here at all.
