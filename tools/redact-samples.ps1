@@ -101,11 +101,30 @@ foreach ($line in $lines) {
     #    amount" actually means.
     $redacted = [regex]::Replace($redacted, '(?<!\d)(?<![\d][.,])\d{10,}(?!\d)(?![.,]\d)', { param($m) Get-AccountToken $m.Value })
 
-    # 3. Transaction references: 6+ char alphanumeric tokens containing both a letter
-    #    and a digit. Pure words and pure numbers are left alone.
+    # 3. URLs first, and by different rules than the prose around them.
+    #
+    #    Rule 4 below only fires on tokens carrying both a letter and a digit, which is
+    #    a fair description of a transaction reference sitting in a sentence. It is not
+    #    a fair description of a URL path: a receipt link's segments are frequently all
+    #    letters or all digits, and 27 of them — one per message, unique, straight off
+    #    the device — went through untouched because of it. A receipt URL is a live
+    #    handle on a real transaction, so inside a URL the test is length alone.
+    #
+    #    The host is deliberately left intact. It is not identifying and it is the
+    #    evidence of which provider a sample came from.
+    $redacted = [regex]::Replace(
+        $redacted,
+        '(?<=https?://[^/\s]+)(/\S*)',
+        {
+            param($m)
+            [regex]::Replace($m.Value, '[A-Za-z0-9]{6,}', { param($t) Get-TxnToken $t.Value })
+        })
+
+    # 4. Transaction references in prose: 6+ char alphanumeric tokens containing both a
+    #    letter and a digit. Pure words are left alone.
     $redacted = [regex]::Replace($redacted, '\b(?=[A-Za-z0-9]{6,}\b)(?=[A-Za-z0-9]*\d)(?=[A-Za-z0-9]*[A-Za-z])[A-Za-z0-9]+\b', { param($m) Get-TxnToken $m.Value })
 
-    # 4. Name candidates — flagged only, never auto-replaced.
+    # 5. Name candidates — flagged only, never auto-replaced.
     foreach ($m in [regex]::Matches($redacted, '\b[A-Z][a-z]{2,}(?:\s+[A-Z][a-z]?\.?)?(?:\s+[A-Z][a-z]{2,})?\b')) {
         [void]$nameCandidates.Add($m.Value)
     }
@@ -120,6 +139,31 @@ Write-Host ("  phone numbers  : {0} distinct -> +251900000NNN" -f $phoneMap.Coun
 Write-Host ("  account numbers: {0} distinct -> same-length zeros" -f $accountMap.Count)
 Write-Host ("  transaction ids: {0} distinct -> synthetic, same shape" -f $txnMap.Count)
 Write-Host "`nWritten to $OutputPath`n"
+
+# What was NOT redacted, which is the number that actually matters.
+#
+# Every leak this tool has had was invisible in the counts above: they only ever
+# said how much was replaced, and a rule that matches nothing reports zero the same
+# way a clean input does. Anything long enough to be an identifier and left alone is
+# listed here so it has to be looked at rather than inferred from a silence.
+$survivors = [System.Collections.Generic.HashSet[string]]::new()
+foreach ($line in $out) {
+    foreach ($m in [regex]::Matches($line, '[A-Za-z0-9]{6,}')) {
+        $v = $m.Value
+        if ($v -match '^0+$') { continue }                      # zeroed account
+        if ($v -match '^\d{1,3}$') { continue }
+        if ($txnMap.Values -contains $v) { continue }            # synthetic reference
+        if ($phoneMap.Values -contains "+$v") { continue }
+        [void]$survivors.Add($v)
+    }
+}
+if ($survivors.Count -gt 0) {
+    Write-Host "NOT REDACTED — read every one of these before saving." -ForegroundColor Yellow
+    Write-Host "Product names and English words are expected. Anything that looks like an"
+    Write-Host "identifier is a leak this tool did not catch.`n"
+    $survivors | Sort-Object | ForEach-Object { Write-Host "  $_" }
+    Write-Host ""
+}
 
 if ($nameCandidates.Count -gt 0) {
     Write-Host "MANUAL STEP — capitalised words that may be personal names." -ForegroundColor Yellow

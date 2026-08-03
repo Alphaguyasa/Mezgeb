@@ -143,10 +143,40 @@ Replacing the fifteen values changed no accuracy figure: 95/95 train and 23/23 h
 before and after, `providerTxnId` at 100% precision and recall in both. The rules match
 digit patterns, not particular digits, which is the point of preserving shape.
 
-**The working tree is clean; the history is not.** These values are in every commit that
-touched those files. Nothing has ever been pushed — there is no remote — so removing
-them means rewriting local history, which is the repository owner's call and is not done
-here.
+**The history was rewritten** to remove them, since nothing had ever been pushed. A
+second pass was needed: one of the values was also hardcoded in a Kotlin test fixture
+that the original scan never looked at, and the write-up of the leak had quoted one of
+the leaked values as its example.
+
+### And then the same hole, two sizes down (fixed 2026-08-03)
+
+Chasing the first leak turned up two more of the same shape.
+
+**A constant 8-digit value** sat in every CBE receipt URL — identical across all 12
+occurrences, so account-scoped rather than per-transaction. Below rule 2's ten-digit
+floor and carrying no letter for rule 3, it matched nothing. The message body's account
+number *is* redacted, so the corpus was masking this account's identity in one field and
+publishing it in another.
+
+**Twenty-seven URL path segments**, one per message and every one distinct, were never
+touched at all: rule 3 requires a token to contain both a letter and a digit, and these
+are letters-only. A receipt link is a live handle on a real transaction, which makes
+these the more serious of the two. Whether they came off the device unaltered is not
+determinable from the repository — but the tool provably never touched them.
+
+The rule for URLs is now length alone, applied to the path and query and not the host:
+any run of six or more alphanumerics becomes filler plus a sequence number. 128 tokens
+were replaced across all seven corpus files. Accuracy did not move — URL contents are
+not an extracted field.
+
+`CorpusValidationTest` gained a matching check, and the tool now prints **what it did
+not redact**. Every leak it has had was invisible in its own output, because the counts
+only ever said how much was replaced, and a rule that matches nothing reports zero
+exactly the way a clean input does.
+
+Public marketing links in the noise samples (`bit.ly`, `forms.gle`) are tokenised too.
+That is over-redaction and it is deliberate: distinguishing a public campaign link from
+a personal receipt link mechanically is the kind of judgement that gets one case wrong.
 
 ## Train / holdout split
 

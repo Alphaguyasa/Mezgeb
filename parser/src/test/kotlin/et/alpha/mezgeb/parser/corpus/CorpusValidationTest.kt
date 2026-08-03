@@ -85,6 +85,44 @@ class CorpusValidationTest {
         }
     }
 
+    /** A receipt URL's path and query, which is where the identifying part lives. */
+    private val urlPath = Regex("""https?://[^/\s]+(/\S*)""")
+
+    /** What a redacted URL token looks like: filler, then a sequence number. */
+    private val redactedUrlToken = Regex("""x+\d{3}""")
+
+    @Test
+    @DisplayName("no receipt URL carries an unredacted path or query token")
+    fun `urls carry no real tokens`() {
+        requireCorpus()
+        val leaks = mutableListOf<String>()
+
+        forEachSample { path, sample ->
+            urlPath.findAll(sample.body).forEach { url ->
+                Regex("""[A-Za-z0-9]{6,}""").findAll(url.groupValues[1]).forEach { token ->
+                    val t = token.value
+                    val allowed = redactedUrlToken.matches(t) ||
+                        t.all { it == '0' } ||
+                        // The JSON escape for "&" survives decoding as u0026 here.
+                        t.startsWith("u0026")
+                    if (!allowed) leaks += "$path/${sample.id}: '$t'"
+                }
+            }
+        }
+
+        if (leaks.isNotEmpty()) {
+            fail(
+                buildString {
+                    appendLine("Unredacted tokens inside receipt URLs.")
+                    appendLine("A receipt link is a live handle on a real transaction, so every")
+                    appendLine("path and query token of six characters or more is replaced with")
+                    appendLine("filler plus a sequence number. The host is left alone on purpose.")
+                    leaks.forEach { appendLine("  - $it") }
+                },
+            )
+        }
+    }
+
     @Test
     @DisplayName("no message body contains an unredacted account number")
     fun `bodies carry no long digit runs`() {
