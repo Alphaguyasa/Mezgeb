@@ -1459,25 +1459,30 @@ different and more uncomfortable thing to write down.
   every Android SDK on earth has the private half of. There is no installable release
   artifact until a real key exists.
 
-### Two lint warnings left open on purpose
+### The lint warnings worth more than a warning line
 
-Lint reports 0 errors and 28 warnings. Most are unused resources, KTX suggestions,
+Lint reports 0 errors and 27 warnings. Most are unused resources, KTX suggestions,
 available dependency upgrades, and two API-level notes that are correctly guarded. Two
-are worth more than a warning line and are deliberately not fixed yet, because both
-want a device to confirm the diagnosis rather than a plausible patch.
+were worth more than a warning line. One turned out to be a live bug and is fixed; the
+other is still open.
 
-- **`QueryPermissionsNeeded` — `BatteryOptimizationHelper.kt:47`. No `<queries>`
-  declaration in either manifest.** From API 30 package visibility filtering hides
-  packages an app has not declared, so a query for the vendor battery-settings
-  activities may come back empty on Android 11 and up and the helper silently does
-  nothing. The failure is the invisible kind again: no crash, the feature just never
-  fires, and every device old enough to be unaffected behaves correctly. What is *not*
-  yet established is whether the helper resolves through the package manager at all or
-  simply tries `startActivity` and catches — the second needs no `<queries>`. Read the
-  code path first; the fix is trivial and the wrong fix would be a manifest declaration
-  that quietly does nothing.
-  Worth checking the credit reminder at the same time: it opens the default messaging
-  app by intent, which is the other place visibility filtering bites.
+Both were found by reading the full report rather than the build result — "lint clean"
+in the commit messages above meant only that `lintVital` passed with 0 errors, and the
+warnings had never been read.
+
+- ~~**`QueryPermissionsNeeded` — `BatteryOptimizationHelper.kt:47`.**~~ **Confirmed and
+  fixed 2026-08-03.** The code path was read before patching, and it is the case that
+  needed the declaration: line 47 calls `resolveActivity(context.packageManager)`, the
+  only package-manager query in the app. With `targetSdk 37`, visibility filtering
+  applied, so on Android 11 and up the resolve returned null for all eight vendor
+  packages, `hasVendorScreen()` was always false, and every device fell back to the
+  stock battery list. `VendorBatterySettings` and its target table were dead code in
+  practice. Nothing crashed, which is why it went unnoticed for eight sessions.
+  Fixed with a `<queries>` block naming the eight packages; both merged release
+  manifests carry all eight.
+  The credit reminder was checked in the same pass and needs nothing: it starts
+  `ACTION_SENDTO` with an `smsto:` URI and never queries. Visibility filtering restricts
+  querying, not launching an implicit intent.
 
 - **`DataExtractionRules` — manifest:47. `allowBackup="false"` is deprecated from
   Android 12.** The manifest comment presents `allowBackup=false` and the absence of
@@ -1488,9 +1493,12 @@ want a device to confirm the diagnosis rather than a plausible patch.
   an explicit rules file rather than a deprecated attribute and a comment that has
   quietly gone out of date. The comment needs correcting either way.
 
-Both were found by reading the full lint report rather than the build result. "Lint
-clean" appears in several commit messages above and means only that `lintVital` passed:
-0 errors. The 28 warnings had not been looked at until now.
+The `QueryPermissionsNeeded` one is worth keeping in mind as a pattern rather than an
+incident. It is the third defect in two days that a green build could not see — after
+`editedAt` carrying two meanings and the language switch that only breaks on a Play
+install. All three had been in the repository for many sessions, all three were found
+by reading something rather than running something, and none of them made anything
+fail. The suite here is good at catching what it was pointed at.
 
 ### Honest gaps that no amount of building fixes
 
