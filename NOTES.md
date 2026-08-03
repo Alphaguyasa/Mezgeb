@@ -1422,11 +1422,12 @@ and a corpus that is honestly short of its own targets.
 Nothing here is a known defect. Each is a check that has not been made, which is a
 different and more uncomfortable thing to write down.
 
-- **The release build has never run on a phone.** R8 is enabled and its effect on the
-  notification listener is unverified. Session 12 names this specifically as the check
-  to make, and it is the failure that would matter most: the listener disappearing under
-  minification does not crash, it just silently stops capturing payments. Everything
-  else in this list is smaller than this one item.
+- ~~**The release build has never run on a phone.**~~ **Done 2026-08-03.** Both flavors
+  installed from R8-minified release APKs. The listener survives minification and the
+  system binds to it; Room, kotlinx-serialization, backup/restore and a 771-message
+  import all work under obfuscation. **Real capture verified: 264 payments stored, 0
+  personal messages stored, 12 credential messages refused.** Full write-up in "Device
+  verification, second pass" at the end of this file.
 - **No permission-flow UI test.** .md names exactly two UI tests worth writing.
   The rule-induction one exists (`RuleBuilderScreenTest`, under Robolectric, runs on
   every build). The permission flow does not, and there is no `androidTest` source set
@@ -1437,7 +1438,12 @@ different and more uncomfortable thing to write down.
   were found by reading the scroll path, not by measuring it. The number they cost on a
   real low-end device is still unknown, and was never claimed otherwise.
 - **The teach-a-rule flow has not been timed by a human**, against the 90-second target,
-  and the README's GIF is a placeholder until it is recorded.
+  and the README's GIF is a placeholder until it is recorded. The builder's machinery is
+  verified on real messages and it correctly refuses a bad tag; what is untested is
+  whether the *interaction* reads as obvious, which is the part only a person can
+  answer. Six real telebirr messages are queued for it. Note that `FLAG_SECURE` blocks
+  screen recording as well as screenshots, so the GIF needs a camera or a temporary
+  build with the flag off.
 - **The App Bundle's split dimensions have not been decoded.** `bundle { language {
   enableSplit = false } }` is set and AGP's own `AppBundleLocaleChanges` check no longer
   fires, which is good evidence but indirect. `bundletool` is not installed here and
@@ -1447,9 +1453,11 @@ different and more uncomfortable thing to write down.
   is one that only shows up on a Play install.
 - **`PdfExporter` (2.1%) and `AppLockRepository` (0%)** stay effectively untested off
   the device: `PdfDocument` is native and returns a closed document under Robolectric,
-  and the Keystore does not exist there at all. Both were verified by hand on the phone.
-  Named so the coverage figures are not mistaken for negligence — and so nobody
-  "fixes" them with a mock that asserts the mock.
+  and the Keystore does not exist there at all. Named so the coverage figures are not
+  mistaken for negligence — and so nobody "fixes" them with a mock that asserts the
+  mock. **Both were re-verified on the phone in Session 8 but *not* in the 2026-08-03
+  pass**, which ran out of scope before reaching the PIN and the exporters. Neither has
+  been exercised against an R8 build.
 
 ### Blocked on a signing key
 
@@ -1570,3 +1578,118 @@ that only a different *kind* of examination finds.
 
 Two strings the Session 11 plurals pass missed were fixed in the same commit. Lint went
 from 31 warnings to 28, still 0 errors.
+
+---
+
+## Device verification, second pass (2026-08-03)
+
+Samsung SM-G965U1, Android 10, API 29 — the same phone as the Session 8 pass. Both
+flavors installed from **R8-minified release APKs**, signed with a throwaway key
+generated for this purpose and kept outside the repository. The `play` build was driven
+through demo data; the `direct` build was pointed at the real inbox.
+
+### The headline: capture works on real messages
+
+The `direct` flavor's inbox import, run against **771 real SMS messages**:
+
+| | |
+|---|---|
+| Payments parsed and stored | **264** |
+| Unreadable, sent to the review queue | 10 |
+| Messages stating a PIN or code, refused | **12** |
+| Messages from people, stored | **0** |
+
+This is the first time the app has been observed doing the thing it exists for, on data
+nobody curated for it. Everything before this was fixtures and seeded demo rows.
+
+**The privacy filter held against a real inbox.** 771 messages went in — a phone's
+inbox is mostly private correspondence — and 274 were stored, every one from a
+financial sender. The review queue contains exactly ten, from CBE, 127 and EBIRR, and
+nothing else. That is the Session 8 fix (`never store a message from a person`)
+demonstrated against genuine private data rather than against a test that was written
+to agree with it. The twelve credential-bearing messages were counted and refused, and
+the app said so on screen in plain words.
+
+### A real accuracy number, and it is lower than the corpus one
+
+**96.4%** — 264 of 274 financial messages parsed. Against `CORPUS.md`'s 100.00%.
+
+That gap is the point, and CORPUS.md predicted it: the holdout holds out *samples*, not
+*templates*, so 100% was always going to flatter. What is more useful than the number is
+which messages failed. All ten are from **CBE, telebirr and EBIRR — the three senders
+already in the corpus**. They are not unknown providers; they are message shapes from
+known providers that the corpus never collected.
+
+That is the corpus gap made concrete, and it is a better argument for gathering more
+templates than anything written in this file so far.
+
+### R8, verified
+
+The check Session 12 names, and the reason it matters: R8 stripping or renaming the
+notification listener does not crash anything, it just silently stops capturing.
+
+- `MezgebNotificationListener` survives with its original class name, and the system
+  holds a live binder to it — `INotificationListener$Stub$Proxy`, with a `ServiceRecord`
+  in the app's own process. `BootCompletedReceiver` survives too.
+- Room opens under obfuscation: the identity-hash check passes and every screen queries
+  normally, so the entity field names were not renamed.
+- kotlinx-serialization survives: a backup encoded, and decoded again.
+- No crash across launch, background, relaunch, and a full import.
+
+`FLAG_SECURE` was verified by accident and then on purpose: a screenshot of the app came
+back **0 bytes**, while one taken from the home screen came back 2.3 MB. It is genuinely
+blocking capture on the release build. One consequence worth recording — **the
+teach-a-rule GIF cannot be recorded over adb**, because FLAG_SECURE blocks screen
+recording too. It needs a camera or a temporary build with the flag off.
+
+### Backup and restore, verified end to end
+
+Written through the system file picker, 153,435 bytes. Header reads `MZGB`, format 1,
+**schema 5**. Grepping the file for customer names, `ETB`, or `transaction` returns
+**zero matches** — the body is genuinely encrypted, from a ledger full of both.
+
+Three properties were checked rather than assumed:
+
+- **A wrong passphrase is refused**, and the ledger is untouched afterwards — 9,270.00
+  ETB across 8 customers, unchanged. Validated before anything is cleared, as designed.
+- **The file decrypts off-device** with the project's own `BackupCrypto` in a plain JVM
+  probe: schema 5, 153,111 characters of JSON.
+- **Restore genuinely reverts.** A distinctive cash entry was added *after* the backup,
+  and restoring removed it while leaving the earlier one: net went 908.88 → **797.77**,
+  cash rows 2 → 1. Identical-data-after-restore proves nothing on its own; this does.
+
+**An error of mine worth keeping, because the lesson generalises.** For several rounds
+restore appeared to do nothing, and the conclusion forming was "restore is broken". It
+was not. The first backup had been saved by tapping Save at coordinates read *before*
+the keyboard appeared; the keyboard had shifted the dialog upward, so the tap landed in
+the keyboard with the passphrase field focused and inserted a stray character. The file
+was encrypted with a passphrase one character off, and every restore correctly refused
+it. What settled it was taking the question off the device entirely — running the file
+through `BackupCrypto` in a JVM test, where it failed to decrypt by any path, which
+ruled out the app and pointed at the file.
+
+Two rules came out of that, and both cost real time before they were learned: **never
+reuse a coordinate captured before the keyboard appeared**, and **verify the field
+contents before submitting** — the passphrase field showing exactly 21 bullets for a
+21-character passphrase was the check that made the retry trustworthy.
+
+### Teach-a-rule: machinery verified, interaction not
+
+The builder opens on a real unmatched message, text selection registers, tagging a span
+registers, and the preview **correctly refuses a bad tag** — tagging a non-numeric word
+as the amount produces "Nothing yet — select the amount first" rather than a broken
+rule. Test, Save, "just record this one", and paging through "Message 1 of 6" are all
+present. Backing out discards cleanly and leaves the queue at ten.
+
+The flow was **not completed**, and further attempts were abandoned deliberately. It
+turns on dragging over a precise span of text, `FLAG_SECURE` prevents seeing what is
+selected, and the offsets in a uiautomator dump are XML-escaped — the message contains
+`&#39;` for an apostrophe, five characters in the dump and one on screen, so every
+computed coordinate was wrong before it was tried.
+
+More importantly, solving that puzzle would have proved the code path executes, not that
+the feature works. The question the brief actually asks is whether a shop owner gets
+through it in ninety seconds without instruction. **That needs a person holding the
+phone**, and it is now a better test than it was: six real telebirr messages are queued,
+so a correct rule should clear several at once — which would also be the first time the
+backlog reprocess worker has run on real data.
