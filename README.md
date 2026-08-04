@@ -6,9 +6,9 @@ Ethiopia, with no network permission and no account to sign up for.
 
 ![Teach-a-rule flow](docs/media/teach-a-rule.gif)
 
-> **Placeholder.** The real recording needs a phone — capture is the one thing that
-> cannot be verified in an emulator. Replace `docs/media/teach-a-rule.gif` in place,
-> same path and name, and this section needs no other change.
+> Teaching a rule from an unrecognised bank message: highlight the amount, label what it
+> is, and Mezgeb reads that sender from then on — the message clears the review queue.
+> Captured on-device from the demo shop.
 
 **Read-only with respect to money.** The app never initiates, sends, or authorizes a
 payment.
