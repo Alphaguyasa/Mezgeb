@@ -15,6 +15,28 @@ payment.
 
 ---
 
+## Screenshots
+
+<table>
+<tr>
+<td align="center" width="33%"><b>Today</b><br><img src="docs/media/screen-today.png" width="230"><br><sub>The day's captured payments, in and out</sub></td>
+<td align="center" width="33%"><b>Ledger</b><br><img src="docs/media/screen-ledger.png" width="230"><br><sub>Every Transaction, grouped and filterable</sub></td>
+<td align="center" width="33%"><b>Customers</b><br><img src="docs/media/screen-customers.png" width="230"><br><sub>Who owes the shop, and for how long</sub></td>
+</tr>
+<tr>
+<td align="center" width="33%"><b>Reports</b><br><img src="docs/media/screen-reports.png" width="230"><br><sub>Totals by channel and category</sub></td>
+<td align="center" width="33%"><b>Review queue</b><br><img src="docs/media/screen-review.png" width="230"><br><sub>Messages no rule could read yet</sub></td>
+<td align="center" width="33%"><b>Teach a rule</b><br><img src="docs/media/screen-teach.png" width="230"><br><sub>Rule induction from a real message</sub></td>
+</tr>
+</table>
+
+> Taken from the built-in demo shop (**Settings → Demo mode**), which seeds a 90-day
+> ledger — no real payment data is shown. The shipping app is `FLAG_SECURE`, so it blocks
+> screenshots and the recents thumbnail; these were captured from a debug build with that
+> flag lifted for the purpose.
+
+---
+
 ## The Play Store constraint
 
 The obvious way to build this is to read the SMS inbox. Google Play will not let you.
