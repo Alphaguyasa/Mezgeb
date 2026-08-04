@@ -7,4 +7,7 @@
 <resources>
     <!-- Matches MezgebTheme's light `surface` (Paper). -->
     <color name="launch_background">#FDFCF5</color>
+
+    <!-- Adaptive launcher icon background. Ink navy, behind the cream መ. -->
+    <color name="ic_launcher_background">#042C53</color>
 </resources>

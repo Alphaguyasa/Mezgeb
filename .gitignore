@@ -22,3 +22,8 @@ local.properties
 keystore.properties
 *.jks
 *.keystore
+
+# --- Launcher icon source art ---
+# Working SVGs and generation scratch for the launcher icon. The committed
+# outputs live under app/src/main/res; this staging directory does not ship.
+/files-images-mezgeb/
