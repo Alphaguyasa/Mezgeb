@@ -6,7 +6,7 @@ plugins {
 // This module is deliberately a plain Kotlin/JVM library. It must never gain an
 // Android plugin or an Android dependency — that is what lets the whole parsing
 // layer run under plain JUnit against the fixture corpus in milliseconds.
-// See .md hard constraint #4.
+// See CONVENTIONS.md hard constraint #4.
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17

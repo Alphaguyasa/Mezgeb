@@ -1,6 +1,6 @@
-# .md
+# Conventions
 
-> Copy this to the repository root as `.md` before Session 1.
+> Copy this to the repository root as `CONVENTIONS.md` before Session 1.
 
 ## Project
 

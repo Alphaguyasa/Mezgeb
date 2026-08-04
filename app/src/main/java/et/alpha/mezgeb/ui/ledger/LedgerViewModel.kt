@@ -82,7 +82,7 @@ sealed interface LedgerEvent {
 /**
  * The ledger.
  *
- * **Deviation from .md's one-StateFlow rule, on purpose.** `PagingData` is a
+ * **Deviation from CONVENTIONS.md's one-StateFlow rule, on purpose.** `PagingData` is a
  * stream of diffs that must be collected exactly once and cached in the ViewModel
  * scope; putting it inside the UI state would make every unrelated state change
  * (a keystroke in the search box) look like a new list to Paging. So there are two

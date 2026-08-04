@@ -3,7 +3,7 @@ package et.alpha.mezgeb.util
 /**
  * The only sanctioned way to describe a captured message in a log line.
  *
- * .md hard constraint #5: raw message bodies never leave the device and are
+ * CONVENTIONS.md hard constraint #5: raw message bodies never leave the device and are
  * never logged. That constraint is easy to hold in review and easy to break at 2am
  * while chasing a capture bug, so the safe alternative exists as a named utility
  * rather than as a rule people are expected to remember.

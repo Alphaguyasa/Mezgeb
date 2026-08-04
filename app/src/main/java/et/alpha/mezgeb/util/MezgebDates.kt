@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap
  * The one place epoch millis become a day, and the one place a day boundary is
  * decided.
  *
- * Timestamps are stored as epoch millis UTC everywhere (.md), but a shop's day
+ * Timestamps are stored as epoch millis UTC everywhere (CONVENTIONS.md), but a shop's day
  * is a local one: a payment at nine in the evening in Addis belongs to that evening,
  * not to the following morning in UTC. Every conversion from an instant to a day
  * happens here so that boundary is applied identically by the Today totals, the

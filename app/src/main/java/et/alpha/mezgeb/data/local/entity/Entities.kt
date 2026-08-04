@@ -32,7 +32,7 @@ import et.alpha.mezgeb.domain.model.SessionStatus
  * because the same payment seen via notification and via SMS import will carry
  * timestamps a few hundred milliseconds apart.
  *
- * [body] is never logged. See .md hard constraint #5.
+ * [body] is never logged. See CONVENTIONS.md hard constraint #5.
  */
 @Entity(
     tableName = "raw_messages",

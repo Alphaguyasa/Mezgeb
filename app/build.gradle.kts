@@ -40,7 +40,7 @@ android {
      * device is already set to. This app lets a shop pick its language in settings, so
      * an owner on an English phone choosing Amharic would be choosing resources that
      * were never installed. The usual remedy is Play Core's split installer, which
-     * needs the network and the Play libraries — both ruled out by .md constraint
+     * needs the network and the Play libraries — both ruled out by CONVENTIONS.md constraint
      * #1 — so the alternative is to not split at all.
      *
      * The cost is a few hundred kilobytes on an APK that is 3 MB. The bug it avoids is
@@ -269,7 +269,7 @@ tasks.register<JacocoReport>("jacocoPlayDebugReport") {
 }
 
 dependencies {
-    // The parsing engine. Pure JVM — see .md hard constraint #4.
+    // The parsing engine. Pure JVM — see CONVENTIONS.md hard constraint #4.
     implementation(project(":parser"))
 
     implementation(libs.androidx.core.ktx)
@@ -301,7 +301,7 @@ dependencies {
     // DataStore holds the capture cursor, the import cursor and the health
     // timestamps. Neither library carries an HTTP client — WorkManager does declare
     // ACCESS_NETWORK_STATE for its network constraints, which the main manifest
-    // removes explicitly. See .md constraint #1.
+    // removes explicitly. See CONVENTIONS.md constraint #1.
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler)

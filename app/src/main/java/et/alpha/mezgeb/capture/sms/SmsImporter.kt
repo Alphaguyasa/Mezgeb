@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.Flow
  * Shared code depends on this interface and never on either implementation, which is
  * also what keeps the restricted permission names out of `src/main` entirely —
  * including out of [requiredPermissions], which returns nothing at all in the `play`
- * flavor. .md hard constraint #2 is about more than the manifest.
+ * flavor. CONVENTIONS.md hard constraint #2 is about more than the manifest.
  */
 interface SmsImporter {
 

@@ -372,7 +372,7 @@ private fun TodayScreenPreview() {
     }
 }
 
-/** Amharic render check — .md requires Ethiopic to be verified in a preview. */
+/** Amharic render check — CONVENTIONS.md requires Ethiopic to be verified in a preview. */
 @Preview(name = "Today (አማርኛ)", showBackground = true, heightDp = 800, locale = "am")
 @Composable
 private fun TodayScreenAmharicPreview() {

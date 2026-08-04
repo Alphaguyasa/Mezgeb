@@ -11,7 +11,7 @@ Seven files. Read them in order once, then work from `05-BUILD-SESSIONS.md`.
 | File | Purpose |
 |---|---|
 | `00-README-START-HERE.md` | This file. Product, positioning, why it's worth building. |
-| `01-.md` | Copy to repo root as `.md`. The project's conventions and hard constraints. |
+| `01-CONVENTIONS.md` | Copy to repo root as `CONVENTIONS.md`. The project's conventions and hard constraints. |
 | `02-SPEC.md` | Product spec — features, screens, user stories, scope fences. |
 | `03-ARCHITECTURE.md` | Technical design — modules, data model, capture strategy, parser engine. |
 | `04-SMS-SAMPLE-COLLECTION.md` | **Do this before writing code.** How to gather the corpus the parser is built from. |

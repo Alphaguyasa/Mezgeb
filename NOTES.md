@@ -54,7 +54,7 @@ therefore fail until Session 2 deletes it.** Use `./gradlew :app:assemblePlayDeb
 
 4. **JDK 17 is the language level, not the daemon JVM.** The Gradle daemon runs on
    the JDK 21 bundled with Android Studio (`gradle/gradle-daemon-jvm.properties`
-   pins `toolchainVersion=21`). Both modules compile to JVM target 17 as .md
+   pins `toolchainVersion=21`). Both modules compile to JVM target 17 as CONVENTIONS.md
    requires. No JDK 17 toolchain download is needed.
 
 5. **Noto Sans Ethiopic is bundled** (`app/src/main/res/font/`, ~1.1 MB, OFL licence
@@ -81,7 +81,7 @@ therefore fail until Session 2 deletes it.** Use `./gradlew :app:assemblePlayDeb
   covered as part of Session 2's normalizer work, where the parsing side lives.
 - Room, WorkManager, DataStore, Paging, biometric, Robolectric and MockK are in the
   version catalog but not yet on `:app`'s dependency list. They get added by the
-  session that first needs them, per .md's "state why when adding a dependency".
+  session that first needs them, per CONVENTIONS.md's "state why when adding a dependency".
 
 ### Known low-priority risk
 
@@ -144,7 +144,7 @@ Seeder 5, Category 4, ReconciliationSession 3, CategoryRule 2, TodayViewModel 2.
    both the outer query and the subquery so the statement stays monotonic.
 
 3. **Seeded category names are English strings in the database, not resources.**
-   .md wants every user-facing string in `strings.xml`, but these are data rows.
+   CONVENTIONS.md wants every user-facing string in `strings.xml`, but these are data rows.
    Session 11 must map the seven system category ids to localised display names rather
    than translating the stored `name`.
 
@@ -466,7 +466,7 @@ that compiles and passes tests, not a capture layer known to work.
   Session 6.
 - `POST_NOTIFICATIONS` is requested alongside the import and nowhere else. Reminders in
   Session 11 will need their own request.
-- No UI test for the permission flow yet. .md asks for one; it needs the
+- No UI test for the permission flow yet. CONVENTIONS.md asks for one; it needs the
   instrumentation runner and a device, and it is worth writing in the same sitting as
   the device verification below rather than blind.
 
@@ -529,7 +529,7 @@ per row.
    succeed, and covers the recents thumbnail — which is where a ledger is most likely
    to be read over someone's shoulder.
 
-2. **`LedgerViewModel` exposes two flows, against .md's one-StateFlow rule.**
+2. **`LedgerViewModel` exposes two flows, against CONVENTIONS.md's one-StateFlow rule.**
    `PagingData` is a stream of diffs that must be collected once and cached in the
    ViewModel scope; putting it inside the UI state would make a keystroke in the search
    box look like a new list to Paging. Events still go one way through `onEvent`. This
@@ -599,7 +599,7 @@ guessing at it would break the feature that depends on it.
 - **Only the date is editable, not the time of day.** Changing the date preserves the
   original time. Editing a time on a captured payment is a strange thing to want; if it
   turns out to be needed, it is a picker away.
-- **No UI tests yet.** .md wants them for permission flows and rule induction —
+- **No UI tests yet.** CONVENTIONS.md wants them for permission flows and rule induction —
   the second of those does not exist until Session 6, and both want a device.
   *(Session 6 added the rule-induction one; the permission flow is still open.)*
 
@@ -1000,7 +1000,7 @@ package, which the source filter correctly refuses). The import path exercises t
 funnel, the same parser and the same dedup, so what remains untested is specifically
 `onNotificationPosted` and the `EXTRA_BIG_TEXT` extraction.
 
-### A suggested addition to .md
+### A suggested addition to CONVENTIONS.md
 
 Hard constraint #5 covers raw bodies never leaving the device and never being logged.
 It does not cover *storing* a message that contains a credential. Worth adding, since
@@ -1191,7 +1191,7 @@ in `DatabaseModule`, seeded before the flag flips so a failed seed leaves the ap
 at the real ledger. Language is applied in `attachBaseContext` — `LocaleManager` on API
 33+, a wrapped configuration below.
 
-**Deviation from .md, deliberate.** `LanguagePreference` and `DemoModeStore` use
+**Deviation from CONVENTIONS.md, deliberate.** `LanguagePreference` and `DemoModeStore` use
 SharedPreferences where the stack section specifies DataStore. Both are read in
 `attachBaseContext`, before any coroutine scope exists, and a language that arrives one
 frame after the first screen is a visible flicker on every launch. Documented in both
@@ -1274,7 +1274,7 @@ Coverage is reported, not enforced. No threshold, no build failure: a gate is a 
 about a proxy, satisfied by a test that executes a line without asserting anything about
 it, and the cheapest way past a failing gate is always the least useful test.
 
-The `ui/*` packages sit at 5–25% and that is intentional — .md says not to write UI
+The `ui/*` packages sit at 5–25% and that is intentional — CONVENTIONS.md says not to write UI
 tests for layout, and those numbers are Compose screen bodies.
 
 **The three least-tested areas that should be tested:**
@@ -1318,7 +1318,7 @@ initialising WorkManager per process, which is what the seam was built to avoid.
 - The release build has **not been run on hardware**. R8's effect on the notification
   listener is unverified, and Session 12 names that as the check to make.
 - No signing key, so both release APKs are unsigned.
-- The permission-flow UI test .md asks for still does not exist; it needs the
+- The permission-flow UI test CONVENTIONS.md asks for still does not exist; it needs the
   instrumentation runner and a device.
 - ~~Rule `confidence` is still not persisted~~ — **done 2026-08-03**, schema 5.
 - ~~`RECEIVE_SMS` is still declared and unused.~~ **Removed 2026-08-03**, on the author's
@@ -1428,7 +1428,7 @@ different and more uncomfortable thing to write down.
   import all work under obfuscation. **Real capture verified: 264 payments stored, 0
   personal messages stored, 12 credential messages refused.** Full write-up in "Device
   verification, second pass" at the end of this file.
-- **No permission-flow UI test.** .md names exactly two UI tests worth writing.
+- **No permission-flow UI test.** CONVENTIONS.md names exactly two UI tests worth writing.
   The rule-induction one exists (`RuleBuilderScreenTest`, under Robolectric, runs on
   every build). The permission flow does not, and there is no `androidTest` source set
   at all — it needs the instrumentation runner and a device.
@@ -1529,7 +1529,7 @@ fail. The suite here is good at catching what it was pointed at.
   without the paragraph in CORPUS.md that says what it is worth: a holdout of samples
   rather than templates, from one person's account, across thirteen message shapes.
 - **Coverage is 36.1% instruction / 46.1% line**, reported and not gated. The `ui/*`
-  packages are the bulk of what is uncovered and that is deliberate — .md says
+  packages are the bulk of what is uncovered and that is deliberate — CONVENTIONS.md says
   not to write UI tests for layout.
 - **Three privacy leaks were found in the corpus in a single day**, two of them in
   places an earlier scan of mine had already reported clean. The guards are real now and
@@ -1559,7 +1559,7 @@ An App Bundle splits by language by default and Play delivers only the locale th
 is already set to. Session 11 added a language override in settings, so a shop owner on
 an English phone choosing Amharic would have been choosing resources that were never
 installed on the device. The usual remedy is Play Core's split installer, which needs
-the network and the Play libraries — both ruled out by .md constraint #1 — so the
+the network and the Play libraries — both ruled out by CONVENTIONS.md constraint #1 — so the
 alternative is not to split at all. Both languages now ship in the base module, at a
 cost of a few hundred kilobytes on a 3 MB APK.
 

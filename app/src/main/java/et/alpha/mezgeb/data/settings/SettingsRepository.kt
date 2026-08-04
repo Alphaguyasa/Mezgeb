@@ -17,7 +17,7 @@ import javax.inject.Singleton
 /**
  * Everything the capture layer has to remember between launches.
  *
- * DataStore rather than SharedPreferences, per .md — the reads are flows, so
+ * DataStore rather than SharedPreferences, per CONVENTIONS.md — the reads are flows, so
  * capture health updates the UI without polling, and the writes are transactional,
  * so an import cursor cannot be half-written when the process dies mid-import.
  *

@@ -7,7 +7,7 @@
     Restricted-permission policy covers placeholder and commented declarations, so
     even naming them here would be a violation; the restricted pair is declared
     only in app/src/direct/AndroidManifest.xml. The offline guarantee is likewise a
-    product feature, not an oversight. See .md hard constraints #1 and #2.
+    product feature, not an oversight. See CONVENTIONS.md hard constraints #1 and #2.
 
     A shop's ledger must not be auto-backed-up off device, and that takes two
     declarations rather than one: allowBackup="false" governs API 26-30, and from

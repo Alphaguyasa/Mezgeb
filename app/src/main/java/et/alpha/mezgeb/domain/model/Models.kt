@@ -13,7 +13,7 @@ package et.alpha.mezgeb.domain.model
 data class RawMessage(
     val id: String,
     val sender: String,
-    /** Never logged. See .md hard constraint #5. */
+    /** Never logged. See CONVENTIONS.md hard constraint #5. */
     val body: String,
     val contentHash: String,
     val receivedAt: Long,

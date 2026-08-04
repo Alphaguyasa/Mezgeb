@@ -2,7 +2,7 @@
 
 Twelve sessions. Each is one focused build session. Start a fresh session each time — long sessions drift.
 
-**Before every session:** confirm `.md` is in the repo root and current.
+**Before every session:** confirm `CONVENTIONS.md` is in the repo root and current.
 **After every session:** run the verification block, commit, and note anything stubbed in `NOTES.md`.
 
 ---
@@ -14,7 +14,7 @@ Twelve sessions. Each is one focused build session. Start a fresh session each t
 ### Prompt
 
 ```
-Set up the Mezgeb Android project from scratch. Read .md first and follow
+Set up the Mezgeb Android project from scratch. Read CONVENTIONS.md first and follow
 every hard constraint in it.
 
 Create:
@@ -309,7 +309,7 @@ grep -r "READ_SMS\|RECEIVE_SMS" app/src/main/ && echo "FAIL" || echo "clean"
 
 ```
 Build the Today and Ledger screens. MVVM with a single StateFlow<UiState> and a
-single onEvent(Event) per screen, per .md. Every screen gets a stateless
+single onEvent(Event) per screen, per CONVENTIONS.md. Every screen gets a stateless
 XxxScreen(state, onEvent) plus an XxxRoute(viewModel) wrapper.
 
 TODAY

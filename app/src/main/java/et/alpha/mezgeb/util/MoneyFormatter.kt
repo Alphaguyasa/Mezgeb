@@ -6,7 +6,7 @@ import kotlin.math.absoluteValue
  * The single place where `Long` santim becomes a display string.
  *
  * Money is stored and computed as minor units everywhere else in the app
- * (.md hard constraint #3); nothing outside the UI layer should call this.
+ * (CONVENTIONS.md hard constraint #3); nothing outside the UI layer should call this.
  *
  * Formatting is done by string manipulation rather than by handing a scaled
  * `Double` to a [java.text.NumberFormat], for the same reason parsing is:
