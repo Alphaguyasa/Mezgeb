@@ -192,4 +192,4 @@ Release APK size is 3.07 MB for both flavors.
 
 ## License
 
-Not yet chosen.
+[MIT](LICENSE) © 2026 Alphaguyasa
