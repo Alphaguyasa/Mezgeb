@@ -1,5 +1,6 @@
 package et.alpha.mezgeb.data.demo
 
+import android.app.Application
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
@@ -37,8 +38,14 @@ import java.time.ZoneOffset
  * Unlike the rest of the data tests this one does not use the in-memory helper. The
  * whole mechanism is *which file gets opened*, and an in-memory database has no file.
  */
+/*
+ * A plain Application, not MezgebApplication. The real one launches the privacy purge
+ * and the seeder against `mezgeb.db` on a background coroutine at startup, and this
+ * test deletes and recreates that very file. The two raced, and on a fast CI runner
+ * the purge queried a database whose tables had just been dropped.
+ */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [34], application = Application::class)
 class DemoModeControllerTest {
 
     private lateinit var context: Context

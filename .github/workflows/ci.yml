@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Read-only token. CI builds and tests; it never publishes, signs or deploys.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      # The Gradle daemon is pinned to JDK 21 (gradle/gradle-daemon-jvm.properties);
+      # both modules still compile to JVM target 17.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Pure-JVM parser first: the fastest signal, and the accuracy harness that
+      # fails the build on any wrong extracted value.
+      - name: Parser tests
+        run: ./gradlew :parser:test --stacktrace
+
+      # No keystore.properties exists here, so release signing is never configured
+      # and only debug builds are produced. No secrets are used by this workflow.
+      - name: Lint, unit tests and debug builds (both flavors)
+        run: >
+          ./gradlew
+          lint
+          testPlayDebugUnitTest
+          testDirectDebugUnitTest
+          assemblePlayDebug
+          assembleDirectDebug
+          --stacktrace
+
+      - name: Upload test and lint reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: |
+            parser/build/reports/
+            app/build/reports/
+          retention-days: 7
+
+      - name: Upload play debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-play-debug
+          path: app/build/outputs/apk/play/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload direct debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-direct-debug
+          path: app/build/outputs/apk/direct/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
