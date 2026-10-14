@@ -238,8 +238,12 @@ class CaptureCoordinator @Inject constructor(
     ): CaptureOutcome {
         // Tier two. The provider's own transaction id is authoritative: when the
         // notification and the inbox render the same payment differently enough to
-        // survive the content hash, this is what catches it.
-        val existing = fields.providerTxnId?.let { transactions.getByProviderTxnId(it) }
+        // survive the content hash, this is what catches it. Scoped to the channel,
+        // since references are only unique per provider, and matched against deleted
+        // rows too, so a payment the shop deleted is not resurrected by its second copy.
+        val existing = fields.providerTxnId?.let {
+            transactions.getByProviderTxnId(DomainChannel.valueOf(fields.channel.name), it)
+        }
         if (existing != null) {
             transactions.markRawMessageResolved(
                 id = rawMessageId,
