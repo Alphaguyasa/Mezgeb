@@ -14,27 +14,14 @@ Built from the audit on 2026-10-14: the full code read plus the open items in
 
 ## Open
 
-### R1 · P0 · S: Provider-ID dedup is global and ignores deleted rows
-`TransactionDao.getByProviderTxnId` matches `providerTxnId` across **all channels**,
-and only among rows that are **not deleted**. That causes two failures:
-- A telebirr reference that happens to equal a CBE reference makes the second, real
-  payment get marked `DUPLICATE` and silently dropped. That is data loss.
-- If the shop deletes a transaction and the same payment then arrives from the other
-  capture path with different text (so the content hash differs), the deleted
-  transaction comes back as a new row.
-
-Fix: scope the lookup to `(channel, providerTxnId)` and include soft-deleted rows. Add
-tests in `CaptureCoordinatorTest` and `TransactionDaoTest`. No schema change.
-
-### R2 · P0 · M: Fail-safe fixtures for truncated, malformed and unexpected messages
-No test checks what the parser does with a **truncated** message. Notification text is
-often cut off, for example "You have received ETB 2,0…". The project rule is: skip and
-flag, never guess. Add a parser test that truncates every corpus sample at every
-position (with and without a trailing "…"). Every outcome must be either not a
-`Success`, or a `Success` whose non-null fields equal the full message's expected
-values. Add hand-written fixtures for malformed messages (garbled amount, missing
-reference, swapped order) and unexpected formats (another currency, an unknown
-template from a known sender). Fix any rule the test catches guessing.
+### R5 · P0 · M: Stable fallback dedup key when there is no provider ID
+When a message has no `providerTxnId`, the only dedup is the content hash. The same
+payment rendered differently by notification and SMS therefore creates two
+transactions. Design: a fallback key over `(channel, direction, amountMinor,
+balanceAfterMinor, occurredAt rounded to the minute)`. When it collides, **flag** the
+new row as a possible duplicate for the user. Do not drop it, because two real
+identical payments in one minute do happen. This needs one additive nullable column
+(allowed) plus a migration test. Write the design in the PR first.
 
 ### R3 · P1 · S: Project-policy guard tests
 Turn the project rules into tests so a later change cannot quietly break them:
@@ -50,15 +37,6 @@ Add `.github/dependabot.yml` (weekly, grouped minor and patch updates) so depend
 with known vulnerabilities surface as PRs. Free on public repos. Dependabot PRs follow
 the normal merge policy, and any new transitive network stack is rejected
 (`CONVENTIONS.md` #1).
-
-### R5 · P0 · M: Stable fallback dedup key when there is no provider ID
-When a message has no `providerTxnId`, the only dedup is the content hash. The same
-payment rendered differently by notification and SMS therefore creates two
-transactions. Design: a fallback key over `(channel, direction, amountMinor,
-balanceAfterMinor, occurredAt rounded to the minute)`. When it collides, **flag** the
-new row as a possible duplicate for the user. Do not drop it, because two real
-identical payments in one minute do happen. This needs one additive nullable column
-(allowed) plus a migration test. Write the design in the PR first.
 
 ### R6 · P2 · S: Triage the lint warnings
 Lint reports 0 errors and about 26 warnings (`NOTES.md`). Read the full report, fix
@@ -94,5 +72,11 @@ whether the current KSP supports built-in Kotlin, and remove the flag if it does
 
 ## Done
 
-- 2026-10-14: CI workflow, operating docs (CLAUDE.md, ROADMAP.md, DAILY_LOG.md,
-  NEEDS_APPROVAL.md). See DAILY_LOG.md.
+- 2026-10-14 · R2: The parser no longer reads a value from a cut-off message. Before
+  the fix, 1,023 truncated variants parsed to wrong values; now none do. Malformed and
+  unexpected-format fixtures added. PR #3.
+- 2026-10-14 · R1: Provider-reference dedup is scoped to the channel and includes
+  deleted rows. PR #2, tag `v2026-10-14-2`.
+- 2026-10-14: CI workflow and operating docs. PR #1, tag `v2026-10-14-1`. Also fixed
+  two problems that were already there: `gradlew` was not executable, and a
+  demo-mode test raced the app's startup purge on Linux.

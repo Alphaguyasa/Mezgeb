@@ -43,6 +43,20 @@ app. Resolved items move to the bottom with the decision and the date.
 - **Money:** none (free on public repos). Do **not** require PR reviews, or the
   autonomous merges will be blocked.
 
+### A5 · Create the daily routine (Phase 2)
+**Ask:** approve creating the cloud routine, or create it yourself at
+https://claude.ai/code/routines:
+- Name: Mezgeb daily lead developer. Repo: `Alphaguyasa/Mezgeb`.
+- Schedule: `0 5 * * *` UTC, which is 08:00 Africa/Nairobi.
+- Model: Claude Fable 5.1 (`claude-fable-5-1`), a higher tier than Opus. If it is not
+  offered on your plan, use the newest Opus. Never upgrade a plan for it.
+- Prompt: "You are the autonomous lead developer of Mezgeb. Read CLAUDE.md,
+  ROADMAP.md, DAILY_LOG.md, and NEEDS_APPROVAL.md. Follow every policy in CLAUDE.md.
+  Do the daily loop, then send the report."
+- Then turn on push notifications and switch it to **Automatically approve**,
+  because scheduled runs have nobody to approve actions.
+- **Money:** none.
+
 ### A4 · Release signing and the Play listing (no action needed, just recorded)
 Release APKs stay unsigned. No keystore exists, and the no-purchases policy rules out
 a Play Console account ($25). When you want to publish, generate a keystore yourself,
