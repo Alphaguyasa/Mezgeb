@@ -150,6 +150,36 @@ class CaptureCoordinatorTest : DatabaseTest() {
     }
 
     @Test
+    fun `the same reference from two different providers is two payments`() = runTest {
+        // References are unique per provider, not across providers. A match across
+        // channels would drop the bank payment as a "duplicate" of the telebirr one.
+        val telebirr = coordinator.capture(notification(TELEBIRR_NOTIFICATION))
+        val bank = coordinator.capture(
+            notification(
+                "Your account has been credited with ETB 300.00. Ref CJ4T5X9AB1.",
+                sender = "CBE",
+                receivedAt = NOW + 60_000,
+            ),
+        )
+
+        assertTrue(telebirr is CaptureOutcome.Recorded)
+        assertTrue(bank is CaptureOutcome.Recorded)
+        assertEquals(2, allTransactions().size)
+    }
+
+    @Test
+    fun `a deleted payment is not brought back by its second copy`() = runTest {
+        val first = coordinator.capture(notification(TELEBIRR_NOTIFICATION))
+        transactions.softDelete((first as CaptureOutcome.Recorded).transactionId, NOW + 1_000)
+
+        // The inbox copy is worded differently, so only the reference can catch it.
+        val second = coordinator.capture(imported(TELEBIRR_FULL_SMS, receivedAt = NOW + 2_000))
+
+        assertEquals(CaptureOutcome.Duplicate(DedupTier.PROVIDER_TXN_ID), second)
+        assertTrue(allTransactions().isEmpty())
+    }
+
+    @Test
     fun `different payments that happen to share an amount are both recorded`() = runTest {
         val first = coordinator.capture(notification(TELEBIRR_NOTIFICATION))
         val second = coordinator.capture(
@@ -420,6 +450,21 @@ class CaptureCoordinatorTest : DatabaseTest() {
                 fieldMap = mapOf("amount" to SemanticField.AMOUNT),
                 directionStrategy = DirectionStrategy.FIXED_IN,
                 priority = 5,
+            ),
+            // A bank template that carries a reference, so the same reference string
+            // can be seen from two providers.
+            ParserRule(
+                id = "cbe_credited_ref",
+                name = "CBE credited with reference",
+                senderPattern = "CBE",
+                channel = Channel.BANK,
+                bodyPattern = "credited with ETB (?<amount>[\\d,.]+)\\. Ref (?<txn>[A-Z0-9]+)",
+                fieldMap = mapOf(
+                    "amount" to SemanticField.AMOUNT,
+                    "txn" to SemanticField.PROVIDER_TXN_ID,
+                ),
+                directionStrategy = DirectionStrategy.FIXED_IN,
+                priority = 6,
             ),
         )
     }

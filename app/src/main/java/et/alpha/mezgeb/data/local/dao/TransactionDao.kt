@@ -35,8 +35,21 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE id = :id")
     fun observeById(id: String): Flow<TransactionEntity?>
 
-    @Query("SELECT * FROM transactions WHERE providerTxnId = :providerTxnId AND isDeleted = 0 LIMIT 1")
-    suspend fun getByProviderTxnId(providerTxnId: String): TransactionEntity?
+    /**
+     * The dedup lookup for a provider's own transaction reference.
+     *
+     * Scoped to [channel] because a reference is only unique within the provider that
+     * issued it: a telebirr reference and a CBE reference can be the same string, and
+     * matching across channels would drop the second, real payment as a duplicate.
+     *
+     * Deliberately includes soft-deleted rows. A payment the shop deleted is still a
+     * payment that was seen; if the other capture path delivers it again, it must stay
+     * deleted rather than come back as a new row.
+     */
+    @Query(
+        "SELECT * FROM transactions WHERE channel = :channel AND providerTxnId = :providerTxnId LIMIT 1",
+    )
+    suspend fun getByProviderTxnId(channel: Channel, providerTxnId: String): TransactionEntity?
 
     @Query("SELECT * FROM transactions WHERE rawMessageId = :rawMessageId")
     suspend fun getByRawMessageId(rawMessageId: String): TransactionEntity?

@@ -107,8 +107,9 @@ class TransactionRepository @Inject constructor(
     suspend fun getTransaction(id: String): Transaction? =
         transactionDao.getById(id)?.toDomain()
 
-    suspend fun getByProviderTxnId(providerTxnId: String): Transaction? =
-        transactionDao.getByProviderTxnId(providerTxnId)?.toDomain()
+    /** Includes soft-deleted rows; see [TransactionDao.getByProviderTxnId]. */
+    suspend fun getByProviderTxnId(channel: Channel, providerTxnId: String): Transaction? =
+        transactionDao.getByProviderTxnId(channel, providerTxnId)?.toDomain()
 
     /** Candidates for "which payment settled this debt?". See the credit book. */
     suspend fun unlinkedIncomingSince(since: Long): List<Transaction> =

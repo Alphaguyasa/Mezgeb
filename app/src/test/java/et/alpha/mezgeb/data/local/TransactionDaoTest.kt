@@ -48,6 +48,24 @@ class TransactionDaoTest : DatabaseTest() {
         query: String? = null,
     ) = dao.listFiltered(from, to, channel, direction, categoryId, isReconciled, query).map { it.id }
 
+    // --- The provider-reference dedup lookup ------------------------------------------
+
+    @Test
+    fun `a provider reference is looked up within its own channel only`() = runTest {
+        assertEquals("t1", dao.getByProviderTxnId(Channel.TELEBIRR, "AAA1BBB2CC")?.id)
+        // The same string issued by another provider is a different payment.
+        assertNull(dao.getByProviderTxnId(Channel.BANK, "AAA1BBB2CC"))
+    }
+
+    @Test
+    fun `a provider reference still finds a row the shop deleted`() = runTest {
+        dao.insert(
+            transaction("t8", channel = Channel.TELEBIRR, providerTxnId = "DDD3EEE4FF", isDeleted = true),
+        )
+
+        assertEquals("t8", dao.getByProviderTxnId(Channel.TELEBIRR, "DDD3EEE4FF")?.id)
+    }
+
     @Test
     fun `no filters returns everything except soft-deleted rows, newest first`() = runTest {
         assertEquals(listOf("t7", "t5", "t4", "t3", "t2", "t1"), ids())
