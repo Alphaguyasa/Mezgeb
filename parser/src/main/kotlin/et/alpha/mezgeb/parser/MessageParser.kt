@@ -86,6 +86,22 @@ class MessageParser(
         }
     }
 
+    /**
+     * Where the message's content ends: before any trailing whitespace, ellipsis or
+     * full stops. Those are what a truncated preview leaves behind ("ETB 2,0…" or
+     * "ETB 2,0..."), and a full stop is also how a sentence ending on a number ends,
+     * so a value followed only by them still counts as reaching the end.
+     */
+    private fun contentEnd(body: String): Int {
+        var end = body.length
+        while (end > 0 && (body[end - 1].isWhitespace() || body[end - 1] in TRUNCATION_TAIL)) end--
+        return end
+    }
+
+    private companion object {
+        val TRUNCATION_TAIL = setOf('…', '.')
+    }
+
     private sealed interface Extraction {
         data class Ok(val fields: ParsedFields) : Extraction
         data class Failed(val reason: UnmatchedReason) : Extraction
@@ -97,11 +113,32 @@ class MessageParser(
         body: String,
         receivedAt: Long,
     ): Extraction {
-        fun group(field: SemanticField): String? {
+        val contentEnd = contentEnd(body)
+
+        fun matchGroup(field: SemanticField): MatchGroup? {
             val groupName = rule.fieldMap.entries.firstOrNull { it.value == field }?.key ?: return null
-            return runCatching { match.groups[groupName]?.value }
-                .getOrNull()
-                ?.takeIf { it.isNotBlank() }
+            return runCatching { match.groups[groupName] }.getOrNull()
+        }
+
+        /**
+         * A captured value that runs into the end of the message may have been cut
+         * off there. Notification previews truncate wherever they truncate, and
+         * "balance is ETB 2,0…" reads as a perfectly valid 2.0. No real message in the
+         * corpus ends on a captured field — they all end on a link or a sign-off — so
+         * a value that does is treated as unknown rather than taken at face value.
+         */
+        fun mayBeCutOff(group: MatchGroup): Boolean = group.range.last + 1 >= contentEnd
+
+        fun group(field: SemanticField): String? {
+            val captured = matchGroup(field) ?: return null
+            if (mayBeCutOff(captured)) return null
+            return captured.value.takeIf { it.isNotBlank() }
+        }
+
+        // The amount is the one field a transaction cannot do without, so a cut-off
+        // amount sends the message to the review queue instead of being dropped.
+        if (matchGroup(SemanticField.AMOUNT)?.let(::mayBeCutOff) == true) {
+            return Extraction.Failed(UnmatchedReason.FIELD_EXTRACTION_FAILED)
         }
 
         val amountMinor = AmountNormalizer.toMinor(group(SemanticField.AMOUNT))
