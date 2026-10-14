@@ -64,7 +64,7 @@ class ReprocessBacklogWorkerTest : DatabaseTest() {
 
     @Test
     fun `a taught rule clears the messages that were waiting for it`() = runTest {
-        queue("m1" to "credited with ETB 450.00", "m2" to "credited with ETB 12.50")
+        queue("m1" to "credited with ETB 450.00 today.", "m2" to "credited with ETB 12.50 today.")
 
         val result = worker(rules = TEST_RULES).doWork()
 
@@ -79,7 +79,7 @@ class ReprocessBacklogWorkerTest : DatabaseTest() {
 
     @Test
     fun `a message no rule reads stays in the queue rather than being dropped`() = runTest {
-        queue("m1" to "credited with ETB 450.00", "m2" to "something no rule matches")
+        queue("m1" to "credited with ETB 450.00 today.", "m2" to "something no rule matches")
 
         val result = worker(rules = TEST_RULES).doWork()
 
@@ -105,7 +105,7 @@ class ReprocessBacklogWorkerTest : DatabaseTest() {
 
     @Test
     fun `re-running after everything parsed does not duplicate the ledger`() = runTest {
-        queue("m1" to "credited with ETB 450.00")
+        queue("m1" to "credited with ETB 450.00 today.")
 
         worker(rules = TEST_RULES).doWork()
         // A second rule taught while the first pass was running appends another run,
@@ -117,7 +117,7 @@ class ReprocessBacklogWorkerTest : DatabaseTest() {
 
     @Test
     fun `with no rules at all nothing is recorded and nothing is lost`() = runTest {
-        queue("m1" to "credited with ETB 450.00")
+        queue("m1" to "credited with ETB 450.00 today.")
 
         val result = worker(rules = emptyList()).doWork()
 
@@ -129,8 +129,8 @@ class ReprocessBacklogWorkerTest : DatabaseTest() {
     @Test
     fun `the reported total matches what was actually scanned`() = runTest {
         queue(
-            "m1" to "credited with ETB 450.00",
-            "m2" to "credited with ETB 1.00",
+            "m1" to "credited with ETB 450.00 today.",
+            "m2" to "credited with ETB 1.00 today.",
             "m3" to "unreadable",
         )
 

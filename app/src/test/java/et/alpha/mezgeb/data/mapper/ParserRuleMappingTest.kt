@@ -41,7 +41,7 @@ class ParserRuleMappingTest : DatabaseTest() {
         val outcome = MessageParser(engineRules).parse(
             sender = "CBE",
             body = "Dear Customer your Account 1*******0000 has been credited with ETB " +
-                "450.00. Your Current Balance is ETB 1,200.00",
+                "450.00. Your Current Balance is ETB 1,200.00. Thanks for Banking with CBE.",
             receivedAt = RECEIVED_AT,
         )
 
