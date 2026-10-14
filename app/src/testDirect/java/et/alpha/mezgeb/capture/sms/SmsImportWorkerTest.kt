@@ -91,9 +91,9 @@ class SmsImportWorkerTest : DatabaseTest() {
     @Test
     fun `payments are imported and personal messages are never stored`() = runTest {
         val source = FakeInboxSource(
-            row("CBE", "Your account has been credited with ETB 450.00", T0),
+            row("CBE", "Your account has been credited with ETB 450.00 today.", T0),
             row("+251911000001", "See you at the shop tomorrow", T0 + 1000),
-            row("CBE", "Your account has been credited with ETB 12.50", T0 + 2000),
+            row("CBE", "Your account has been credited with ETB 12.50 today.", T0 + 2000),
         )
 
         val result = worker(source).doWork()
@@ -109,7 +109,7 @@ class SmsImportWorkerTest : DatabaseTest() {
 
     @Test
     fun `a payment already captured live is not imported twice`() = runTest {
-        val body = "Your account has been credited with ETB 450.00"
+        val body = "Your account has been credited with ETB 450.00 today."
         coordinator.capture(
             CapturedMessage(
                 sender = "CBE",
@@ -130,8 +130,8 @@ class SmsImportWorkerTest : DatabaseTest() {
     @Test
     fun `the cursor advances so a second import re-reads nothing`() = runTest {
         val source = FakeInboxSource(
-            row("CBE", "Your account has been credited with ETB 450.00", T0),
-            row("CBE", "Your account has been credited with ETB 12.50", T0 + 9_000),
+            row("CBE", "Your account has been credited with ETB 450.00 today.", T0),
+            row("CBE", "Your account has been credited with ETB 12.50 today.", T0 + 9_000),
         )
 
         worker(source).doWork()
@@ -144,7 +144,7 @@ class SmsImportWorkerTest : DatabaseTest() {
         Shadows.shadowOf(context as android.app.Application)
             .denyPermissions(Manifest.permission.READ_SMS)
 
-        val result = worker(FakeInboxSource(row("CBE", "credited with ETB 1.00", T0))).doWork()
+        val result = worker(FakeInboxSource(row("CBE", "credited with ETB 1.00 today.", T0))).doWork()
 
         assertTrue(result is ListenableWorker.Result.Failure)
         assertTrue(transactions.listTransactions(TransactionFilter()).isEmpty())

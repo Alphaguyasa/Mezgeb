@@ -86,6 +86,31 @@ class MessageParser(
         }
     }
 
+    /**
+     * Where the message's content ends: before trailing whitespace and before the
+     * marks a truncated preview leaves behind, "…" or a run of dots ("ETB 2,0...").
+     * A single full stop is not one of them; it is how a sentence ends.
+     */
+    private fun contentEnd(body: String): Int {
+        var end = body.length
+        while (true) {
+            while (end > 0 && body[end - 1].isWhitespace()) end--
+            end = when {
+                end > 0 && body[end - 1] == ELLIPSIS -> end - 1
+                end > 1 && body[end - 1] == '.' && body[end - 2] == '.' -> {
+                    var start = end
+                    while (start > 0 && body[start - 1] == '.') start--
+                    start
+                }
+                else -> return end
+            }
+        }
+    }
+
+    private companion object {
+        const val ELLIPSIS = '…'
+    }
+
     private sealed interface Extraction {
         data class Ok(val fields: ParsedFields) : Extraction
         data class Failed(val reason: UnmatchedReason) : Extraction
@@ -97,11 +122,41 @@ class MessageParser(
         body: String,
         receivedAt: Long,
     ): Extraction {
-        fun group(field: SemanticField): String? {
+        val contentEnd = contentEnd(body)
+
+        fun matchGroup(field: SemanticField): MatchGroup? {
             val groupName = rule.fieldMap.entries.firstOrNull { it.value == field }?.key ?: return null
-            return runCatching { match.groups[groupName]?.value }
-                .getOrNull()
-                ?.takeIf { it.isNotBlank() }
+            return runCatching { match.groups[groupName] }.getOrNull()
+        }
+
+        /**
+         * A captured value that runs into the end of the message may have been cut
+         * off there. Notification previews truncate wherever they truncate, and
+         * "balance is ETB 2,0…" reads as a perfectly valid 2.0. No real message in the
+         * corpus ends on a captured field — they all end on a link or a sign-off — so
+         * a value that does is treated as unknown rather than taken at face value.
+         *
+         * A number followed by nothing but a full stop counts too: "ETB22." is what
+         * "ETB22.95" looks like cut after its decimal point. A reference followed by a
+         * full stop does not, because a cut removes text and never adds a full stop.
+         */
+        fun mayBeCutOff(group: MatchGroup): Boolean {
+            val end = group.range.last + 1
+            if (end >= contentEnd) return true
+            val isNumber = group.value.all { it.isDigit() || it == ',' || it == '.' }
+            return isNumber && end == contentEnd - 1 && body[end] == '.'
+        }
+
+        fun group(field: SemanticField): String? {
+            val captured = matchGroup(field) ?: return null
+            if (mayBeCutOff(captured)) return null
+            return captured.value.takeIf { it.isNotBlank() }
+        }
+
+        // The amount is the one field a transaction cannot do without, so a cut-off
+        // amount sends the message to the review queue instead of being dropped.
+        if (matchGroup(SemanticField.AMOUNT)?.let(::mayBeCutOff) == true) {
+            return Extraction.Failed(UnmatchedReason.FIELD_EXTRACTION_FAILED)
         }
 
         val amountMinor = AmountNormalizer.toMinor(group(SemanticField.AMOUNT))

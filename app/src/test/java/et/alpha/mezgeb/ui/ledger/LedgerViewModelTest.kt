@@ -170,7 +170,7 @@ class LedgerViewModelTest : DatabaseTest() {
             rawMessage(
                 id = "m1",
                 sender = "CBE",
-                body = "Your account has been credited with ETB 450.00",
+                body = "Your account has been credited with ETB 450.00 today.",
                 parseState = ParseState.UNMATCHED,
             ),
         )
