@@ -87,19 +87,28 @@ class MessageParser(
     }
 
     /**
-     * Where the message's content ends: before any trailing whitespace, ellipsis or
-     * full stops. Those are what a truncated preview leaves behind ("ETB 2,0…" or
-     * "ETB 2,0..."), and a full stop is also how a sentence ending on a number ends,
-     * so a value followed only by them still counts as reaching the end.
+     * Where the message's content ends: before trailing whitespace and before the
+     * marks a truncated preview leaves behind, "…" or a run of dots ("ETB 2,0...").
+     * A single full stop is not one of them; it is how a sentence ends.
      */
     private fun contentEnd(body: String): Int {
         var end = body.length
-        while (end > 0 && (body[end - 1].isWhitespace() || body[end - 1] in TRUNCATION_TAIL)) end--
-        return end
+        while (true) {
+            while (end > 0 && body[end - 1].isWhitespace()) end--
+            end = when {
+                end > 0 && body[end - 1] == ELLIPSIS -> end - 1
+                end > 1 && body[end - 1] == '.' && body[end - 2] == '.' -> {
+                    var start = end
+                    while (start > 0 && body[start - 1] == '.') start--
+                    start
+                }
+                else -> return end
+            }
+        }
     }
 
     private companion object {
-        val TRUNCATION_TAIL = setOf('…', '.')
+        const val ELLIPSIS = '…'
     }
 
     private sealed interface Extraction {
@@ -126,8 +135,17 @@ class MessageParser(
          * "balance is ETB 2,0…" reads as a perfectly valid 2.0. No real message in the
          * corpus ends on a captured field — they all end on a link or a sign-off — so
          * a value that does is treated as unknown rather than taken at face value.
+         *
+         * A number followed by nothing but a full stop counts too: "ETB22." is what
+         * "ETB22.95" looks like cut after its decimal point. A reference followed by a
+         * full stop does not, because a cut removes text and never adds a full stop.
          */
-        fun mayBeCutOff(group: MatchGroup): Boolean = group.range.last + 1 >= contentEnd
+        fun mayBeCutOff(group: MatchGroup): Boolean {
+            val end = group.range.last + 1
+            if (end >= contentEnd) return true
+            val isNumber = group.value.all { it.isDigit() || it == ',' || it == '.' }
+            return isNumber && end == contentEnd - 1 && body[end] == '.'
+        }
 
         fun group(field: SemanticField): String? {
             val captured = matchGroup(field) ?: return null
