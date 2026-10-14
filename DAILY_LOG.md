@@ -36,8 +36,11 @@ closing word. No real corpus message ends on a captured value.
 **Model check.** platform.claude.com/docs/en/models/overview lists Claude Fable 5.1
 above Opus 5.5. This setup session ran on Opus 5.5.
 
-**Phase 2 (daily routine) is not done.** Creating the cloud routine was blocked by
-this session's permission settings and needs Alpha's approval (NEEDS_APPROVAL.md A5).
+**Phase 2 (daily routine) is done.** It was created after Alpha approved it:
+"Mezgeb daily lead developer", `0 5 * * *` UTC (08:00 Nairobi), model
+`claude-opus-5-5`, repo `Alphaguyasa/Mezgeb`. All account connectors were detached
+because the routine needs only the repo. First run: 2026-10-15. Alpha decided on
+Opus only, never Fable, and CLAUDE.md §10 now says so.
 
 ### Report
 
@@ -45,8 +48,8 @@ this session's permission settings and needs Alpha's approval (NEEDS_APPROVAL.md
 |---|---|
 | Done | Setup and CI (#1), R1 dedup scoping (#2), R2 truncation safety (#3) |
 | Merged | #1 → `v2026-10-14-1`, #2 → `v2026-10-14-2`, #3 → `v2026-10-14-3` |
-| Failed or blocked | Creating the daily routine was blocked by the permission check and needs Alpha (A5) |
+| Failed or blocked | Nothing open. Routine creation was blocked once, then approved by Alpha and created |
 | Roadmap | 10 open (R3 to R12), no replan needed. R5 (fallback dedup key, P0) is now top |
-| Model | Opus 5.5 today. ACTION FOR ALPHA: run the daily routine on Claude Fable 5.1 |
-| Needs approval | A1 database encryption, A2 more message samples, A3 protect `main`, A5 create the routine |
+| Model | Opus 5.5 (`claude-opus-5-5`). Opus only, by Alpha's decision |
+| Needs approval | A1 database encryption, A2 more message samples, A3 protect `main` |
 | Next | R5 (fallback dedup key: flag possible duplicates, additive nullable column + migration test), then R3 (policy guard tests) |
