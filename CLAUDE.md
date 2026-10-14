@@ -211,15 +211,18 @@ still applies as written.)
 
 ## 10. MODEL POLICY
 
-- Always use the newest Opus-class model, or any higher tier, that is available to
-  you. Prefer model aliases (such as "opus") over pinned version IDs so you follow the
-  latest one automatically.
-- At the start of every run, check Anthropic's official models documentation for a
-  newer Opus or higher model
-  (https://platform.claude.com/docs/en/models/overview). Fable is a higher tier than
-  Opus. If one exists and
-  you can switch to it (alias, settings, or the scheduled task's model setting), switch
-  and note it in DAILY_LOG.md.
+**Alpha's decision (2026-10-14): use the newest Opus model only. Never switch to
+Fable, Mythos or any other tier above Opus. Alpha has no money or credit for them.**
+This overrides the "or any higher tier" wording in the original policy.
+
+- Always use the newest **Opus** model. Prefer the alias (such as "opus") over a
+  pinned version ID where the setting accepts one. The daily routine currently runs
+  `claude-opus-5-5`.
+- At the start of every run, check Anthropic's official models documentation
+  (https://platform.claude.com/docs/en/models/overview) for a **newer Opus** model.
+  Ignore every other model line. If a newer Opus exists and you can switch to it
+  (alias, settings, or the scheduled task's model setting), switch and note it in
+  DAILY_LOG.md.
 - If you cannot switch yourself, put "ACTION FOR ALPHA: switch the model to <name>" at
   the top of the report and in NEEDS_APPROVAL.md.
 - Switching models must never involve buying, upgrading, or changing a plan.
