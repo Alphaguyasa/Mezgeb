@@ -84,6 +84,7 @@
     <!-- Transaction rows -->
     <string name="transaction_no_counterparty">No name given</string>
     <string name="transaction_edited">edited</string>
+    <string name="transaction_possible_duplicate">possible duplicate</string>
 
     <!-- Today -->
     <string name="today_total_in">Received today</string>
@@ -132,6 +133,8 @@
     <string name="detail_edit">Edit this transaction</string>
     <string name="detail_not_found">This transaction no longer exists.</string>
     <string name="detail_edited_notice">You changed this record after it was captured.</string>
+    <string name="detail_possible_duplicate_notice">This may be a second copy of a transaction already in the ledger: same amount and balance, within a minute. If it is the same one, delete this copy.</string>
+    <string name="detail_not_a_duplicate">Not a duplicate</string>
     <string name="detail_field_amount">Amount</string>
     <string name="detail_field_direction">Direction</string>
     <string name="detail_field_channel">Paid through</string>

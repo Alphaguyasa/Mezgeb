@@ -115,6 +115,18 @@ data class TransactionEntity(
      * Defaulted so a backup written before this column existed still restores.
      */
     val touchedAt: Long? = null,
+    /**
+     * Set when this row looks like a second copy of another one: same channel,
+     * direction, amount and balance, within a minute of it, with no provider reference
+     * to tell the two apart. Points at the row it resembles.
+     *
+     * A flag, not a verdict. Two real payments of the same amount inside one minute do
+     * happen, so the row is recorded and counted like any other until the shop owner
+     * deletes it or says it is not a duplicate, which clears this back to null.
+     *
+     * Defaulted so a backup written at schema 5 still restores.
+     */
+    val possibleDuplicateOfId: String? = null,
 )
 
 @Entity(tableName = "customers")
