@@ -100,6 +100,7 @@ internal fun transaction(
     isDeleted: Boolean = false,
     editedAt: Long? = null,
     touchedAt: Long? = null,
+    possibleDuplicateOfId: String? = null,
 ) = TransactionEntity(
     id = id,
     rawMessageId = rawMessageId,
@@ -119,6 +120,7 @@ internal fun transaction(
     isDeleted = isDeleted,
     editedAt = editedAt,
     touchedAt = touchedAt,
+    possibleDuplicateOfId = possibleDuplicateOfId,
 )
 
 internal fun customer(
