@@ -48,6 +48,7 @@ data class TransactionUiModel(
     val categoryName: String?,
     val isEdited: Boolean,
     val isReconciled: Boolean,
+    val isPossibleDuplicate: Boolean = false,
 )
 
 fun Transaction.toUiModel(categoryName: String?): TransactionUiModel = TransactionUiModel(
@@ -60,6 +61,7 @@ fun Transaction.toUiModel(categoryName: String?): TransactionUiModel = Transacti
     categoryName = categoryName,
     isEdited = isEdited,
     isReconciled = isReconciled,
+    isPossibleDuplicate = isPossibleDuplicate,
 )
 
 /**
@@ -122,6 +124,16 @@ fun TransactionRow(
                         text = stringResource(R.string.transaction_edited),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (transaction.isPossibleDuplicate) {
+                    // In the error colour because this row may be counting one payment
+                    // twice, and a doubled figure is believed where a missing one is
+                    // noticed.
+                    Text(
+                        text = stringResource(R.string.transaction_possible_duplicate),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error,
                     )
                 }
             }

@@ -232,6 +232,32 @@ class MigrationTest {
         migrated.close()
     }
 
+    @Test
+    fun `v5 to v6 brings every transaction across unflagged`() = runTest {
+        createVersionOne { db ->
+            db.execSQL(
+                """
+                INSERT INTO transactions
+                    (id, rawMessageId, direction, amountMinor, currency, channel, counterpartyName,
+                     counterpartyPhone, providerTxnId, balanceAfterMinor, occurredAt, categoryId,
+                     note, isReconciled, reconciliationSessionId, isDeleted, editedAt)
+                VALUES ('t1', NULL, 'IN', 45000, 'ETB', 'BANK', NULL, NULL, NULL, 120000,
+                        1782950400000, NULL, NULL, 0, NULL, 0, NULL)
+                """.trimIndent(),
+            )
+        }
+
+        val migrated = openAtCurrentVersion()
+        val row = migrated.transactionDao().getById("t1")
+
+        assertEquals(45_000L, row?.amountMinor)
+        assertEquals(120_000L, row?.balanceAfterMinor)
+        // The lookalike check did not run when this row was captured. Flagging it now
+        // would be the app guessing, so it comes across as it was: unflagged.
+        assertNull(row?.possibleDuplicateOfId)
+        migrated.close()
+    }
+
     // --- Building version 1 from what version 1 actually was ---------------------------
 
     /**

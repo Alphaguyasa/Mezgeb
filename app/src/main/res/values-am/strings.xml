@@ -76,6 +76,7 @@
     <!-- Transaction rows -->
     <string name="transaction_no_counterparty">ስም አልተጠቀሰም</string>
     <string name="transaction_edited">ተስተካክሏል</string>
+    <string name="transaction_possible_duplicate">ድግግሞሽ ሊሆን ይችላል</string>
 
     <!-- Today -->
     <string name="today_total_in">ዛሬ የገባ</string>
@@ -122,6 +123,8 @@
     <string name="detail_edit">ይህን ግብይት አስተካክል</string>
     <string name="detail_not_found">ይህ ግብይት ከእንግዲህ የለም።</string>
     <string name="detail_edited_notice">ከተያዘ በኋላ ይህን መዝገብ እርስዎ አስተካክለውታል።</string>
+    <string name="detail_possible_duplicate_notice">ይህ በመዝገቡ ውስጥ ያለ ግብይት ሁለተኛ ቅጂ ሊሆን ይችላል፤ መጠኑና ቀሪ ሂሳቡ አንድ ነው፣ በአንድ ደቂቃ ውስጥ ነው። ያው ግብይት ከሆነ ይህን ቅጂ ይሰርዙት።</string>
+    <string name="detail_not_a_duplicate">ድግግሞሽ አይደለም</string>
     <string name="detail_field_amount">መጠን</string>
     <string name="detail_field_direction">አቅጣጫ</string>
     <string name="detail_field_channel">የተከፈለበት መንገድ</string>
