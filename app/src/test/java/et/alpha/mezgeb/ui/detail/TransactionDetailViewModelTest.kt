@@ -213,6 +213,30 @@ class TransactionDetailViewModelTest : DatabaseTest() {
         assertNotNull(db.transactionDao().getById("t1"))
     }
 
+    @Test
+    fun `saying a flagged row is not a duplicate clears the flag and nothing else`() = runTest {
+        seedParsedTransaction()
+        db.transactionDao().insert(
+            transaction("t2", rawMessageId = null, possibleDuplicateOfId = "t1"),
+        )
+        val viewModel = viewModel("t2")
+
+        viewModel.state.test {
+            val flagged = awaitItemWhere { it.transaction != null }
+            assertTrue(flagged.transaction!!.isPossibleDuplicate)
+
+            viewModel.onEvent(TransactionDetailEvent.DismissPossibleDuplicate)
+
+            val cleared = awaitItemWhere { it.transaction?.isPossibleDuplicate == false }
+            // No figure changed, so this is neither an edit nor a touch: a period being
+            // reconciled has nothing new to explain.
+            assertNull(cleared.transaction?.editedAt)
+            assertNull(cleared.transaction?.touchedAt)
+            assertEquals(45_000L, cleared.transaction?.amountMinor)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
     private fun viewModel(transactionId: String) = TransactionDetailViewModel(
         transactions = transactions,
         rules = rules,

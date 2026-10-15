@@ -61,7 +61,7 @@ Other docs:
   `ParseOutcome` (`Success` / `Unmatched` / `Ambiguous` / `Ignored`). The engine never
   guesses: if a field will not normalize, the outcome is `Unmatched`, and the message
   goes to the review queue.
-- **Database:** Room, `MezgebDatabase`, currently **version 5**. Migrations are in
+- **Database:** Room, `MezgebDatabase`, currently **version 6**. Migrations are in
   `data/local/Migrations.kt`, schemas are committed in `app/schemas/`, tests are in
   `MigrationTest.kt`. Demo mode uses a separate database file.
 - **Reconciliation:** `domain/reconcile/ReconcilePeriodUseCase.kt`. The formula is in

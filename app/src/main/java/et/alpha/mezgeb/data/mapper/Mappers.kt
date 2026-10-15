@@ -74,6 +74,7 @@ fun TransactionEntity.toDomain(): Transaction = Transaction(
     isDeleted = isDeleted,
     editedAt = editedAt,
     touchedAt = touchedAt,
+    possibleDuplicateOfId = possibleDuplicateOfId,
 )
 
 fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
@@ -95,6 +96,7 @@ fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     isDeleted = isDeleted,
     editedAt = editedAt,
     touchedAt = touchedAt,
+    possibleDuplicateOfId = possibleDuplicateOfId,
 )
 
 // --- Customer & credit ----------------------------------------------------------
