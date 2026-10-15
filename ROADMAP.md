@@ -68,7 +68,8 @@ whether the current KSP supports built-in Kotlin, and remove the flag if it does
 - 2026-10-15 · R5: Lookalike payments with no provider reference are flagged as
   possible duplicates (schema v6, additive column), shown in the ledger, and
   dismissable. They are never dropped. Also added a CI step that fails when the
-  exported Room schemas are not committed. PR #6.
+  exported Room schemas are not committed. PR #6. (Tag `v2026-10-15-2` was not
+  pushed: A6.)
 - 2026-10-15 · R3: Project rules as guard tests, including the merged-manifest
   permissions per flavor. PR #7. (The tag `v2026-10-15-1` could not be pushed: see
   NEEDS_APPROVAL A6.)

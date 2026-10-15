@@ -51,8 +51,8 @@ can then be added on request.
 
 ### A6 · Release tags cannot be pushed from the daily run
 **Ask:** none needed now. Decide only if you want the tags.
-- On 2026-10-15 the run merged PR #7 and created tag `v2026-10-15-1` on the merge
-  commit `d79cba9`. Pushing the tag failed every time ("remote end hung up"), while
+- On 2026-10-15 the run merged PR #7 and created tags `v2026-10-15-1` (`d79cba9`, #7) and
+  `v2026-10-15-2` (`82f4758`, #6). Pushing them failed every time ("remote end hung up"), while
   branch pushes and merges worked. The cloud environment's git proxy seems to refuse
   tag refs. As CLAUDE.md §8 says, I did not look for a workaround.
 - **Effect:** you can still roll back. Every merge is a squash commit on `main` with
