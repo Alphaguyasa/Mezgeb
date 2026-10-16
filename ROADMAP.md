@@ -14,18 +14,6 @@ Built from the audit on 2026-10-14: the full code read plus the open items in
 
 ## Open
 
-### R4 · P1 · S: Dependabot for Gradle and GitHub Actions
-Add `.github/dependabot.yml` (weekly, grouped minor and patch updates) so dependencies
-with known vulnerabilities surface as PRs. Free on public repos. Dependabot PRs follow
-the normal merge policy, and any new transitive network stack is rejected
-(`CONVENTIONS.md` #1).
-
-### R13 · P1 · S: Reconciliation names possible duplicates
-A row flagged as a possible duplicate (R5) still counts in `capturedIn`. A period
-that holds flagged rows should say so among the ranked gap explanations ("2 possible
-duplicates, 900.00 birr"), so the shop owner checks them before closing the period.
-Never auto-exclude them: when unsure, flag.
-
 ### R6 · P2 · S: Triage the lint warnings
 Lint reports 0 errors and about 26 warnings (`NOTES.md`). Read the full report, fix
 the real ones, and suppress the rest narrowly with a reason, as was done for
@@ -65,6 +53,13 @@ whether the current KSP supports built-in Kotlin, and remove the flag if it does
 
 ## Done
 
+- 2026-10-16 · R13: Reconciliation names flagged possible duplicates among the ranked
+  gap explanations ("N payments may have been recorded twice" with their total). Only
+  money in through a captured channel; deleted and dismissed flags are not named.
+  Nothing is subtracted. PR #11. (Tag `v2026-10-16-2` not pushed: A6.)
+- 2026-10-16 · R4: Dependabot for Gradle and GitHub Actions, weekly, minor and patch
+  grouped, Kotlin and KSP in one group, AGP alone, with a guard test. PR #10. (Tag
+  `v2026-10-16-1` not pushed: A6.)
 - 2026-10-15 · R5: Lookalike payments with no provider reference are flagged as
   possible duplicates (schema v6, additive column), shown in the ledger, and
   dismissable. They are never dropped. Also added a CI step that fails when the
