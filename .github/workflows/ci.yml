@@ -47,6 +47,16 @@ jobs:
           assembleDirectDebug
           --stacktrace
 
+      # Room rewrites app/schemas on every compile. A schema JSON that differs from
+      # the committed one, or a new version nobody committed, means the next migration
+      # would be tested against a schema the repository does not have. The diff is
+      # printed in full, so a missing file can be committed exactly as Room wrote it.
+      - name: Exported Room schemas are committed
+        if: ${{ !cancelled() }}
+        run: |
+          git add --intent-to-add app/schemas
+          git diff --exit-code -- app/schemas
+
       - name: Upload test and lint reports
         if: failure()
         uses: actions/upload-artifact@v4

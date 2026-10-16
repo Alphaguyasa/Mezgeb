@@ -112,6 +112,27 @@ class TransactionRepository @Inject constructor(
     suspend fun getByProviderTxnId(channel: Channel, providerTxnId: String): Transaction? =
         transactionDao.getByProviderTxnId(channel, providerTxnId)?.toDomain()
 
+    /** See [TransactionDao.findLookalike]. */
+    suspend fun findLookalike(
+        channel: Channel,
+        direction: Direction,
+        amountMinor: Long,
+        balanceAfterMinor: Long?,
+        occurredAt: Long,
+        providerTxnId: String?,
+        windowMillis: Long,
+    ): Transaction? = transactionDao.findLookalike(
+        channel = channel,
+        direction = direction,
+        amountMinor = amountMinor,
+        balanceAfterMinor = balanceAfterMinor,
+        occurredAt = occurredAt,
+        providerTxnId = providerTxnId,
+        windowMillis = windowMillis,
+    )?.toDomain()
+
+    suspend fun clearPossibleDuplicate(id: String) = transactionDao.clearPossibleDuplicate(id)
+
     /** Candidates for "which payment settled this debt?". See the credit book. */
     suspend fun unlinkedIncomingSince(since: Long): List<Transaction> =
         transactionDao.unlinkedIncomingSince(since).map { it.toDomain() }

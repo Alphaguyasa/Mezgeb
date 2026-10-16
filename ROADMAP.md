@@ -14,29 +14,17 @@ Built from the audit on 2026-10-14: the full code read plus the open items in
 
 ## Open
 
-### R5 · P0 · M: Stable fallback dedup key when there is no provider ID
-When a message has no `providerTxnId`, the only dedup is the content hash. The same
-payment rendered differently by notification and SMS therefore creates two
-transactions. Design: a fallback key over `(channel, direction, amountMinor,
-balanceAfterMinor, occurredAt rounded to the minute)`. When it collides, **flag** the
-new row as a possible duplicate for the user. Do not drop it, because two real
-identical payments in one minute do happen. This needs one additive nullable column
-(allowed) plus a migration test. Write the design in the PR first.
-
-### R3 · P1 · S: Project-policy guard tests
-Turn the project rules into tests so a later change cannot quietly break them:
-- no `android.*` or `androidx.*` import in `parser/src/main`;
-- no `fallbackToDestructiveMigration` anywhere;
-- no `android.util.Log`, `println` or Timber calls in shipped code;
-- no Float or Double field holding money (`*Minor`, `amount*`) in entities or models;
-- no `INTERNET` or SMS `<uses-permission>` in the main or play manifests;
-- a Room `version` bump without a matching exported schema JSON fails.
-
 ### R4 · P1 · S: Dependabot for Gradle and GitHub Actions
 Add `.github/dependabot.yml` (weekly, grouped minor and patch updates) so dependencies
 with known vulnerabilities surface as PRs. Free on public repos. Dependabot PRs follow
 the normal merge policy, and any new transitive network stack is rejected
 (`CONVENTIONS.md` #1).
+
+### R13 · P1 · S: Reconciliation names possible duplicates
+A row flagged as a possible duplicate (R5) still counts in `capturedIn`. A period
+that holds flagged rows should say so among the ranked gap explanations ("2 possible
+duplicates, 900.00 birr"), so the shop owner checks them before closing the period.
+Never auto-exclude them: when unsure, flag.
 
 ### R6 · P2 · S: Triage the lint warnings
 Lint reports 0 errors and about 26 warnings (`NOTES.md`). Read the full report, fix
@@ -57,6 +45,11 @@ the review queue. TalkBack quality still needs a person.
 Run `:app:jacocoPlayDebugReport` in CI and upload the HTML as an artifact, reported
 but not gated (see the reasoning in `app/build.gradle.kts`).
 
+### R14 · P2 · S: Ledger filter for possible duplicates
+A filter chip in the ledger that shows only flagged rows, so a shop can work through
+them in one place. This extends `listFiltered`/`pagingSourceFiltered` with one nullable
+parameter.
+
 ### R10 · P1 · L: Encrypt the database at rest
 **Blocked: see NEEDS_APPROVAL.md A1.** This needs a new native dependency
 (SQLCipher), a one-time migration of the plaintext database, and a decision on
@@ -71,6 +64,15 @@ This is an AGP 9 opt-out kept because KSP registered its sources the old way. Ch
 whether the current KSP supports built-in Kotlin, and remove the flag if it does.
 
 ## Done
+
+- 2026-10-15 · R5: Lookalike payments with no provider reference are flagged as
+  possible duplicates (schema v6, additive column), shown in the ledger, and
+  dismissable. They are never dropped. Also added a CI step that fails when the
+  exported Room schemas are not committed. PR #6. (Tag `v2026-10-15-2` was not
+  pushed: A6.)
+- 2026-10-15 · R3: Project rules as guard tests, including the merged-manifest
+  permissions per flavor. PR #7. (The tag `v2026-10-15-1` could not be pushed: see
+  NEEDS_APPROVAL A6.)
 
 - 2026-10-14 · R2: The parser no longer reads a value from a cut-off message. Before
   the fix, 1,023 truncated variants parsed to wrong values; now none do. Malformed and

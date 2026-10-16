@@ -53,6 +53,46 @@ interface TransactionDao {
     )
     suspend fun getByProviderTxnId(channel: Channel, providerTxnId: String): TransactionEntity?
 
+    /**
+     * The fallback dedup lookup, for a payment no provider reference could catch.
+     *
+     * Same channel, direction, amount and balance, captured from a message, within
+     * [windowMillis] either side of [occurredAt]. A window rather than rounding to the
+     * minute: rounding puts 09:14:59 and 09:15:01 in different buckets, and those are
+     * the same payment seen by the notification and the inbox a moment apart.
+     *
+     * `balanceAfterMinor IS` rather than `=`, so two messages that both lack a balance
+     * still compare. Two rows that both carry a provider reference are never
+     * candidates: had the references matched, the strong key would already have
+     * caught them, so different references mean different payments.
+     *
+     * Includes soft-deleted rows, like [getByProviderTxnId]: the second copy of a
+     * payment the shop already deleted is still worth pointing out.
+     */
+    @Query(
+        """
+        SELECT * FROM transactions
+        WHERE rawMessageId IS NOT NULL
+          AND channel = :channel
+          AND direction = :direction
+          AND amountMinor = :amountMinor
+          AND balanceAfterMinor IS :balanceAfterMinor
+          AND occurredAt BETWEEN :occurredAt - :windowMillis AND :occurredAt + :windowMillis
+          AND (:providerTxnId IS NULL OR providerTxnId IS NULL)
+        ORDER BY ABS(occurredAt - :occurredAt), id
+        LIMIT 1
+        """,
+    )
+    suspend fun findLookalike(
+        channel: Channel,
+        direction: Direction,
+        amountMinor: Long,
+        balanceAfterMinor: Long?,
+        occurredAt: Long,
+        providerTxnId: String?,
+        windowMillis: Long,
+    ): TransactionEntity?
+
     @Query("SELECT * FROM transactions WHERE rawMessageId = :rawMessageId")
     suspend fun getByRawMessageId(rawMessageId: String): TransactionEntity?
 
@@ -376,6 +416,13 @@ interface TransactionDao {
      */
     @Query("UPDATE transactions SET categoryId = :categoryId, touchedAt = :now WHERE id = :id")
     suspend fun setCategory(id: String, categoryId: String?, now: Long)
+
+    /**
+     * The shop owner looked and says this is a payment of its own. Neither an edit nor
+     * a touch: no figure changes, so a reconciliation period has nothing to explain.
+     */
+    @Query("UPDATE transactions SET possibleDuplicateOfId = NULL WHERE id = :id")
+    suspend fun clearPossibleDuplicate(id: String)
 
     @Query("UPDATE transactions SET isReconciled = :isReconciled, reconciliationSessionId = :sessionId WHERE id = :id")
     suspend fun setReconciled(id: String, isReconciled: Boolean, sessionId: String?)

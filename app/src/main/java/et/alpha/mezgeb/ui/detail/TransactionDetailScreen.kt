@@ -178,6 +178,19 @@ private fun ViewMode(
         )
     }
 
+    if (transaction.isPossibleDuplicate) {
+        // The app only suspects. Deleting is already on the top bar; this is the other
+        // answer, for the shop owner who checked and found two real payments.
+        Text(
+            text = stringResource(R.string.detail_possible_duplicate_notice),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error,
+        )
+        TextButton(onClick = { onEvent(TransactionDetailEvent.DismissPossibleDuplicate) }) {
+            Text(stringResource(R.string.detail_not_a_duplicate))
+        }
+    }
+
     Card {
         Column(Modifier.padding(spacing.lg)) {
             DetailRow(

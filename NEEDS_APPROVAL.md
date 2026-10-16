@@ -49,6 +49,20 @@ a Play Console account ($25). When you want to publish, generate a keystore your
 keep it out of the repo, and store it as a GitHub Actions secret. A release workflow
 can then be added on request.
 
+### A6 · Release tags cannot be pushed from the daily run
+**Ask:** none needed now. Decide only if you want the tags.
+- On 2026-10-15 the run merged PRs #7 and #6 and created tags `v2026-10-15-1` (`d79cba9`, #7) and
+  `v2026-10-15-2` (`82f4758`, #6). Pushing them failed every time ("remote end hung up"), while
+  branch pushes and merges worked. The cloud environment's git proxy seems to refuse
+  tag refs. As CLAUDE.md §8 says, I did not look for a workaround.
+- **Effect:** you can still roll back. Every merge is a squash commit on `main` with
+  its PR number, and the log lists each one. Only the named tags are missing.
+- **Options:** (a) do nothing (the log stays the rollback list); (b) create the tags
+  yourself from the GitHub web UI (Releases → Draft a new release → new tag on the
+  listed commit); (c) allow the routine's environment to push tags, if that setting
+  exists for you.
+- **Money:** none.
+
 ## Resolved
 
 - 2026-10-14 · A5: the daily routine was created with Alpha's approval. It runs

@@ -38,6 +38,8 @@ import et.alpha.mezgeb.domain.model.Direction as DomainDirection
  *                        │
  *                     provider txn id already known? ► Duplicate (strong key)
  *                        │
+ *                     looks like a row already there? ─► flag it, but still record it
+ *                        │
  *                     insert Transaction, apply category rules, mark PARSED
  * ```
  *
@@ -253,8 +255,26 @@ class CaptureCoordinator @Inject constructor(
             return CaptureOutcome.Duplicate(DedupTier.PROVIDER_TXN_ID)
         }
 
+        // Tier three, for a payment with no reference to compare (or only one side
+        // carrying one). The notification and the inbox can word one payment
+        // differently, and without a reference that used to become two transactions.
+        // A lookalike is flagged, never dropped: two real payments of the same amount
+        // inside one minute do happen, and only the shop owner can tell which this is.
+        val lookalike = transactions.findLookalike(
+            channel = DomainChannel.valueOf(fields.channel.name),
+            direction = DomainDirection.valueOf(fields.direction.name),
+            amountMinor = fields.amountMinor,
+            balanceAfterMinor = fields.balanceAfterMinor,
+            occurredAt = fields.occurredAt,
+            providerTxnId = fields.providerTxnId,
+            windowMillis = LOOKALIKE_WINDOW_MILLIS,
+        )
+
         val transactionId = ids.newId()
-        transactions.insert(fields.toTransaction(transactionId, rawMessageId, body))
+        transactions.insert(
+            fields.toTransaction(transactionId, rawMessageId, body)
+                .copy(possibleDuplicateOfId = lookalike?.id),
+        )
         transactions.markRawMessageResolved(rawMessageId, resolvedState, ruleId)
         ruleId?.let { rules.recordParserRuleMatch(it) }
         return CaptureOutcome.Recorded(rawMessageId, transactionId)
@@ -292,6 +312,15 @@ class CaptureCoordinator @Inject constructor(
         touchedAt = null,
     )
 }
+
+/**
+ * How far apart two lookalike messages may be and still be flagged as one payment.
+ *
+ * A minute either side. The two capture paths see the same payment within seconds of
+ * each other, and a message that states its own time states it to the minute, so a
+ * wider window would only add unrelated payments to the flag.
+ */
+private const val LOOKALIKE_WINDOW_MILLIS = 60_000L
 
 private fun UnmatchedReason.toQueueReason(): QueueReason = when (this) {
     UnmatchedReason.NO_RULE_FOR_SENDER,

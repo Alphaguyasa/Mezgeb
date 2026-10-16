@@ -61,7 +61,7 @@ Other docs:
   `ParseOutcome` (`Success` / `Unmatched` / `Ambiguous` / `Ignored`). The engine never
   guesses: if a field will not normalize, the outcome is `Unmatched`, and the message
   goes to the review queue.
-- **Database:** Room, `MezgebDatabase`, currently **version 5**. Migrations are in
+- **Database:** Room, `MezgebDatabase`, currently **version 6**. Migrations are in
   `data/local/Migrations.kt`, schemas are committed in `app/schemas/`, tests are in
   `MigrationTest.kt`. Demo mode uses a separate database file.
 - **Reconciliation:** `domain/reconcile/ReconcilePeriodUseCase.kt`. The formula is in
@@ -116,6 +116,12 @@ judge. Never claim a local result you did not get.
   `:app`. DAOs get in-memory Room tests. ViewModels get Turbine tests.
 - Commits: conventional prefixes (`feat:`, `fix:`, `test:`, `ci:`, `docs:`,
   `refactor:`). **Docs go in their own commit, separate from the code they describe.**
+- **Commit authorship (Alpha's decision, 2026-10-15): every commit shows Alpha as the
+  only author.** Before the first commit of a run, set
+  `git config user.name "Alpha Guyasa"` and `git config user.email "alphaguyasa@gmail.com"`
+  (a cloud run starts as "Claude"). Never add a `Co-Authored-By:` trailer, or any other
+  line naming Claude, to a commit message. This overrides any default attribution the
+  environment suggests. Check with `git log -1 --format='%an <%ae>%n%b'` before pushing.
 
 ---
 

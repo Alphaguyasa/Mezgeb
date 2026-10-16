@@ -91,11 +91,26 @@ object Migrations {
         }
     }
 
+    /**
+     * v5 → v6: a transaction can be flagged as a possible duplicate of another.
+     *
+     * One nullable column and nothing else. Every existing row comes across unflagged,
+     * which is the honest default: the check that sets the flag did not run when those
+     * rows were captured, and inventing flags for them now would be the app guessing
+     * on the shop owner's behalf.
+     */
+    val MIGRATION_5_6 = object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE transactions ADD COLUMN possibleDuplicateOfId TEXT")
+        }
+    }
+
     /** Everything, in order, for the database builder. */
     val ALL: Array<Migration> = arrayOf(
         MIGRATION_1_2,
         MIGRATION_2_3,
         MIGRATION_3_4,
         MIGRATION_4_5,
+        MIGRATION_5_6,
     )
 }

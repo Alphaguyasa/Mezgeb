@@ -38,8 +38,19 @@ the one that runs on every message a phone receives — stored personal messages
 `IGNORED`. Fixed by moving the policy into the shared coordinator; one funnel, one place
 for it to be wrong.
 
-**Deduplication.** A payment can arrive as both a notification and an SMS. Rows are keyed
-by a content hash over the normalized body plus sender, so the second arrival is dropped.
+**Deduplication.** A payment can arrive as both a notification and an SMS. Three tiers,
+in order:
+
+1. **Content hash.** Raw messages are keyed by a hash over the normalized body plus
+   sender, so the same text arriving twice is dropped.
+2. **Provider reference.** When the two copies are worded differently, the provider's
+   transaction id catches them. It is scoped to the channel and includes deleted rows.
+3. **Lookalike flag.** With no reference to compare (or one on one side only), a row with
+   the same channel, direction, amount and balance within a minute of an existing one is
+   recorded but **flagged** (`transactions.possibleDuplicateOfId`, schema v6). It is never
+   dropped, because two real payments of one amount inside a minute do happen. The
+   ledger shows "possible duplicate", and the shop owner deletes the copy or taps
+   "Not a duplicate".
 
 ## 2. Modules
 

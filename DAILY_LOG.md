@@ -5,6 +5,62 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-10-15: First daily run (scheduled)
+
+**Start.** CI on `main` was green. Model check: the models overview lists Opus 5.5
+(`claude-opus-5-5`) as the newest Opus, and that is what this run used. No switch
+needed. Fable 5.1 is listed above it and was ignored, as Alpha decided.
+
+**Environment.** This cloud run had JDK 21 but no Android SDK. `dl.google.com` (and so
+Google Maven) was blocked, so no Gradle build could run locally, not even
+`:parser:test`. CI was the judge for everything below. No local result is claimed.
+
+**R5 (P0, fallback dedup key), PR #6, merged.** A payment with no provider reference was
+deduplicated only by the content hash, so one payment worded differently by the
+notification and the inbox became two transactions. There is now a third tier: same
+channel, direction, amount and balance within ±60 s, where at most one side has a
+reference. A match is **flagged** in `transactions.possibleDuplicateOfId`, never dropped.
+- The ledger shows "possible duplicate". The detail screen explains it and offers
+  "Not a duplicate". Strings are in English and Amharic.
+- Schema v6 adds one nullable column, with migration 5→6 and a test.
+- New tests: a DAO test for each lookalike condition, coordinator tests, a ViewModel
+  dismiss test and the migration test.
+- Room's `6.json` could not be generated locally, so a new CI step fails when
+  `app/schemas` is out of date and prints the diff. Its first run printed the file.
+  I committed it byte for byte, after checking that the blob hash `09247e5` matched.
+  That was one of the two allowed fix attempts. The second CI run was green.
+
+**R3 (P1, policy guard tests), PR #7, merged.**
+- `ProjectRulesTest` checks these rules over the source tree: no Android import in
+  `:parser`, no destructive-migration call, no log or print calls in shipped code, no
+  Float or Double money, no INTERNET or SMS permissions in the wrong manifests, and a
+  committed schema JSON for every DB version.
+- `MergedManifestPermissionTest` reads the merged permissions for each flavor: no
+  network permission in either, READ_SMS only in `direct`.
+- Green on the first CI run.
+
+**Tags.** Created `v2026-10-15-1` (#7, `d79cba9`) and `v2026-10-15-2` (#6, `82f4758`)
+locally, but **pushing them failed** ("remote end hung up"), while branch pushes worked.
+I did not look for a workaround. See NEEDS_APPROVAL A6.
+
+**Roadmap.** R3 and R5 are done. Added R13 (reconciliation names possible duplicates,
+P1) and R14 (ledger filter for flagged rows). 9 items are open, 7 of them unblocked,
+so no replan was needed.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R5 fallback dedup flag (#6), R3 policy guard tests (#7) |
+| Merged | #7 yes (`d79cba9`), #6 yes (`82f4758`). Tags `v2026-10-15-1`/`-2` created but **could not be pushed** |
+| Failed or blocked | Tag push refused by the environment (A6). No local Gradle (no Android SDK, Google Maven blocked) |
+| Roadmap | 9 open (7 unblocked, R10/R11 blocked). No replan needed. Added R13, R14 |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push (new, optional) |
+| Next | R4 (Dependabot), then R13 (reconciliation shows possible duplicates) |
+
+---
+
 ## 2026-10-14: Setup run (interactive, on Alpha's PC)
 
 **Phase 0 (setup).** Read the whole codebase and docs, then wrote CLAUDE.md,

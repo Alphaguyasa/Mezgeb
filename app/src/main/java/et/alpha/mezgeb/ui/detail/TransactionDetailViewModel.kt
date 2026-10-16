@@ -88,6 +88,9 @@ sealed interface TransactionDetailEvent {
     ) : TransactionDetailEvent
 
     data object ToggleReconciled : TransactionDetailEvent
+
+    /** The shop owner checked: this is its own payment, not a second copy. */
+    data object DismissPossibleDuplicate : TransactionDetailEvent
     data object RequestDelete : TransactionDetailEvent
     data object DismissDelete : TransactionDetailEvent
     data object ConfirmDelete : TransactionDetailEvent
@@ -182,6 +185,10 @@ class TransactionDetailViewModel @Inject constructor(
                     // at. Session 8 sets this when closing a period.
                     sessionId = transaction.reconciliationSessionId,
                 )
+            }
+
+            TransactionDetailEvent.DismissPossibleDuplicate -> viewModelScope.launch {
+                transactions.clearPossibleDuplicate(transactionId)
             }
 
             TransactionDetailEvent.RequestDelete ->

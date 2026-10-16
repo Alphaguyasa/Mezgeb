@@ -213,6 +213,88 @@ class CaptureCoordinatorTest : DatabaseTest() {
         assertEquals(2, allTransactions().size)
     }
 
+    // --- Tier three: the lookalike flag ----------------------------------------------
+
+    @Test
+    fun `the same payment worded differently with no reference is recorded and flagged`() =
+        runTest {
+            // The notification is trimmed and the inbox SMS is not, so the hash differs,
+            // and neither carries a reference. Before the lookalike check this was two
+            // silent transactions for one payment.
+            val first = coordinator.capture(notification(CBE_CREDIT_SHORT, sender = "CBE"))
+                as CaptureOutcome.Recorded
+            val second = coordinator.capture(
+                imported(CBE_CREDIT, sender = "CBE", receivedAt = NOW + 20_000),
+            ) as CaptureOutcome.Recorded
+
+            // Recorded, not dropped: only the shop owner can say it is the same payment.
+            assertEquals(2, allTransactions().size)
+            assertEquals(
+                first.transactionId,
+                transactions.getTransaction(second.transactionId)?.possibleDuplicateOfId,
+            )
+            // The row that came first is the original and is left alone.
+            assertNull(transactions.getTransaction(first.transactionId)?.possibleDuplicateOfId)
+        }
+
+    @Test
+    fun `a reference on only one side does not stop the flag`() = runTest {
+        val withRef = coordinator.capture(
+            notification(
+                "Your account has been credited with ETB 450.00. Ref FT26A1B2C3.",
+                sender = "CBE",
+            ),
+        ) as CaptureOutcome.Recorded
+        val without = coordinator.capture(
+            imported(CBE_CREDIT, sender = "CBE", receivedAt = NOW + 5_000),
+        ) as CaptureOutcome.Recorded
+
+        assertEquals(
+            withRef.transactionId,
+            transactions.getTransaction(without.transactionId)?.possibleDuplicateOfId,
+        )
+    }
+
+    @Test
+    fun `two payments with different references are never flagged`() = runTest {
+        // Had the references matched, tier two would have caught them. They did not,
+        // so these are two payments, however alike the rest of them looks.
+        coordinator.capture(notification(TELEBIRR_NOTIFICATION))
+        val second = coordinator.capture(
+            notification(
+                "You have received ETB 450.00 from ABEBE. Your transaction number is " +
+                    "BX9911QQ42.",
+                receivedAt = NOW + 10_000,
+            ),
+        ) as CaptureOutcome.Recorded
+
+        assertNull(transactions.getTransaction(second.transactionId)?.possibleDuplicateOfId)
+    }
+
+    @Test
+    fun `the same amount more than a minute apart is not flagged`() = runTest {
+        coordinator.capture(notification(CBE_CREDIT_SHORT, sender = "CBE"))
+        val later = coordinator.capture(
+            imported(CBE_CREDIT, sender = "CBE", receivedAt = NOW + 60_001),
+        ) as CaptureOutcome.Recorded
+
+        assertNull(transactions.getTransaction(later.transactionId)?.possibleDuplicateOfId)
+    }
+
+    @Test
+    fun `a different amount at the same moment is not flagged`() = runTest {
+        coordinator.capture(notification(CBE_CREDIT_SHORT, sender = "CBE"))
+        val other = coordinator.capture(
+            imported(
+                "Your account has been credited with ETB 460.00 on 01/07/2026 at 09:14.",
+                sender = "CBE",
+                receivedAt = NOW + 1_000,
+            ),
+        ) as CaptureOutcome.Recorded
+
+        assertNull(transactions.getTransaction(other.transactionId)?.possibleDuplicateOfId)
+    }
+
     // --- The messages that do not become transactions --------------------------------
 
     @Test
@@ -421,6 +503,9 @@ class CaptureCoordinatorTest : DatabaseTest() {
 
         const val CBE_CREDIT =
             "Your account has been credited with ETB 450.00 on 01/07/2026 at 09:14."
+
+        /** How the messaging app's notification can render [CBE_CREDIT]: trimmed. */
+        const val CBE_CREDIT_SHORT = "Your account has been credited with ETB 450.00 by transfer."
 
         const val CBE_CREDIT_LATER =
             "Your account has been credited with ETB 450.00 on 02/07/2026 at 16:02."
