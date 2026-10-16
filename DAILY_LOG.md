@@ -5,6 +5,60 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-10-16: Second daily run (scheduled)
+
+**Start.** CI on `main` was green. Model check: the models overview still lists Opus
+5.5 (`claude-opus-5-5`) as the newest Opus. This run used it. No switch was needed.
+Fable 5.1 was ignored, as Alpha decided.
+
+**Environment.** The setup matched yesterday's: JDK 21, no Android SDK, and Google
+Maven blocked, so no Gradle build ran locally. CI judged everything below. No local
+result is claimed.
+
+**R4 (P1, Dependabot), PR #10, merged.**
+- `.github/dependabot.yml` runs weekly (Monday 04:00 UTC) for `gradle` and
+  `github-actions`.
+- Minor and patch updates come grouped. Majors come one per PR.
+- Kotlin and KSP share a group, because KSP's version must track Kotlin exactly.
+- AGP gets its own PR. The Robolectric android-all jar stays pinned by hand.
+- A guard test in `ProjectRulesTest` checks the config.
+- Green on the first CI run.
+- Dependabot squash commits name Dependabot as the author, which collides with the
+  authorship rule. I asked Alpha in A7. Until then, the run will review those PRs but
+  not merge them.
+
+**R13 (P1, reconciliation names possible duplicates), PR #11, merged.**
+- Flagged lookalikes still count in `capturedIn`. The ranked gap explanations now
+  include "N payments may have been recorded twice" with their total, and tapping it
+  opens the ledger.
+- Only flagged, non-deleted money in through a captured channel (not cash) is counted.
+  Nothing is ever subtracted.
+- Added a DAO test and two use-case tests. Strings are in English and Amharic.
+- **One slip, caught before merge:** the branch was first cut from a stale local
+  `origin/main` (`d9d955a`, from before R5). I merged the current `main` into it (no
+  history rewrite) and pushed. CI was green on that head.
+
+**Tags.** I created `v2026-10-16-1` (#10, `8451e53`) and `v2026-10-16-2` (#11,
+`b8a038c`) locally. Pushing them failed again with "remote end hung up", the same
+problem as A6. I did not look for a workaround.
+
+**Roadmap.** R4 and R13 are done. 8 items are open, 6 of them unblocked (R6, R7, R8,
+R9, R14, R12), so no replan was needed.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R4 Dependabot (#10), R13 reconciliation names possible duplicates (#11) |
+| Merged | #10 yes (`8451e53`), #11 yes (`b8a038c`). Tags `v2026-10-16-1`/`-2` created but **could not be pushed** (A6) |
+| Failed or blocked | Tag push (A6). No local Gradle (no Android SDK, Google Maven blocked) |
+| Roadmap | 8 open (6 unblocked, R10/R11 blocked). No replan needed |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, **A7 Dependabot authorship (new)** |
+| Next | R6 (triage lint warnings), then R7 (permission-flow test) |
+
+---
+
 ## 2026-10-15: First daily run (scheduled)
 
 **Start.** CI on `main` was green. Model check: the models overview lists Opus 5.5
