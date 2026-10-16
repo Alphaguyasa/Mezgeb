@@ -53,7 +53,7 @@ R9, R14, R12), so no replan was needed.
 | Field | Content |
 |---|---|
 | Done | R4 Dependabot (#10), R13 reconciliation names possible duplicates (#11) |
-| Merged | #10 yes (`8451e53`), #11 yes (`b8a038c`). Tags `v2026-10-16-1`/`-2` created but **could not be pushed** (A6) |
+| Merged | #10 yes (`8451e53`), #11 yes (`b8a038c`). **Correction (Alpha, same day):** the report said these were "authored by Alpha". The work was done by both contributors, Alpha and Claude. The squash commits name only Alpha because of the old rule, which is now replaced (CLAUDE.md §4). Tags `v2026-10-16-1`/`-2` created but **could not be pushed** (A6) |
 | Failed or blocked | Tag push (A6). No local Gradle (no Android SDK, Google Maven blocked) |
 | Roadmap | 8 open (6 unblocked, R10/R11 blocked). No replan needed |
 | Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |

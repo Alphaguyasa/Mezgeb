@@ -67,7 +67,8 @@ can then be added on request.
 
 ### A7 · Who is the author of a merged Dependabot PR?
 **Ask:** may the daily run merge Dependabot PRs whose squash commit names
-`dependabot[bot]` as its author?
+`dependabot[bot]` as its author? (Since 2026-10-16 the rule is that Alpha and Claude are
+both credited. Dependabot would be a third name in the history.)
 - Since PR #10, Dependabot opens update PRs. It opened four at once on 2026-10-16,
   all major GitHub Actions bumps: #12 `actions/checkout` 4→7, #13 `actions/setup-java`
   4→5, #14 `gradle/actions` 4→6, #15 `actions/upload-artifact` 4→7. Your rule from
