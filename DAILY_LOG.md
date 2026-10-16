@@ -26,6 +26,9 @@ result is claimed.
 - Dependabot squash commits name Dependabot as the author, which collides with the
   authorship rule. I asked Alpha in A7. Until then, the run will review those PRs but
   not merge them.
+- Dependabot opened its first four PRs right after the merge, all major GitHub Actions
+  bumps (#12 checkout 4→7, #13 setup-java 4→5, #14 gradle/actions 4→6,
+  #15 upload-artifact 4→7). They stay open, waiting on A7.
 
 **R13 (P1, reconciliation names possible duplicates), PR #11, merged.**
 - Flagged lookalikes still count in `capturedIn`. The ranked gap explanations now
@@ -55,7 +58,7 @@ R9, R14, R12), so no replan was needed.
 | Roadmap | 8 open (6 unblocked, R10/R11 blocked). No replan needed |
 | Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
 | Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, **A7 Dependabot authorship (new)** |
-| Next | R6 (triage lint warnings), then R7 (permission-flow test) |
+| Next | Review Dependabot PRs #12–#15 (merge only after A7). Then R6 (triage lint warnings) and R7 (permission-flow test) |
 
 ---
 
