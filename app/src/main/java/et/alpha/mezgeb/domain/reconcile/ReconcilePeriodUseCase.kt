@@ -71,6 +71,19 @@ sealed interface GapExplanation {
         override val potentialMinor: Long get() = totalMinor
     }
 
+    /**
+     * Money in that may have been captured twice (the lookalike flag from capture).
+     * Each flagged row still counts in `capturedIn`, so a real duplicate makes the
+     * period look better than it is by up to [totalMinor]. It is shown, never subtracted:
+     * two real payments of one amount inside a minute happen, and only the shop knows.
+     */
+    data class PossibleDuplicates(
+        val count: Int,
+        val totalMinor: Long,
+    ) : GapExplanation {
+        override val potentialMinor: Long get() = totalMinor
+    }
+
     /** Someone changed a parsed value after this period was opened. */
     data class EditedSincePeriodOpened(val count: Int) : GapExplanation {
         override val potentialMinor: Long? get() = null
@@ -162,6 +175,14 @@ class ReconcilePeriodUseCase @Inject constructor(
             explanations += GapExplanation.UncategorizedTransactions(
                 count = uncategorised,
                 totalMinor = transactions.sumUncategorised(periodStart, periodEnd),
+            )
+        }
+
+        val duplicates = transactions.possibleDuplicateTotals(periodStart, periodEnd)
+        if (duplicates.transactionCount > 0) {
+            explanations += GapExplanation.PossibleDuplicates(
+                count = duplicates.transactionCount,
+                totalMinor = duplicates.totalMinor,
             )
         }
 

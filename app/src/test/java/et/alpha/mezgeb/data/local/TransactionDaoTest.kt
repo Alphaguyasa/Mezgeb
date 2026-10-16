@@ -1,5 +1,6 @@
 package et.alpha.mezgeb.data.local
 
+import et.alpha.mezgeb.data.local.dao.PossibleDuplicateTotals
 import et.alpha.mezgeb.domain.model.Channel
 import et.alpha.mezgeb.domain.model.Direction
 import kotlinx.coroutines.flow.first
@@ -201,6 +202,35 @@ class TransactionDaoTest : DatabaseTest() {
     @Test
     fun `countUncategorised counts only rows with no category`() = runTest {
         assertEquals(2, dao.countUncategorised(T0, T0 + 10 * DAY))
+    }
+
+    @Test
+    fun `possibleDuplicateTotals counts only flagged money in through a captured channel`() = runTest {
+        // None of the seed rows is flagged.
+        assertEquals(
+            PossibleDuplicateTotals(0, 0),
+            dao.possibleDuplicateTotals(Direction.IN, Channel.CASH, T0, T0 + 10 * DAY),
+        )
+
+        dao.insertAll(
+            listOf(
+                // Counted: flagged, in, telebirr, inside the window.
+                transaction("d1", direction = Direction.IN, amountMinor = 45_000, channel = Channel.TELEBIRR, occurredAt = T0 + 30_000, possibleDuplicateOfId = "t1"),
+                // Not counted: money out does not inflate capturedIn.
+                transaction("d2", direction = Direction.OUT, amountMinor = 30_000, channel = Channel.BANK, occurredAt = T0 + 2 * DAY, possibleDuplicateOfId = "t3"),
+                // Not counted: cash is not captured money.
+                transaction("d3", direction = Direction.IN, amountMinor = 5_000, channel = Channel.CASH, occurredAt = T0 + 3 * DAY, possibleDuplicateOfId = "t4"),
+                // Not counted: the shop already deleted this copy.
+                transaction("d4", direction = Direction.IN, amountMinor = 120_000, channel = Channel.CBE_BIRR, occurredAt = T0 + DAY, possibleDuplicateOfId = "t2", isDeleted = true),
+                // Not counted: outside the window.
+                transaction("d5", direction = Direction.IN, amountMinor = 7_000, channel = Channel.TELEBIRR, occurredAt = T0 + 20 * DAY, possibleDuplicateOfId = "t1"),
+            ),
+        )
+
+        assertEquals(
+            PossibleDuplicateTotals(1, 45_000),
+            dao.possibleDuplicateTotals(Direction.IN, Channel.CASH, T0, T0 + 10 * DAY),
+        )
     }
 
     // --- Mutations ----------------------------------------------------------------

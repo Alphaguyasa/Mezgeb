@@ -244,6 +244,50 @@ class ReconcilePeriodUseCaseTest : DatabaseTest() {
     }
 
     @Test
+    fun `a possible duplicate is named with its amount and never subtracted`() = runTest {
+        db.transactionDao().insertAll(
+            listOf(
+                transaction("first", amountMinor = 45_000, categoryId = "cat_sales", occurredAt = T0 + HOUR),
+                transaction(
+                    "second",
+                    amountMinor = 45_000,
+                    categoryId = "cat_sales",
+                    occurredAt = T0 + HOUR + 30_000,
+                    possibleDuplicateOfId = "first",
+                ),
+            ),
+        )
+        expected = 45_000
+
+        val result = useCase()(periodStart, periodEnd, openedAt)
+
+        // Both copies still count: it may be a real second payment, and only the shop
+        // knows. Reconciliation must never decide that for them.
+        assertEquals(90_000L, result.capturedInMinor)
+        assertEquals(-45_000L, result.gapMinor)
+        assertEquals(
+            GapExplanation.PossibleDuplicates(count = 1, totalMinor = 45_000),
+            result.explanations.single(),
+        )
+    }
+
+    @Test
+    fun `a dismissed or deleted possible duplicate is no longer named`() = runTest {
+        db.transactionDao().insertAll(
+            listOf(
+                transaction("first", amountMinor = 45_000, categoryId = "cat_sales", occurredAt = T0 + HOUR),
+                transaction("kept", amountMinor = 45_000, categoryId = "cat_sales", occurredAt = T0 + HOUR, possibleDuplicateOfId = "first"),
+                transaction("deleted", amountMinor = 45_000, categoryId = "cat_sales", occurredAt = T0 + HOUR, possibleDuplicateOfId = "first", isDeleted = true),
+            ),
+        )
+        db.transactionDao().clearPossibleDuplicate("kept")
+
+        val explanations = useCase()(periodStart, periodEnd, openedAt).explanations
+
+        assertTrue(explanations.none { it is GapExplanation.PossibleDuplicates })
+    }
+
+    @Test
     fun `nothing wrong means nothing to explain`() = runTest {
         db.transactionDao().insert(
             transaction("t1", amountMinor = 50_000, categoryId = "cat_sales", occurredAt = T0 + HOUR),
