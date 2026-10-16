@@ -55,12 +55,30 @@ can then be added on request.
   `v2026-10-15-2` (`82f4758`, #6). Pushing them failed every time ("remote end hung up"), while
   branch pushes and merges worked. The cloud environment's git proxy seems to refuse
   tag refs. As CLAUDE.md §8 says, I did not look for a workaround.
+- 2026-10-16: the same failure for `v2026-10-16-1` (`8451e53`, #10) and
+  `v2026-10-16-2` (`b8a038c`, #11). The four missing tags are all created locally only.
 - **Effect:** you can still roll back. Every merge is a squash commit on `main` with
   its PR number, and the log lists each one. Only the named tags are missing.
 - **Options:** (a) do nothing (the log stays the rollback list); (b) create the tags
   yourself from the GitHub web UI (Releases → Draft a new release → new tag on the
   listed commit); (c) allow the routine's environment to push tags, if that setting
   exists for you.
+- **Money:** none.
+
+### A7 · Who is the author of a merged Dependabot PR?
+**Ask:** may the daily run merge Dependabot PRs whose squash commit names
+`dependabot[bot]` as its author?
+- Since PR #10, Dependabot opens update PRs. It opened four at once on 2026-10-16,
+  all major GitHub Actions bumps: #12 `actions/checkout` 4→7, #13 `actions/setup-java`
+  4→5, #14 `gradle/actions` 4→6, #15 `actions/upload-artifact` 4→7. Your rule from
+  2026-10-15 says every commit shows you as the only author. The run's own commits do.
+  A squash merge of a Dependabot PR, however, keeps Dependabot as the author, and the
+  run cannot change that without rewriting the commit.
+- **Until you answer:** the run reviews Dependabot PRs (CI, and the transitive tree
+  for a network stack) and reports them, but leaves them open and unmerged.
+- **Options:** (a) yes, Dependabot may appear as the author of its own update commits;
+  (b) no, the run re-creates each update as its own commit on a `claude/` branch and
+  closes the Dependabot PR; (c) merge them yourself from the phone.
 - **Money:** none.
 
 ## Resolved
