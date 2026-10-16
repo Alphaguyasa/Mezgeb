@@ -434,6 +434,10 @@
         <item quantity="one">%1$d customer owes you money</item>
         <item quantity="other">%1$d customers owe you money</item>
     </plurals>
+    <plurals name="reconcile_explain_possible_duplicates">
+        <item quantity="one">%1$d payment may have been recorded twice</item>
+        <item quantity="other">%1$d payments may have been recorded twice</item>
+    </plurals>
     <plurals name="reconcile_explain_edited">
         <item quantity="one">%1$d transaction changed since you started checking</item>
         <item quantity="other">%1$d transactions changed since you started checking</item>

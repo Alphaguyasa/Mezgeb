@@ -75,6 +75,7 @@ fun ReconcileRoute(
                 is GapExplanation.UnmatchedMessages -> onOpenReview()
                 is GapExplanation.OutstandingCredit -> onOpenCustomers()
                 is GapExplanation.UncategorizedTransactions,
+                is GapExplanation.PossibleDuplicates,
                 is GapExplanation.EditedSincePeriodOpened,
                 -> onOpenLedger()
             }
@@ -399,6 +400,12 @@ private fun ExplanationRow(explanation: GapExplanation, onClick: () -> Unit) {
                         explanation.count,
                     )
 
+                    is GapExplanation.PossibleDuplicates -> pluralStringResource(
+                        R.plurals.reconcile_explain_possible_duplicates,
+                        explanation.count,
+                        explanation.count,
+                    )
+
                     is GapExplanation.OutstandingCredit -> pluralStringResource(
                         R.plurals.reconcile_explain_credit,
                         explanation.customerCount,
@@ -582,6 +589,7 @@ private fun ReconcileGapPreview() {
                     explanations = listOf(
                         GapExplanation.UnmatchedMessages(4, 32_000, amountsFound = 3),
                         GapExplanation.UncategorizedTransactions(2, 12_000),
+                        GapExplanation.PossibleDuplicates(1, 9_000),
                         GapExplanation.EditedSincePeriodOpened(1),
                     ),
                 ),

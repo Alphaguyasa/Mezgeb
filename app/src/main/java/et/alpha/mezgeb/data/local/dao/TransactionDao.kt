@@ -17,6 +17,8 @@ data class ChannelTotal(val channel: Channel, val totalMinor: Long, val transact
 
 data class DayTotal(val dayEpochMillis: Long, val inMinor: Long, val outMinor: Long)
 
+data class PossibleDuplicateTotals(val transactionCount: Int, val totalMinor: Long)
+
 @Dao
 interface TransactionDao {
 
@@ -353,6 +355,29 @@ interface TransactionDao {
         """,
     )
     suspend fun countUncategorised(from: Long, to: Long): Int
+
+    /**
+     * Flagged lookalikes (see [findLookalike]) that count toward a period's money.
+     *
+     * Only the rows that inflate `capturedIn`: money in, through a captured channel.
+     * A flagged row is never excluded from any total, because it may be a real second
+     * payment; this only tells reconciliation how much a duplicate could be hiding.
+     */
+    @Query(
+        """
+        SELECT COUNT(*) AS transactionCount, COALESCE(SUM(amountMinor), 0) AS totalMinor
+        FROM transactions
+        WHERE isDeleted = 0 AND possibleDuplicateOfId IS NOT NULL
+          AND direction = :direction AND channel != :excludingChannel
+          AND occurredAt >= :from AND occurredAt <= :to
+        """,
+    )
+    suspend fun possibleDuplicateTotals(
+        direction: Direction,
+        excludingChannel: Channel,
+        from: Long,
+        to: Long,
+    ): PossibleDuplicateTotals
 
     /**
      * Rows a human touched after the period was opened, for whatever reason.

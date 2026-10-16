@@ -388,6 +388,10 @@
         <item quantity="one">%1$d ደንበኛ ገንዘብ ይፈልግብዎታል</item>
         <item quantity="other">%1$d ደንበኞች ገንዘብ ይፈልጉብዎታል</item>
     </plurals>
+    <plurals name="reconcile_explain_possible_duplicates">
+        <item quantity="one">%1$d ክፍያ ሁለት ጊዜ ተመዝግቦ ሊሆን ይችላል</item>
+        <item quantity="other">%1$d ክፍያዎች ሁለት ጊዜ ተመዝግበው ሊሆን ይችላል</item>
+    </plurals>
     <plurals name="reconcile_explain_edited">
         <item quantity="one">መመርመር ከጀመሩ በኋላ %1$d ግብይት ተለውጧል</item>
         <item quantity="other">መመርመር ከጀመሩ በኋላ %1$d ግብይቶች ተለውጠዋል</item>
