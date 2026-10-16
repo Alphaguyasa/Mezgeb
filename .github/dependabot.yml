@@ -1,0 +1,62 @@
+# Dependabot opens a pull request when a dependency has a newer release or a known
+# vulnerability. It only opens PRs: nothing merges without green CI and the merge policy
+# in CLAUDE.md §8. Every Gradle update is still checked by hand for a transitive network
+# stack before it merges (CONVENTIONS.md hard constraint #1), because CI cannot see that.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: scope
+    groups:
+      # KSP is versioned as <kotlin>-<ksp> and must track Kotlin exactly
+      # (gradle/libs.versions.toml). Bumping one without the other breaks the build, so
+      # they always travel in one PR, majors included.
+      kotlin-and-ksp:
+        patterns:
+          # Not "org.jetbrains.kotlin*": that would also catch kotlinx (coroutines,
+          # serialization), which ship on their own schedule.
+          - "org.jetbrains.kotlin:*"
+          - "org.jetbrains.kotlin.*"
+          - "com.google.devtools.ksp*"
+      # The Android Gradle Plugin changes the build itself, so it gets its own PR and
+      # never hides inside a batch of library bumps.
+      android-gradle-plugin:
+        patterns:
+          - "com.android.application*"
+          - "com.android.tools.build*"
+      # Everything else: one weekly PR for minor and patch updates. Majors come one per
+      # PR, so a breaking change is reviewed on its own.
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # The instrumented android-all jar is pinned to the build Robolectric expects
+      # (see the comment in libs.versions.toml). It moves together with Robolectric,
+      # by hand, never on its own.
+      - dependency-name: "org.robolectric:android-all-instrumented"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+      include: scope
+    groups:
+      actions:
+        update-types:
+          - minor
+          - patch
