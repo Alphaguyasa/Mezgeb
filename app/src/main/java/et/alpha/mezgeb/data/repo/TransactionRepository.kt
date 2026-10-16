@@ -7,6 +7,7 @@ import androidx.paging.map
 import et.alpha.mezgeb.data.local.dao.CategoryTotal
 import et.alpha.mezgeb.data.local.dao.ChannelTotal
 import et.alpha.mezgeb.data.local.dao.DayTotal
+import et.alpha.mezgeb.data.local.dao.PossibleDuplicateTotals
 import et.alpha.mezgeb.data.local.dao.RawMessageDao
 import et.alpha.mezgeb.data.local.dao.TransactionDao
 import et.alpha.mezgeb.data.mapper.toDomain
@@ -184,6 +185,10 @@ class TransactionRepository @Inject constructor(
     /** Money in through a message, with hand-entered cash left out. See reconciliation. */
     suspend fun sumCapturedIn(from: Long, to: Long): Long =
         transactionDao.sumByDirectionExcludingChannel(Direction.IN, Channel.CASH, from, to)
+
+    /** Flagged possible duplicates among the money counted by [sumCapturedIn]. */
+    suspend fun possibleDuplicateTotals(from: Long, to: Long): PossibleDuplicateTotals =
+        transactionDao.possibleDuplicateTotals(Direction.IN, Channel.CASH, from, to)
 
     suspend fun getUnmatchedBetween(from: Long, to: Long): List<RawMessage> =
         rawMessageDao.getUnmatchedBetween(from, to).map { it.toDomain() }

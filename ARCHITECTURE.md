@@ -158,8 +158,9 @@ gap           = expectedTotal − accountedFor
 
 When `gap ≠ 0` the screen shows a ranked list of explanations rather than a bare number:
 unmatched messages in the period (with a partial total where the amount alone was
-extractable), uncategorised transactions, outstanding credit, and rows a human touched
-since the period was opened.
+extractable), uncategorised transactions, possible duplicates (money in flagged by the
+lookalike check, which still counts in `capturedIn` and is never subtracted), outstanding
+credit, and rows a human touched since the period was opened.
 
 Closing a session snapshots every computed figure into the entity. Later edits do not
 retroactively change a closed period — that is the entire point of closing one, and it is
