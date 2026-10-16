@@ -113,6 +113,28 @@ class ProjectRulesTest {
         )
     }
 
+    @Test
+    fun `dependabot watches both ecosystems and keeps Kotlin and KSP together`() {
+        // Dependency updates are how a known vulnerability reaches us at all (ROADMAP
+        // R4). KSP is versioned as <kotlin>-<ksp>: a PR that bumps only one of them can
+        // never build, so the two must share one update group.
+        val config = File(DEPENDABOT_CONFIG)
+        assertTrue("missing $DEPENDABOT_CONFIG", config.isFile)
+        val text = config.readText()
+        for (ecosystem in listOf("gradle", "github-actions")) {
+            assertTrue(
+                "dependabot does not watch $ecosystem",
+                Regex("""package-ecosystem:\s*"?$ecosystem"?\s*$""", RegexOption.MULTILINE)
+                    .containsMatchIn(text),
+            )
+        }
+        val group = text.substringAfter("kotlin-and-ksp:", missingDelimiterValue = "")
+            .substringBefore("android-gradle-plugin:")
+        assertTrue("no kotlin-and-ksp group", group.isNotEmpty())
+        assertTrue("Kotlin is not in the KSP group", "\"org.jetbrains.kotlin:*\"" in group)
+        assertTrue("KSP is not in the Kotlin group", "\"com.google.devtools.ksp*\"" in group)
+    }
+
     // --- Helpers ---------------------------------------------------------------------
 
     private fun shippedKotlinFiles(): List<File> =
@@ -152,6 +174,7 @@ class ProjectRulesTest {
         const val DIRECT_MANIFEST = "src/direct/AndroidManifest.xml"
 
         const val DATABASE_SOURCE = "src/main/java/et/alpha/mezgeb/data/local/MezgebDatabase.kt"
+        const val DEPENDABOT_CONFIG = "../.github/dependabot.yml"
         val SCHEMA_DIR = File("schemas/et.alpha.mezgeb.data.local.MezgebDatabase")
     }
 }
