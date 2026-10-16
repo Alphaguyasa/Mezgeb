@@ -59,7 +59,7 @@ jobs:
 
       - name: Upload test and lint reports
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: reports
           path: |
@@ -68,7 +68,7 @@ jobs:
           retention-days: 7
 
       - name: Upload play debug APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: app-play-debug
           path: app/build/outputs/apk/play/debug/*.apk
@@ -76,7 +76,7 @@ jobs:
           retention-days: 14
 
       - name: Upload direct debug APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: app-direct-debug
           path: app/build/outputs/apk/direct/debug/*.apk
