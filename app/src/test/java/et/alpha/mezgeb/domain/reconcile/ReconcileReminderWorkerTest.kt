@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Application
 import android.app.NotificationManager
 import android.content.Context
+import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.ListenableWorker
 import androidx.work.WorkerFactory
@@ -26,6 +27,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.robolectric.Shadows
+import org.robolectric.util.ReflectionHelpers
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -172,6 +174,27 @@ class ReconcileReminderWorkerTest : DatabaseTest() {
         // A refused permission is the user's answer, not a failure to retry.
         assertTrue(result is ListenableWorker.Result.Success)
         assertEquals(0, postedNotifications())
+    }
+
+    @Test
+    fun `below Android 13 the reminder needs no runtime permission`() = runTest {
+        // POST_NOTIFICATIONS does not exist before API 33, so the platform answers
+        // "denied" to every check of it. Before ROADMAP R6 the worker took that answer
+        // at face value and the reminder never appeared on Android 8 to 12. The test
+        // runtime is API 34, so the older version is simulated by setting SDK_INT.
+        Shadows.shadowOf(context as Application)
+            .denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        settings.markFirstRun(T0)
+
+        val realSdk = Build.VERSION.SDK_INT
+        ReflectionHelpers.setStaticField(Build.VERSION::class.java, "SDK_INT", Build.VERSION_CODES.S_V2)
+        try {
+            worker(now = T0 + 8 * DAY).doWork()
+        } finally {
+            ReflectionHelpers.setStaticField(Build.VERSION::class.java, "SDK_INT", realSdk)
+        }
+
+        assertEquals(1, postedNotifications())
     }
 
     private fun postedNotifications(): Int {

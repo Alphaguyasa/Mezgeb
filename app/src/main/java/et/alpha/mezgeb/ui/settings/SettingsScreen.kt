@@ -42,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import et.alpha.mezgeb.R
@@ -95,7 +96,7 @@ fun SettingsRoute(
         onRestoreRequested = { openBackup.launch(arrayOf("*/*")) },
         onRestoreConfirmed = { uri, passphrase ->
             viewModel.restore(passphrase) {
-                context.contentResolver.openInputStream(Uri.parse(uri))
+                context.contentResolver.openInputStream(uri.toUri())
             }
         },
         onLanguageChosen = { language ->

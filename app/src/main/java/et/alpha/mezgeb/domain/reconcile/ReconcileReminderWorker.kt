@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -61,10 +62,16 @@ class ReconcileReminderWorker @AssistedInject constructor(
 
     private fun notifyIfPermitted() {
         val manager = NotificationManagerCompat.from(context)
-        val granted = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.POST_NOTIFICATIONS,
-        ) == PackageManager.PERMISSION_GRANTED
+        // POST_NOTIFICATIONS exists only from API 33. Below that the platform does not
+        // know the permission, so checking it always answers "denied", and before this
+        // guard the reminder never appeared on Android 8 to 12 at all (lint's
+        // InlinedApi warning, read in ROADMAP R6). Those versions need no runtime
+        // permission: the user's way to say no is the app's notification setting.
+        val granted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
         // On API 33+ a refused permission means the notification simply does not
         // appear. That is the user's answer, not an error.
         if (!granted) return
