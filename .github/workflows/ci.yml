@@ -47,6 +47,14 @@ jobs:
           assembleDirectDebug
           --stacktrace
 
+      # Lint warnings never fail the build, and the reports below are uploaded only
+      # when something does fail, so on a green build nobody saw them. The two real
+      # bugs lint found in August were found by reading the report by hand. AGP always
+      # writes a text report; printing it puts every warning in the log of every run.
+      - name: Print the lint report
+        if: ${{ !cancelled() }}
+        run: find app/build -name '*lint*.txt' -print -exec cat {} \;
+
       # Room rewrites app/schemas on every compile. A schema JSON that differs from
       # the committed one, or a new version nobody committed, means the next migration
       # would be tested against a schema the repository does not have. The diff is

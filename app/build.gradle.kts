@@ -117,19 +117,6 @@ android {
         unitTests.isIncludeAndroidResources = true
     }
 
-    /**
-     * The full lint report goes to the build log as well as to the HTML file.
-     *
-     * CI uploads the reports only when a build fails, and lint warnings never fail it,
-     * so on a green build the warnings were written to a file nobody downloaded. The
-     * two real bugs lint found in August were found by reading that file by hand. A
-     * warning printed in the log of every CI run is one a reviewer can actually see.
-     */
-    lint {
-        textReport = true
-        textOutput = file("stdout")
-    }
-
 }
 
 kotlin {
