@@ -14,11 +14,6 @@ Built from the audit on 2026-10-14: the full code read plus the open items in
 
 ## Open
 
-### R6 · P2 · S: Triage the lint warnings
-Lint reports 0 errors and about 26 warnings (`NOTES.md`). Read the full report, fix
-the real ones, and suppress the rest narrowly with a reason, as was done for
-`fullBackupContent`.
-
 ### R7 · P2 · M: Permission-flow test (notification access and SMS import)
 `CONVENTIONS.md` names two UI tests worth having. The rule-induction test exists, but
 the permission-flow test does not. Write it under Robolectric, like
@@ -28,10 +23,6 @@ the permission-flow test does not. Write it under Robolectric, like
 Add Compose semantics tests: content descriptions on icon-only buttons, money read as
 words rather than digits-plus-symbol, and 48dp touch targets on Today, the keypad and
 the review queue. TalkBack quality still needs a person.
-
-### R9 · P2 · S: Coverage report in CI
-Run `:app:jacocoPlayDebugReport` in CI and upload the HTML as an artifact, reported
-but not gated (see the reasoning in `app/build.gradle.kts`).
 
 ### R14 · P2 · S: Ledger filter for possible duplicates
 A filter chip in the ledger that shows only flagged rows, so a shop can work through
@@ -50,8 +41,28 @@ phone, which a cloud run cannot collect.
 ### R12 · P2 · S: Revisit `android.disallowKotlinSourceSets=false`
 This is an AGP 9 opt-out kept because KSP registered its sources the old way. Check
 whether the current KSP supports built-in Kotlin, and remove the flag if it does.
+Note (2026-10-18): Dependabot PR #17 moves KSP to `2.3.12`, which is no longer
+versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
+`kotlin-and-ksp` group reasoning assume the old scheme. Do this item together with
+#17 once A7 is answered.
+
+### R15 · P2 · S: Clear the compiler warnings in test sources
+CI's log shows about 40 Kotlin warnings, all in `app/src/test`: missing
+`@OptIn(ExperimentalCoroutinesApi::class)` in the ViewModel tests, parameter names in
+`MigrationTest.kt:309` that differ from Room's `Callback`, and a `Json` instance
+created per use in `DatabaseSeederTest.kt:72`. None is a bug. They hide a new warning
+the same way the 24 version warnings hid the reminder bug (R6).
 
 ## Done
+
+- 2026-10-18 · R6: Lint went from 42 warnings to none. One was a real bug: the weekly
+  reconcile reminder never appeared on Android 8 to 12, because `POST_NOTIFICATIONS`
+  is always "denied" below API 33. Fixed and tested. Version-check lint rules are off
+  (Dependabot owns them). CI prints the lint report in every log. PR #19. (Tag
+  `v2026-10-18-2` not pushed: A6.)
+- 2026-10-18 · R9: CI writes the JaCoCo report and uploads it as the
+  `coverage-play-debug` artifact on every build. Reported, not gated. PR #20. (Tag
+  `v2026-10-18-1` not pushed: A6.)
 
 - 2026-10-16 · R13: Reconciliation names flagged possible duplicates among the ranked
   gap explanations ("N payments may have been recorded twice" with their total). Only
