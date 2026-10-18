@@ -135,6 +135,20 @@ class ProjectRulesTest {
         assertTrue("KSP is not in the Kotlin group", "\"com.google.devtools.ksp*\"" in group)
     }
 
+    @Test
+    fun `CI writes the coverage report and keeps it`() {
+        // Coverage is reported, not gated (ROADMAP R9). A report that is generated but
+        // never uploaded is one nobody reads, so both halves are checked.
+        val ci = File(CI_WORKFLOW)
+        assertTrue("missing $CI_WORKFLOW", ci.isFile)
+        val text = ci.readText()
+        assertTrue("CI does not run the coverage report", ":app:jacocoPlayDebugReport" in text)
+        assertTrue(
+            "CI does not upload the coverage report",
+            "path: app/build/reports/jacoco/jacocoPlayDebugReport/" in text,
+        )
+    }
+
     // --- Helpers ---------------------------------------------------------------------
 
     private fun shippedKotlinFiles(): List<File> =
@@ -175,6 +189,7 @@ class ProjectRulesTest {
 
         const val DATABASE_SOURCE = "src/main/java/et/alpha/mezgeb/data/local/MezgebDatabase.kt"
         const val DEPENDABOT_CONFIG = "../.github/dependabot.yml"
+        const val CI_WORKFLOW = "../.github/workflows/ci.yml"
         val SCHEMA_DIR = File("schemas/et.alpha.mezgeb.data.local.MezgebDatabase")
     }
 }

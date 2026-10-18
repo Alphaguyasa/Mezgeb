@@ -57,6 +57,20 @@ jobs:
           git add --intent-to-add app/schemas
           git diff --exit-code -- app/schemas
 
+      # Coverage is reported, never gated (the reasoning is in app/build.gradle.kts).
+      # The play unit tests already ran above, so this only writes the report. It is
+      # uploaded on every green build, because the uncovered lines are the useful part.
+      - name: Coverage report (play debug)
+        run: ./gradlew :app:jacocoPlayDebugReport --stacktrace
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-play-debug
+          path: app/build/reports/jacoco/jacocoPlayDebugReport/
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload test and lint reports
         if: failure()
         uses: actions/upload-artifact@v4
