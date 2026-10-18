@@ -1,7 +1,7 @@
 package et.alpha.mezgeb.domain.credit
 
 import android.content.Intent
-import android.net.Uri
+import androidx.core.net.toUri
 import et.alpha.mezgeb.util.MoneyFormatter
 
 /**
@@ -35,7 +35,7 @@ object ReminderMessage {
      * to type out again.
      */
     fun intent(phone: String, message: String): Intent =
-        Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:${phone.filter { it.isDigit() || it == '+' }}"))
+        Intent(Intent.ACTION_SENDTO, "smsto:${phone.filter { it.isDigit() || it == '+' }}".toUri())
             .putExtra("sms_body", message)
             .putExtra(Intent.EXTRA_TEXT, message)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

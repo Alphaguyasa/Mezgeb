@@ -2,6 +2,7 @@ package et.alpha.mezgeb.domain.lock
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -63,23 +64,23 @@ class AppLockRepository @Inject constructor(
     fun timeoutSeconds(): Int = prefs.getInt(KEY_TIMEOUT, DEFAULT_TIMEOUT_SECONDS)
 
     suspend fun setTimeoutSeconds(seconds: Int) = withContext(io) {
-        prefs.edit().putInt(KEY_TIMEOUT, seconds.coerceAtLeast(0)).apply()
+        prefs.edit { putInt(KEY_TIMEOUT, seconds.coerceAtLeast(0)) }
     }
 
     fun isBiometricEnabled(): Boolean = prefs.getBoolean(KEY_BIOMETRIC, false)
 
     suspend fun setBiometricEnabled(enabled: Boolean) = withContext(io) {
-        prefs.edit().putBoolean(KEY_BIOMETRIC, enabled).apply()
+        prefs.edit { putBoolean(KEY_BIOMETRIC, enabled) }
     }
 
     suspend fun setPin(pin: String): Boolean = withContext(io) {
         if (!PinCredential.isAcceptable(pin)) return@withContext false
         val hashed = PinCredential.hash(pin)
-        prefs.edit()
-            .putString(KEY_SALT, hashed.saltBase64)
-            .putString(KEY_HASH, hashed.hashBase64)
-            .putInt(KEY_FAILED, 0)
-            .apply()
+        prefs.edit {
+            putString(KEY_SALT, hashed.saltBase64)
+            putString(KEY_HASH, hashed.hashBase64)
+            putInt(KEY_FAILED, 0)
+        }
         true
     }
 
@@ -88,12 +89,12 @@ class AppLockRepository @Inject constructor(
      * turns the lock off and on again is not still serving a lockout.
      */
     suspend fun clearPin() = withContext(io) {
-        prefs.edit()
-            .remove(KEY_SALT)
-            .remove(KEY_HASH)
-            .remove(KEY_BIOMETRIC)
-            .putInt(KEY_FAILED, 0)
-            .apply()
+        prefs.edit {
+            remove(KEY_SALT)
+            remove(KEY_HASH)
+            remove(KEY_BIOMETRIC)
+            putInt(KEY_FAILED, 0)
+        }
     }
 
     suspend fun verify(pin: String): UnlockResult = withContext(io) {
@@ -106,16 +107,19 @@ class AppLockRepository @Inject constructor(
         if (salt == null || hash == null) return@withContext UnlockResult.Unlocked
 
         if (PinCredential.matches(pin, PinHash(salt, hash))) {
-            prefs.edit().putInt(KEY_FAILED, 0).putLong(KEY_LOCKED_UNTIL, 0L).apply()
+            prefs.edit {
+                putInt(KEY_FAILED, 0)
+                putLong(KEY_LOCKED_UNTIL, 0L)
+            }
             return@withContext UnlockResult.Unlocked
         }
 
         val failed = prefs.getInt(KEY_FAILED, 0) + 1
         val backoff = LockoutPolicy.backoffMillis(failed)
-        prefs.edit()
-            .putInt(KEY_FAILED, failed)
-            .putLong(KEY_LOCKED_UNTIL, if (backoff > 0) now + backoff else 0L)
-            .apply()
+        prefs.edit {
+            putInt(KEY_FAILED, failed)
+            putLong(KEY_LOCKED_UNTIL, if (backoff > 0) now + backoff else 0L)
+        }
 
         if (backoff > 0) UnlockResult.LockedOut(now + backoff) else UnlockResult.Wrong(failed)
     }

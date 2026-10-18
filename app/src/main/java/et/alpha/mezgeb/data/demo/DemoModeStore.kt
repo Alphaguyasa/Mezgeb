@@ -21,7 +21,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class DemoModeStore @Inject constructor(
-    @param:ApplicationContext context: Context,
+    @ApplicationContext context: Context,
 ) {
 
     private val prefs: SharedPreferences =

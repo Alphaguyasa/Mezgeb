@@ -24,20 +24,11 @@
     <string name="money_content_description">%1$s %2$s %3$s</string>
 
     <!-- Placeholder screens -->
-    <string name="placeholder_today_title">ዛሬ እስካሁን ክፍያ የለም</string>
-    <string name="placeholder_today_body">የማስታወቂያ ፈቃድ ከተሰጠ በኋላ ክፍያዎች እንደደረሱ እዚህ ይታያሉ።</string>
     <string name="placeholder_ledger_title">መዝገብዎ ባዶ ነው</string>
     <string name="placeholder_ledger_body">የተያዘ ክፍያና የጥሬ ገንዘብ ሽያጭ ሁሉ በቀን ተከፋፍሎ እዚህ ይዘረዘራል።</string>
-    <string name="placeholder_review_title">ግምገማ የሚያስፈልገው ነገር የለም</string>
-    <string name="placeholder_review_body">ማንኛውም ሕግ ማንበብ ያልቻለው መልእክት ሕግ እንዲያስተምሩት እዚህ ይጠብቃል።</string>
     <string name="placeholder_customers_title">እስካሁን ደንበኛ የለም</string>
     <string name="placeholder_customers_body">የሰጡትን ዱቤ መከታተል ለመጀመር ደንበኛ ይጨምሩ።</string>
-    <string name="placeholder_reconcile_title">ክፍት ጊዜ የለም</string>
-    <string name="placeholder_reconcile_body">የጠበቁትንና የተያዘውን ለማነጻጸር አንድ ጊዜ ይክፈቱ።</string>
     <string name="placeholder_reports_title">በቂ መረጃ የለም</string>
-    <string name="placeholder_reports_body">ጥቂት ግብይቶች ከተመዘገቡ በኋላ ማጠቃለያና ገበታ ይታያል።</string>
-    <string name="placeholder_settings_title">ቅንብሮች</string>
-    <string name="placeholder_settings_body">ቋንቋ፣ ማስታወሻ፣ ደኅንነትና ምትኬ እዚህ ይገኛሉ።</string>
 
     <!-- Onboarding -->
     <string name="onboarding_title">መዝገብ ክፍያዎችዎን እንዴት እንደሚያነብ</string>

@@ -117,6 +117,17 @@ android {
         unitTests.isIncludeAndroidResources = true
     }
 
+    /**
+     * Lint's "a newer version is available" checks are off, because Dependabot owns
+     * that question (`.github/dependabot.yml`, ROADMAP R4) and answers it with a PR
+     * that CI tests. The same news as 24 lint warnings on every build only buried the
+     * warnings that were about this code, which is how the reminder bug fixed in R6
+     * went unread. Every other lint check stays on.
+     */
+    lint {
+        disable += setOf("GradleDependency", "NewerVersionAvailable", "AndroidGradlePluginVersion")
+    }
+
 }
 
 kotlin {
