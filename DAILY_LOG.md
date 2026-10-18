@@ -5,6 +5,67 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-10-18: Third daily run (scheduled)
+
+**Start.** CI on `main` was green (`eb59502`). There is no log entry for 2026-10-17,
+and no commit or PR from that day, so it looks like no run happened then. Model check:
+the models overview still lists Opus 5.5 (`claude-opus-5-5`) as the newest Opus. This
+run used it. No switch was needed. Fable 5.1 was ignored, as Alpha decided.
+
+**Authorship.** PR #18 ("credit both contributors") was closed without merging on
+2026-10-16. `CLAUDE.md` on `main` still says Alpha is the only author, so this run
+followed that rule. All commits show Alpha Guyasa, with no Co-Authored-By trailer.
+
+**Environment.** Same as before: JDK 21, no Android SDK, and Google Maven blocked
+(403). No Gradle build ran locally. CI judged everything below.
+
+**R9 (coverage in CI), PR #20, merged (`9b45d42`).**
+- CI runs `:app:jacocoPlayDebugReport` and uploads it as the `coverage-play-debug`
+  artifact (1.4 MB on the first run).
+- A guard test checks that CI both runs and uploads it.
+- Green on the first CI run.
+
+**R6 (lint triage), PR #19, merged (`bfd8b6b`).**
+- Lint went from **42 warnings to "No issues found"**.
+- **One warning was a real bug.** The weekly reconcile reminder never appeared on
+  Android 8 to 12. `POST_NOTIFICATIONS` exists only from API 33, so below that the
+  check always said "denied". The check now runs only on API 33 and up. A new test
+  simulates API 32. The August notes had filed this warning as "correctly guarded".
+- Lint's newer-version checks (24 warnings) are off, because Dependabot covers them.
+- Nine unused placeholder strings were removed (English and Amharic).
+- Ten KTX suggestions were applied, with `apply()` semantics kept.
+- One redundant label was removed, and one attribute warning was suppressed with a
+  reason.
+- One compiler warning was fixed.
+- CI now prints the lint text report in every log.
+- First attempt: `lint { textOutput = file("stdout") }` is deprecated in AGP 9 and
+  only wrote a file named `app/stdout`. I replaced it with a CI step that prints the
+  generated report. The build was green each time; the first try just did not give
+  me the report.
+
+**Tags.** I created `v2026-10-18-1` (#20) and `v2026-10-18-2` (#19) locally. Pushing
+them failed again with "remote end hung up" (A6).
+
+**Dependabot.** #12 to #15 and #17 are all green, and all wait on A7.
+
+**Roadmap.** R6 and R9 are done. Added R15 (compiler warnings in test sources). R12
+now notes the new KSP versioning in #17. 7 items are open, 5 of them unblocked (R7,
+R8, R14, R12, R15), so no replan was needed.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R6 lint triage plus the reminder fix (#19), R9 coverage report in CI (#20) |
+| Merged | #20 yes (`9b45d42`), #19 yes (`bfd8b6b`). Tags `v2026-10-18-1`/`-2` created but **could not be pushed** (A6) |
+| Failed or blocked | Tag push (A6). No local Gradle (no Android SDK, Google Maven blocked) |
+| Roadmap | 7 open (5 unblocked, R10/R11 blocked). No replan needed. Added R15 |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12–#15, #17) |
+| Next | R7 (permission-flow test), then R8 (accessibility semantics tests) |
+
+---
+
 ## 2026-10-16: Second daily run (scheduled)
 
 **Start.** CI on `main` was green. Model check: the models overview still lists Opus

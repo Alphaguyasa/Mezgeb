@@ -57,6 +57,8 @@ can then be added on request.
   tag refs. As CLAUDE.md §8 says, I did not look for a workaround.
 - 2026-10-16: the same failure for `v2026-10-16-1` (`8451e53`, #10) and
   `v2026-10-16-2` (`b8a038c`, #11). The four missing tags are all created locally only.
+- 2026-10-18: the same failure for `v2026-10-18-1` (`9b45d42`, #20) and
+  `v2026-10-18-2` (`bfd8b6b`, #19). Six tags are missing now.
 - **Effect:** you can still roll back. Every merge is a squash commit on `main` with
   its PR number, and the log lists each one. Only the named tags are missing.
 - **Options:** (a) do nothing (the log stays the rollback list); (b) create the tags
@@ -74,6 +76,9 @@ can then be added on request.
   2026-10-15 says every commit shows you as the only author. The run's own commits do.
   A squash merge of a Dependabot PR, however, keeps Dependabot as the author, and the
   run cannot change that without rewriting the commit.
+- 2026-10-16: Dependabot also opened #17, the grouped minor and patch update (24
+  updates, including Kotlin 2.2.10 → 2.4.21, KSP → 2.3.12, AGP 9.3.1 → 9.4.1,
+  Gradle 9.5.0 → 9.8.1). CI is green on it. It waits on this answer too.
 - **Until you answer:** the run reviews Dependabot PRs (CI, and the transitive tree
   for a network stack) and reports them, but leaves them open and unmerged.
 - **Options:** (a) yes, Dependabot may appear as the author of its own update commits;
