@@ -36,6 +36,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -247,15 +249,36 @@ private fun TodayTotals(
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    // Not a MoneyText: the net is neither money in nor money out, so it
+                    // takes neither colour. It still has to be read as words, or
+                    // TalkBack reads the sign as a symbol in front of the digits.
+                    val spokenNet = spokenNet(netMinor)
                     Text(
                         text = MoneyFormatter.format(netMinor, signed = true),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.clearAndSetSemantics { contentDescription = spokenNet },
                     )
                 }
             }
         }
     }
+}
+
+/** The day's net as a sentence: which side is ahead, and by how much. */
+@Composable
+private fun spokenNet(netMinor: Long): String = when {
+    netMinor > 0 -> stringResource(
+        R.string.today_net_ahead_content_description,
+        MoneyFormatter.formatUnsigned(netMinor),
+        MoneyFormatter.DEFAULT_CURRENCY,
+    )
+    netMinor < 0 -> stringResource(
+        R.string.today_net_behind_content_description,
+        MoneyFormatter.formatUnsigned(netMinor),
+        MoneyFormatter.DEFAULT_CURRENCY,
+    )
+    else -> stringResource(R.string.today_net_even_content_description)
 }
 
 /**
