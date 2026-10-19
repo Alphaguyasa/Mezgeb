@@ -374,8 +374,10 @@ private fun ImportCard(status: SmsImportStatus, onStartImport: () -> Unit) {
  * Adds the notification permission alongside the importer's own, on the versions
  * that need it, so the progress notification is actually visible. Kept out of the
  * importer's own list because a refusal here must not stop the import.
+ *
+ * Internal rather than private so the permission-flow test can check the pre-33 list.
  */
-private fun withNotificationPermission(permissions: List<String>): Array<String> =
+internal fun withNotificationPermission(permissions: List<String>): Array<String> =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         (permissions + Manifest.permission.POST_NOTIFICATIONS).toTypedArray()
     } else {
