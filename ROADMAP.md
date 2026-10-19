@@ -14,15 +14,24 @@ Built from the audit on 2026-10-14: the full code read plus the open items in
 
 ## Open
 
-### R7 · P2 · M: Permission-flow test (notification access and SMS import)
-`CONVENTIONS.md` names two UI tests worth having. The rule-induction test exists, but
-the permission-flow test does not. Write it under Robolectric, like
-`RuleBuilderScreenTest`, for both flavors.
-
 ### R8 · P2 · M: Accessibility semantics tests
 Add Compose semantics tests: content descriptions on icon-only buttons, money read as
 words rather than digits-plus-symbol, and 48dp touch targets on Today, the keypad and
 the review queue. TalkBack quality still needs a person.
+Status (2026-10-19): PR #24 is open and red after two fix attempts. The keypad and
+review-queue checks pass. On Today, two problems are left. (1) The signed-amount check
+reads the unmerged tree, where cleared child text still appears; it must read the
+merged tree. (2) The "record cash sale" button has no readable name in the test. The
+net total now has a spoken description, and Today's icon buttons are 48dp, both on
+that branch. Finish this PR first.
+
+### R16 · P2 · S: Say so when the user refuses to let the app read messages
+Found while writing R7. In the `direct` build, if the user refuses `READ_SMS` the
+onboarding screen does nothing visible: the status stays `Idle`. After "don't ask
+again", tapping "Read past messages" does nothing at all, because the system refuses
+without a dialog. Show a short message and a way to app settings. This needs new
+strings in English and Amharic. The R7 test pins down that a refusal never starts
+the import.
 
 ### R14 · P2 · S: Ledger filter for possible duplicates
 A filter chip in the ledger that shows only flagged rows, so a shop can work through
@@ -54,6 +63,11 @@ created per use in `DatabaseSeederTest.kt:72`. None is a bug. They hide a new wa
 the same way the 24 version warnings hid the reminder bug (R6).
 
 ## Done
+
+- 2026-10-19 · R7: Permission-flow test. The real `OnboardingRoute` runs under
+  Robolectric with a recording `ActivityResultRegistry` in place of the system dialog,
+  in both flavors. `testPlay` and `testDirect` check each real importer's permissions.
+  PR #23. (Tag `v2026-10-19-1` not pushed: A6.)
 
 - 2026-10-18 · R6: Lint went from 42 warnings to none. One was a real bug: the weekly
   reconcile reminder never appeared on Android 8 to 12, because `POST_NOTIFICATIONS`
