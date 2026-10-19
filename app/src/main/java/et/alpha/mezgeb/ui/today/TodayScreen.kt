@@ -4,12 +4,14 @@ import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -104,7 +106,12 @@ fun TodayScreen(
         title = stringResource(R.string.destination_today),
         modifier = modifier,
         actions = {
-            IconButton(onClick = onOpenReview) {
+            // Sized to the 48dp floor for the same reason as BackButton: Material's
+            // IconButton reports a 40dp node, under the floor this app holds itself to.
+            IconButton(
+                onClick = onOpenReview,
+                modifier = Modifier.size(spacing.touchTarget),
+            ) {
                 BadgedBox(
                     badge = {
                         if (state.reviewQueueCount > 0) {
@@ -118,13 +125,19 @@ fun TodayScreen(
                     )
                 }
             }
-            IconButton(onClick = onOpenReconcile) {
+            IconButton(
+                onClick = onOpenReconcile,
+                modifier = Modifier.size(spacing.touchTarget),
+            ) {
                 Icon(
                     imageVector = Icons.Filled.CheckCircle,
                     contentDescription = stringResource(R.string.cd_open_reconcile),
                 )
             }
-            IconButton(onClick = onOpenSettings) {
+            IconButton(
+                onClick = onOpenSettings,
+                modifier = Modifier.size(spacing.touchTarget),
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Settings,
                     contentDescription = stringResource(R.string.cd_open_settings),
@@ -252,13 +265,16 @@ private fun TodayTotals(
                     // Not a MoneyText: the net is neither money in nor money out, so it
                     // takes neither colour. It still has to be read as words, or
                     // TalkBack reads the sign as a symbol in front of the digits.
+                    // The semantics go on a wrapper, as in MoneyText, so they replace
+                    // the Text's own rather than sit beside them on the same node.
                     val spokenNet = spokenNet(netMinor)
-                    Text(
-                        text = MoneyFormatter.format(netMinor, signed = true),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.clearAndSetSemantics { contentDescription = spokenNet },
-                    )
+                    Box(Modifier.clearAndSetSemantics { contentDescription = spokenNet }) {
+                        Text(
+                            text = MoneyFormatter.format(netMinor, signed = true),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
                 }
             }
         }

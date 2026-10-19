@@ -255,8 +255,9 @@ class AccessibilitySemanticsTest {
     private fun SemanticsNode.heightDp(): Float =
         maxOf(size.height, layoutInfo.height) / context.resources.displayMetrics.density
 
-    private fun List<SemanticsNode>.describe(): String = joinToString {
-        "\"${it.spokenName()}\" (${it.widthDp()}x${it.heightDp()}dp)"
+    /** Name, size and every semantics property, so a failure says which node it is. */
+    private fun List<SemanticsNode>.describe(): String = joinToString(separator = "\n") {
+        "\"${it.spokenName()}\" (${it.widthDp()}x${it.heightDp()}dp) ${it.config}"
     }
 
     private companion object {
