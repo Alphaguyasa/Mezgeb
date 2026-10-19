@@ -17,9 +17,9 @@ import et.alpha.mezgeb.R
 import et.alpha.mezgeb.capture.CaptureHealth
 import et.alpha.mezgeb.designsystem.MezgebTheme
 import et.alpha.mezgeb.designsystem.component.AmountKeypad
+import et.alpha.mezgeb.domain.model.Channel
 import et.alpha.mezgeb.domain.model.Direction
 import et.alpha.mezgeb.domain.model.UnmatchedGroup
-import et.alpha.mezgeb.parser.model.Channel
 import et.alpha.mezgeb.ui.common.TransactionUiModel
 import et.alpha.mezgeb.ui.review.ReviewScreen
 import et.alpha.mezgeb.ui.review.ReviewUiState
