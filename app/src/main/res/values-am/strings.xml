@@ -54,6 +54,8 @@
     <string name="onboarding_import_action">ያለፉ መልእክቶችን አንብብ</string>
     <string name="onboarding_import_running">ከ%2$d ውስጥ %1$d ተመርምሯል</string>
     <string name="onboarding_import_failed">ያለፉ መልእክቶችን ማንበብ አልተቻለም።</string>
+    <string name="onboarding_import_refused">መዝገብ መልእክቶችዎን እንዲያነብ አልተፈቀደለትም፤ ስለዚህ ያለፉ ክፍያዎች አልተጨመሩም። ለመፍቀድ የመተግበሪያ ቅንብሮችን ይክፈቱ፣ ከዚያ ፈቃዶችን፣ ከዚያ ኤስኤምኤስን ይምረጡ።</string>
+    <string name="onboarding_import_open_app_settings">የመተግበሪያ ቅንብሮችን ክፈት</string>
     <string name="onboarding_done">ተጠናቀቀ</string>
 
     <!-- Shared actions -->

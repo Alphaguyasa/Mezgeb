@@ -132,6 +132,56 @@ class OnboardingPermissionFlowTest {
     }
 
     @Test
+    fun `refusing the read permission says so and offers app settings`() {
+        // After "don't ask again" the system refuses without a dialog, so without this
+        // message the button would look broken. The settings button is the way out.
+        showLoadedRoute()
+        tapImport()
+
+        answer(READ_PERMISSION to false, Manifest.permission.POST_NOTIFICATIONS to true)
+        awaitText(R.string.onboarding_import_refused)
+
+        compose.onNodeWithText(text(R.string.onboarding_import_open_app_settings))
+            .performScrollTo()
+            .performClick()
+
+        val started = Shadows.shadowOf(context as Application).nextStartedActivity
+        assertEquals(FakeCaptureAccess.APP_SETTINGS_ACTION, started?.action)
+    }
+
+    @Test
+    fun `granting on a second try clears the refusal`() {
+        showLoadedRoute()
+        tapImport()
+        answer(READ_PERMISSION to false)
+        awaitText(R.string.onboarding_import_refused)
+
+        tapImport()
+        answer(READ_PERMISSION to true)
+
+        assertTrue(importer.started)
+        awaitNoText(R.string.onboarding_import_refused)
+    }
+
+    @Test
+    fun `allowing the permission in app settings clears the refusal on return`() {
+        showLoadedRoute()
+        tapImport()
+        answer(READ_PERMISSION to false)
+        awaitText(R.string.onboarding_import_refused)
+
+        // The user went to app settings and allowed it there; the route only learns
+        // that by checking again when it comes back to the front.
+        Shadows.shadowOf(context as Application).grantPermissions(READ_PERMISSION)
+        compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+        compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+
+        awaitNoText(R.string.onboarding_import_refused)
+        // Allowed is not the same as asked to import: nothing starts on its own.
+        assertFalse(importer.started)
+    }
+
+    @Test
     fun `refusing only the notification permission still imports`() {
         // The progress notification is a nicety. Holding the import hostage to it would
         // punish a user for declining something the import does not need.
@@ -152,6 +202,8 @@ class OnboardingPermissionFlowTest {
         answer()
 
         assertFalse(importer.started)
+        // Backing out is not a refusal, so there is nothing to explain.
+        assertTrue(nodes(R.string.onboarding_import_refused).isEmpty())
     }
 
     @Test
@@ -259,9 +311,9 @@ class OnboardingPermissionFlowTest {
         compose.waitForIdle()
     }
 
-    /** Plays the user's answer to the system dialog back into the route's launcher. */
+    /** Plays the user's answer to the latest system dialog back into the route's launcher. */
     private fun answer(vararg results: Pair<String, Boolean>) {
-        val requestCode = registry.launches.single().first
+        val requestCode = registry.launches.last().first
         compose.runOnUiThread {
             registry.dispatchResult(requestCode, mapOf(*results))
         }
@@ -270,6 +322,10 @@ class OnboardingPermissionFlowTest {
 
     private fun awaitText(@StringRes id: Int) {
         compose.waitUntil(timeoutMillis = 5_000) { nodes(id).isNotEmpty() }
+    }
+
+    private fun awaitNoText(@StringRes id: Int) {
+        compose.waitUntil(timeoutMillis = 5_000) { nodes(id).isEmpty() }
     }
 
     private fun nodes(@StringRes id: Int) =
@@ -298,10 +354,12 @@ class OnboardingPermissionFlowTest {
     private class FakeCaptureAccess(var granted: Boolean = false) : CaptureAccess {
         override fun isNotificationAccessGranted(): Boolean = granted
         override fun settingsIntent(): Intent = Intent(SETTINGS_ACTION)
+        override fun appSettingsIntent(): Intent = Intent(APP_SETTINGS_ACTION)
         override fun requestRebind() = Unit
 
         companion object {
             const val SETTINGS_ACTION = "test.settings"
+            const val APP_SETTINGS_ACTION = "test.app_settings"
         }
     }
 
