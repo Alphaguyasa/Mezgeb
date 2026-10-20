@@ -5,6 +5,65 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-10-20: Fifth daily run (scheduled)
+
+**Start.** CI on `main` was green (`f6fd503`). Model check: the models overview still
+lists Opus 5.5 (`claude-opus-5-5`) as the newest Opus. This run used it, so no switch
+was needed. Fable 5.1 was ignored, as Alpha decided.
+
+**Environment.** Same as before: JDK 21, no Android SDK, and Google Maven blocked
+(403). No Gradle build ran locally. CI judged everything below.
+
+**R8 (accessibility semantics tests), PR #24, merged (`58566c8`).**
+- The roadmap said to finish this PR first. It had used its two fix attempts
+  yesterday. This run made one more push, and CI went green on it.
+- Fix for the FAB failure: the test was right. Material 3's extended FAB hides its
+  label from TalkBack and names the button from its icon, and our icon had no
+  description. So TalkBack read "Record cash sale" as just "button". **Real bug, now
+  fixed.** The Customers screen had the same bug ("Add customer"), fixed in the same
+  push.
+- Fix for the signed-amount failure: the check now reads the merged tree, which is
+  what TalkBack reads.
+- Also: the main branch was merged into the PR first, and a lint naming warning in
+  the test was fixed.
+
+**R16 (refused permission feedback), PR #26, merged (`0921345`).**
+- In the `direct` build, refusing `READ_SMS` now shows "no past payments were added",
+  with an "Open app settings" button. After "don't ask again", that button is the
+  only way to allow it.
+- The message clears after a successful retry, or when the user comes back from
+  settings with the permission granted. Coming back does not start the import by
+  itself.
+- A dialog that was backed out of is not a refusal, so it shows nothing.
+- `play` is unchanged: it has no import card and asks for nothing. No permission was
+  added.
+- New strings are in English and Amharic. A native speaker should check the Amharic.
+- Four new route tests and two ViewModel tests. Green on the first run, and again
+  after `main` (with #24) was merged in.
+
+**Tags.** I created `v2026-10-20-1` (#24) and `v2026-10-20-2` (#26) locally. Pushing
+them failed again (A6).
+
+**Dependabot.** #12, #14, #15, #17 and #22 are unchanged and still wait on A7.
+
+**Roadmap.** R8 and R16 are done. Added R17 (the same accessibility checks on the
+other screens), because the Customers bug sat outside the screens R8 tests. 6 items
+are open, 4 of them unblocked (R17, R14, R12, R15). No replan was needed.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R8 accessibility tests, with two TalkBack fixes (#24). R16 refused-permission message (#26) |
+| Merged | #24 yes (`58566c8`), #26 yes (`0921345`). Tags `v2026-10-20-1`/`-2` created but **could not be pushed** (A6) |
+| Failed or blocked | Tag push (A6). No local Gradle |
+| Roadmap | 6 open (4 unblocked). No replan needed. Added R17 |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #17, #22) |
+| Next | R17 (accessibility checks on the other screens), then R14 (possible-duplicates ledger filter) |
+
+---
+
 ## 2026-10-19: Fourth daily run (scheduled)
 
 **Start.** CI on `main` was green (`239c451`). Model check: the models overview still
