@@ -5,6 +5,63 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-10-19: Fourth daily run (scheduled)
+
+**Start.** CI on `main` was green (`239c451`). Model check: the models overview still
+lists Opus 5.5 (`claude-opus-5-5`) as the newest Opus. This run used it. No switch was
+needed. Fable 5.1 was ignored, as Alpha decided.
+
+**Environment.** Same as before: JDK 21, no Android SDK, and Google Maven blocked
+(403; `maven.google.com` redirects to the blocked host). No Gradle build ran locally.
+CI judged everything below. CI artifacts (blob storage) cannot be downloaded from
+here either.
+
+**R7 (permission-flow test), PR #23, merged (`9202766`).**
+- `OnboardingPermissionFlowTest` drives the real `OnboardingRoute`. A recording
+  `ActivityResultRegistry` stands in for the system permission dialog. The test
+  checks what is requested, and that granted starts the import. Read refused,
+  dismissed, or only the notification permission refused each behave correctly.
+  It also checks that pre-33 devices skip `POST_NOTIFICATIONS`, that the access
+  button opens settings, and that access granted there shows on resume.
+- `testPlay` (new source set): the play importer asks for nothing.
+  `testDirect`: the direct importer asks for `READ_SMS` only, and it is declared in
+  the manifest.
+- Green on the first CI run. Lint still says "No issues found".
+- **Found, not fixed:** a refused `READ_SMS` gives the user no feedback. Logged as
+  R16.
+
+**R8 (accessibility semantics tests), PR #24, open and red. Not merged.**
+- The keypad and review-queue checks pass.
+- Real fixes on the branch: Today's net total now has a spoken description (it was
+  read as "+2,125.00 ETB"), in English and Amharic. Today's three icon buttons are
+  48dp, like `BackButton`.
+- Attempt 1 fixed a wrong import. Attempt 2 also made CI print full test failures.
+  What is left, both on Today: the signed-amount check reads the unmerged tree, which
+  is a mistake in the test itself; and the "record cash sale" button has no readable
+  name in the test. Both are explained on the PR. I stopped at the two-attempt limit.
+
+**Tags.** I created `v2026-10-19-1` (#23) locally. Pushing it failed again (A6).
+
+**Dependabot.** #22 (setup-java 4→6) is new and green. #12, #14, #15, #17 and #22
+all wait on A7.
+
+**Roadmap.** R7 is done. R8 is in progress. Added R16. 7 items are open, 5 of them
+unblocked (R8, R16, R14, R12, R15), so no replan was needed.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R7 permission-flow test (#23). R8 accessibility tests written (#24), not finished |
+| Merged | #23 yes (`9202766`). Tag `v2026-10-19-1` created but **could not be pushed** (A6). #24 **not merged** (red after 2 attempts) |
+| Failed or blocked | #24: two Today checks still fail (details on the PR). Tag push (A6). No local Gradle |
+| Roadmap | 7 open (5 unblocked). No replan needed. Added R16 |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #17, #22) |
+| Next | Finish #24 (merged-tree check, FAB name), then R16 |
+
+---
+
 ## 2026-10-18: Third daily run (scheduled)
 
 **Start.** CI on `main` was green (`eb59502`). There is no log entry for 2026-10-17,

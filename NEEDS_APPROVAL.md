@@ -59,6 +59,8 @@ can then be added on request.
   `v2026-10-16-2` (`b8a038c`, #11). The four missing tags are all created locally only.
 - 2026-10-18: the same failure for `v2026-10-18-1` (`9b45d42`, #20) and
   `v2026-10-18-2` (`bfd8b6b`, #19). Six tags are missing now.
+- 2026-10-19: the same failure for `v2026-10-19-1` (`9202766`, #23). Seven tags are
+  missing now.
 - **Effect:** you can still roll back. Every merge is a squash commit on `main` with
   its PR number, and the log lists each one. Only the named tags are missing.
 - **Options:** (a) do nothing (the log stays the rollback list); (b) create the tags
@@ -79,6 +81,8 @@ can then be added on request.
 - 2026-10-16: Dependabot also opened #17, the grouped minor and patch update (24
   updates, including Kotlin 2.2.10 → 2.4.21, KSP → 2.3.12, AGP 9.3.1 → 9.4.1,
   Gradle 9.5.0 → 9.8.1). CI is green on it. It waits on this answer too.
+- 2026-10-19: Dependabot opened #22 (`actions/setup-java` 4→6, green). #13 (4→5)
+  is no longer open.
 - **Until you answer:** the run reviews Dependabot PRs (CI, and the transitive tree
   for a network stack) and reports them, but leaves them open and unmerged.
 - **Options:** (a) yes, Dependabot may appear as the author of its own update commits;
