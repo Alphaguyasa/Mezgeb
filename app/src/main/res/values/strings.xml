@@ -83,6 +83,9 @@
     <string name="today_total_in">Received today</string>
     <string name="today_total_out">Paid out today</string>
     <string name="today_net">Net</string>
+    <string name="today_net_ahead_content_description">%1$s %2$s more received than paid out</string>
+    <string name="today_net_behind_content_description">%1$s %2$s more paid out than received</string>
+    <string name="today_net_even_content_description">Received and paid out are equal</string>
     <string name="today_record_cash">Record cash sale</string>
     <!-- 1: number of messages waiting -->
     <string name="today_empty_title">Nothing yet today</string>

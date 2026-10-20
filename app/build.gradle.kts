@@ -221,6 +221,13 @@ tasks.withType<Test>().configureEach {
         isIncludeNoLocationClasses = true
         excludes = listOf("jdk.internal.*")
     }
+
+    // The full assertion message in the build log, not only "AssertionError at
+    // Foo.kt:12". The HTML report is an artifact, and an artifact cannot be opened
+    // from the phone this project is followed on; the log can.
+    testLogging {
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
 }
 
 /**

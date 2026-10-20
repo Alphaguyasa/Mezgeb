@@ -4,12 +4,14 @@ import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -36,6 +38,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -102,7 +106,12 @@ fun TodayScreen(
         title = stringResource(R.string.destination_today),
         modifier = modifier,
         actions = {
-            IconButton(onClick = onOpenReview) {
+            // Sized to the 48dp floor for the same reason as BackButton: Material's
+            // IconButton reports a 40dp node, under the floor this app holds itself to.
+            IconButton(
+                onClick = onOpenReview,
+                modifier = Modifier.size(spacing.touchTarget),
+            ) {
                 BadgedBox(
                     badge = {
                         if (state.reviewQueueCount > 0) {
@@ -116,13 +125,19 @@ fun TodayScreen(
                     )
                 }
             }
-            IconButton(onClick = onOpenReconcile) {
+            IconButton(
+                onClick = onOpenReconcile,
+                modifier = Modifier.size(spacing.touchTarget),
+            ) {
                 Icon(
                     imageVector = Icons.Filled.CheckCircle,
                     contentDescription = stringResource(R.string.cd_open_reconcile),
                 )
             }
-            IconButton(onClick = onOpenSettings) {
+            IconButton(
+                onClick = onOpenSettings,
+                modifier = Modifier.size(spacing.touchTarget),
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Settings,
                     contentDescription = stringResource(R.string.cd_open_settings),
@@ -132,7 +147,14 @@ fun TodayScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onRecordCashSale,
-                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                // Material clears the label's semantics and names the button from its
+                // icon, so a null description here leaves TalkBack saying only "button".
+                icon = {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = stringResource(R.string.today_record_cash),
+                    )
+                },
                 text = { Text(stringResource(R.string.today_record_cash)) },
             )
         },
@@ -247,15 +269,39 @@ private fun TodayTotals(
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Text(
-                        text = MoneyFormatter.format(netMinor, signed = true),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
+                    // Not a MoneyText: the net is neither money in nor money out, so it
+                    // takes neither colour. It still has to be read as words, or
+                    // TalkBack reads the sign as a symbol in front of the digits.
+                    // The semantics go on a wrapper, as in MoneyText, so they replace
+                    // the Text's own rather than sit beside them on the same node.
+                    val spokenNet = spokenNet(netMinor)
+                    Box(Modifier.clearAndSetSemantics { contentDescription = spokenNet }) {
+                        Text(
+                            text = MoneyFormatter.format(netMinor, signed = true),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
                 }
             }
         }
     }
+}
+
+/** The day's net as a sentence: which side is ahead, and by how much. */
+@Composable
+private fun spokenNet(netMinor: Long): String = when {
+    netMinor > 0 -> stringResource(
+        R.string.today_net_ahead_content_description,
+        MoneyFormatter.formatUnsigned(netMinor),
+        MoneyFormatter.DEFAULT_CURRENCY,
+    )
+    netMinor < 0 -> stringResource(
+        R.string.today_net_behind_content_description,
+        MoneyFormatter.formatUnsigned(netMinor),
+        MoneyFormatter.DEFAULT_CURRENCY,
+    )
+    else -> stringResource(R.string.today_net_even_content_description)
 }
 
 /**
