@@ -61,6 +61,8 @@ can then be added on request.
   `v2026-10-18-2` (`bfd8b6b`, #19). Six tags are missing now.
 - 2026-10-19: the same failure for `v2026-10-19-1` (`9202766`, #23). Seven tags are
   missing now.
+- 2026-10-20: the same failure for `v2026-10-20-1` (`58566c8`, #24) and
+  `v2026-10-20-2` (`0921345`, #26). Nine tags are missing now.
 - **Effect:** you can still roll back. Every merge is a squash commit on `main` with
   its PR number, and the log lists each one. Only the named tags are missing.
 - **Options:** (a) do nothing (the log stays the rollback list); (b) create the tags

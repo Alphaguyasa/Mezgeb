@@ -14,24 +14,13 @@ Built from the audit on 2026-10-14: the full code read plus the open items in
 
 ## Open
 
-### R8 · P2 · M: Accessibility semantics tests
-Add Compose semantics tests: content descriptions on icon-only buttons, money read as
-words rather than digits-plus-symbol, and 48dp touch targets on Today, the keypad and
-the review queue. TalkBack quality still needs a person.
-Status (2026-10-19): PR #24 is open and red after two fix attempts. The keypad and
-review-queue checks pass. On Today, two problems are left. (1) The signed-amount check
-reads the unmerged tree, where cleared child text still appears; it must read the
-merged tree. (2) The "record cash sale" button has no readable name in the test. The
-net total now has a spoken description, and Today's icon buttons are 48dp, both on
-that branch. Finish this PR first.
-
-### R16 · P2 · S: Say so when the user refuses to let the app read messages
-Found while writing R7. In the `direct` build, if the user refuses `READ_SMS` the
-onboarding screen does nothing visible: the status stays `Idle`. After "don't ask
-again", tapping "Read past messages" does nothing at all, because the system refuses
-without a dialog. Show a short message and a way to app settings. This needs new
-strings in English and Amharic. The R7 test pins down that a refusal never starts
-the import.
+### R17 · P2 · M: Accessibility checks on the other screens
+R8 covers Today, the keypad and the review queue. The Customers screen had the same
+unnamed extended FAB as Today, and only a code search found it. Run the same checks
+(named controls, 48dp targets, no signed amount read as symbols) on the ledger,
+customers, credit detail, reconcile, reports, settings and onboarding screens. Move
+the shared assertions out of `AccessibilitySemanticsTest` into a small helper so
+each screen's test stays short.
 
 ### R14 · P2 · S: Ledger filter for possible duplicates
 A filter chip in the ledger that shows only flagged rows, so a shop can work through
@@ -63,6 +52,18 @@ created per use in `DatabaseSeederTest.kt:72`. None is a bug. They hide a new wa
 the same way the 24 version warnings hid the reminder bug (R6).
 
 ## Done
+
+- 2026-10-20 · R16: A refused `READ_SMS` in the `direct` build now says that no past
+  payments were added, and offers a button to the app's page in system settings.
+  That button is the only way forward after "don't ask again". The message clears on
+  a successful retry, or on return from settings with the permission held. A
+  dismissed dialog shows nothing. `play` is unchanged. PR #26. (Tag `v2026-10-20-2`
+  not pushed: A6.)
+- 2026-10-20 · R8: Accessibility semantics tests on Today, the keypad and the review
+  queue. Three real fixes: Today's net total is spoken as a sentence. Both extended
+  FABs (Today and Customers) now have a spoken name; they had none, because Material
+  takes the name from the icon. Today's icon buttons are 48dp. PR #24. (Tag
+  `v2026-10-20-1` not pushed: A6.)
 
 - 2026-10-19 · R7: Permission-flow test. The real `OnboardingRoute` runs under
   Robolectric with a recording `ActivityResultRegistry` in place of the system dialog,
