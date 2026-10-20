@@ -147,7 +147,14 @@ fun TodayScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onRecordCashSale,
-                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                // Material clears the label's semantics and names the button from its
+                // icon, so a null description here leaves TalkBack saying only "button".
+                icon = {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = stringResource(R.string.today_record_cash),
+                    )
+                },
                 text = { Text(stringResource(R.string.today_record_cash)) },
             )
         },

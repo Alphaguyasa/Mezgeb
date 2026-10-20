@@ -59,14 +59,16 @@ class AccessibilitySemanticsTest {
 
     @Test
     fun `today names and sizes every control`() {
-        show { today() }
+        show { BusiestToday() }
 
         assertControlsAreNamedAndLargeEnough()
+        // The FAB is named from its icon: Material clears the label's own semantics.
+        assertSpoken(context.getString(R.string.today_record_cash))
     }
 
     @Test
     fun `today reads every amount as words`() {
-        show { today() }
+        show { BusiestToday() }
 
         assertNoSignedAmountIsSpoken()
         // The totals, a row and the net, each as a sentence.
@@ -84,7 +86,7 @@ class AccessibilitySemanticsTest {
 
     @Test
     fun `a day that is behind says so in words`() {
-        show { today(totalInMinor = 10_000, totalOutMinor = 25_000) }
+        show { BusiestToday(totalInMinor = 10_000, totalOutMinor = 25_000) }
 
         assertNoSignedAmountIsSpoken()
         assertSpoken(
@@ -98,7 +100,7 @@ class AccessibilitySemanticsTest {
 
     @Test
     fun `a day with nothing in or out is not read as plus zero`() {
-        show { today(totalInMinor = 0, totalOutMinor = 0) }
+        show { BusiestToday(totalInMinor = 0, totalOutMinor = 0) }
 
         assertNoSignedAmountIsSpoken()
         assertSpoken(context.getString(R.string.today_net_even_content_description))
@@ -149,7 +151,7 @@ class AccessibilitySemanticsTest {
      * and money out, so every kind of control and amount is on it at once.
      */
     @Composable
-    private fun today(
+    private fun BusiestToday(
         totalInMinor: Long = TOTAL_IN_MINOR,
         totalOutMinor: Long = TOTAL_OUT_MINOR,
     ) {
@@ -210,13 +212,14 @@ class AccessibilitySemanticsTest {
     }
 
     /**
-     * No text on the unmerged tree may be a sign followed by a digit. The unmerged
-     * tree is what matters: a MoneyText clears its children's semantics, so a signed
-     * amount still showing up there is one TalkBack will reach.
+     * No text on the merged tree may be a sign followed by a digit. The merged tree is
+     * what TalkBack reads. The unmerged tree is the wrong place to look: it still holds
+     * the visible "+2,450.00" Text under a MoneyText, whose clearAndSetSemantics drops
+     * it from what is spoken.
      */
     private fun assertNoSignedAmountIsSpoken() {
         val signedAmount = Regex("""[+−]\d""")
-        val all = compose.onAllNodes(isRoot().not(), useUnmergedTree = true).fetchSemanticsNodes()
+        val all = compose.onAllNodes(isRoot().not()).fetchSemanticsNodes()
         val offenders = all.flatMap { node ->
             node.config.getOrNull(SemanticsProperties.Text).orEmpty().map { it.text } +
                 node.config.getOrNull(SemanticsProperties.ContentDescription).orEmpty()
