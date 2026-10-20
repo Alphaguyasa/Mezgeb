@@ -145,6 +145,38 @@ class OnboardingViewModelTest {
     }
 
     @Test
+    fun `a refused permission is remembered until the next try`() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.state.test {
+            assertFalse(awaitLoaded().importPermissionRefused)
+
+            viewModel.onEvent(OnboardingEvent.ImportPermissionRefused)
+            assertTrue(awaitItem().importPermissionRefused)
+
+            viewModel.onEvent(OnboardingEvent.StartImport)
+            assertFalse(awaitItem().importPermissionRefused)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a permission granted in settings clears the refusal without importing`() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.state.test {
+            awaitLoaded()
+            viewModel.onEvent(OnboardingEvent.ImportPermissionRefused)
+            assertTrue(awaitItem().importPermissionRefused)
+
+            viewModel.onEvent(OnboardingEvent.ImportPermissionGranted)
+            assertFalse(awaitItem().importPermissionRefused)
+            assertFalse(importer.started)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `finishing records that the explanation has been seen`() = runTest {
         val viewModel = viewModel()
 
@@ -185,6 +217,7 @@ class OnboardingViewModelTest {
     private class FakeCaptureAccess(var granted: Boolean = false) : CaptureAccess {
         override fun isNotificationAccessGranted(): Boolean = granted
         override fun settingsIntent(): Intent = Intent("test.settings")
+        override fun appSettingsIntent(): Intent = Intent("test.app_settings")
         override fun requestRebind() = Unit
     }
 

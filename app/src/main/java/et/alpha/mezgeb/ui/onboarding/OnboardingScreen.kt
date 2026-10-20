@@ -3,6 +3,7 @@ package et.alpha.mezgeb.ui.onboarding
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -37,6 +38,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.Lifecycle
@@ -62,20 +64,32 @@ fun OnboardingRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
+    val importPermissions = remember { viewModel.importPermissions() }
+
     // Notification access is granted in system settings, in another app. Coming back
-    // to this screen is the only signal that anything might have changed.
+    // to this screen is the only signal that anything might have changed. The same
+    // holds for a read permission the user went to app settings to allow.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.onEvent(OnboardingEvent.Refresh)
+        if (importPermissions.isNotEmpty() && importPermissions.all { context.holds(it) }) {
+            viewModel.onEvent(OnboardingEvent.ImportPermissionGranted)
+        }
     }
 
-    val importPermissions = remember { viewModel.importPermissions() }
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) { results ->
         // The progress notification is a nicety; reading the messages is the point.
         // Only the importer's own permissions decide whether the import can run.
-        if (importPermissions.all { results[it] == true }) {
-            viewModel.onEvent(OnboardingEvent.StartImport)
+        when {
+            importPermissions.all { results[it] == true } ->
+                viewModel.onEvent(OnboardingEvent.StartImport)
+            // After "don't ask again" the system answers with this refusal at once,
+            // without showing anything, so this is also the only sign of that state.
+            importPermissions.any { results[it] == false } ->
+                viewModel.onEvent(OnboardingEvent.ImportPermissionRefused)
+            // An empty result is a dialog backed out of, not an answer. Nothing was
+            // refused, so nothing is said; the button is still there.
         }
     }
 
@@ -88,6 +102,9 @@ fun OnboardingRoute(
         onOpenBatterySettings = {
             viewModel.onEvent(OnboardingEvent.BatterySettingsOpened)
             context.startSafely(viewModel.batterySettingsIntent())
+        },
+        onOpenAppSettings = {
+            context.startSafely(viewModel.appSettingsIntent())
         },
         onStartImport = {
             if (importPermissions.isEmpty()) {
@@ -110,6 +127,7 @@ fun OnboardingScreen(
     onEvent: (OnboardingEvent) -> Unit,
     onOpenNotificationSettings: () -> Unit,
     onOpenBatterySettings: () -> Unit,
+    onOpenAppSettings: () -> Unit,
     onStartImport: () -> Unit,
     onFinish: () -> Unit,
     modifier: Modifier = Modifier,
@@ -154,7 +172,12 @@ fun OnboardingScreen(
             }
 
             if (state.canImportPastMessages) {
-                ImportCard(status = state.importStatus, onStartImport = onStartImport)
+                ImportCard(
+                    status = state.importStatus,
+                    permissionRefused = state.importPermissionRefused,
+                    onOpenAppSettings = onOpenAppSettings,
+                    onStartImport = onStartImport,
+                )
             }
 
             Button(
@@ -277,7 +300,12 @@ private fun BatteryCard(onOpenSettings: () -> Unit) {
 }
 
 @Composable
-private fun ImportCard(status: SmsImportStatus, onStartImport: () -> Unit) {
+private fun ImportCard(
+    status: SmsImportStatus,
+    permissionRefused: Boolean,
+    onOpenAppSettings: () -> Unit,
+    onStartImport: () -> Unit,
+) {
     val spacing = MezgebTheme.spacing
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -358,6 +386,22 @@ private fun ImportCard(status: SmsImportStatus, onStartImport: () -> Unit) {
                 SmsImportStatus.Idle, SmsImportStatus.Unavailable -> Unit
             }
 
+            if (permissionRefused && status !is SmsImportStatus.Running) {
+                // Says what did not happen and where to fix it. The settings button is
+                // the only way forward once the system has stopped showing its dialog.
+                Text(
+                    text = stringResource(R.string.onboarding_import_refused),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
+                TextButton(
+                    onClick = onOpenAppSettings,
+                    modifier = Modifier.heightIn(min = spacing.touchTarget),
+                ) {
+                    Text(stringResource(R.string.onboarding_import_open_app_settings))
+                }
+            }
+
             if (status !is SmsImportStatus.Running) {
                 OutlinedButton(
                     onClick = onStartImport,
@@ -393,6 +437,9 @@ private fun Context.startSafely(intent: Intent) {
     runCatching { startActivity(intent) }
 }
 
+private fun Context.holds(permission: String): Boolean =
+    ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+
 @Preview(name = "Onboarding", showBackground = true, heightDp = 900)
 @Composable
 private fun OnboardingScreenPreview() {
@@ -408,6 +455,7 @@ private fun OnboardingScreenPreview() {
             onEvent = {},
             onOpenNotificationSettings = {},
             onOpenBatterySettings = {},
+            onOpenAppSettings = {},
             onStartImport = {},
             onFinish = {},
         )
@@ -429,6 +477,7 @@ private fun OnboardingScreenAmharicPreview() {
             onEvent = {},
             onOpenNotificationSettings = {},
             onOpenBatterySettings = {},
+            onOpenAppSettings = {},
             onStartImport = {},
             onFinish = {},
         )

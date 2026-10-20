@@ -199,6 +199,7 @@ class TodayViewModelTest : DatabaseTest() {
     private class FakeCaptureAccess(var granted: Boolean = true) : CaptureAccess {
         override fun isNotificationAccessGranted(): Boolean = granted
         override fun settingsIntent(): Intent = Intent("test.settings")
+        override fun appSettingsIntent(): Intent = Intent("test.app_settings")
         override fun requestRebind() = Unit
     }
 }

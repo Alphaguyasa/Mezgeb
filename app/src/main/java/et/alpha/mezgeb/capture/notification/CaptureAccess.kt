@@ -3,6 +3,7 @@ package et.alpha.mezgeb.capture.notification
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.service.notification.NotificationListenerService
@@ -25,6 +26,13 @@ interface CaptureAccess {
 
     /** The system screen where the user grants or revokes it. */
     fun settingsIntent(): Intent
+
+    /**
+     * This app's own page in system settings. A runtime permission refused with
+     * "don't ask again" can only be granted there: the system stops showing the
+     * dialog and answers every later request with a refusal on its own.
+     */
+    fun appSettingsIntent(): Intent
 
     /**
      * Asks the system to bind the listener again. Safe to call when already bound.
@@ -58,6 +66,11 @@ class AndroidCaptureAccess @Inject constructor(
         }
         return intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
+
+    override fun appSettingsIntent(): Intent = Intent(
+        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+        Uri.fromParts("package", context.packageName, null),
+    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
     override fun requestRebind() {
         // Throws if the component is not an enabled listener, which is a normal state

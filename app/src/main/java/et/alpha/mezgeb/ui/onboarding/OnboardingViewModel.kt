@@ -26,6 +26,12 @@ data class OnboardingUiState(
     val importStatus: SmsImportStatus = SmsImportStatus.Unavailable,
     /** True when this device has a vendor screen worth visiting and has not been. */
     val showBatteryHint: Boolean = false,
+    /**
+     * True after the user refused the permission the import needs, until they try
+     * again or grant it in settings. Without it a refusal looks like a button that
+     * does nothing, and after "don't ask again" that is literally what it becomes.
+     */
+    val importPermissionRefused: Boolean = false,
 )
 
 sealed interface OnboardingEvent {
@@ -33,6 +39,12 @@ sealed interface OnboardingEvent {
     data object Refresh : OnboardingEvent
 
     data object StartImport : OnboardingEvent
+
+    /** The system dialog came back with the import's permission refused. */
+    data object ImportPermissionRefused : OnboardingEvent
+
+    /** The import's permission is now held, granted in settings after a refusal. */
+    data object ImportPermissionGranted : OnboardingEvent
 
     /** The user has been sent to the vendor's battery screen; do not ask again. */
     data object BatterySettingsOpened : OnboardingEvent
@@ -58,6 +70,8 @@ class OnboardingViewModel @Inject constructor(
 
     private val refreshes = MutableStateFlow(0)
 
+    private val importPermissionRefused = MutableStateFlow(false)
+
     /** Resolved once: the answer depends on the firmware, which does not change. */
     private val hasVendorBatteryScreen: Boolean = battery.hasVendorScreen()
 
@@ -65,13 +79,15 @@ class OnboardingViewModel @Inject constructor(
         importer.observeStatus(),
         settings.observeBatteryHintShown(),
         refreshes,
-    ) { importStatus, batteryHintShown, _ ->
+        importPermissionRefused,
+    ) { importStatus, batteryHintShown, _, permissionRefused ->
         OnboardingUiState(
             isLoading = false,
             hasNotificationAccess = access.isNotificationAccessGranted(),
             canImportPastMessages = importer.isSupported,
             importStatus = importStatus,
             showBatteryHint = hasVendorBatteryScreen && !batteryHintShown,
+            importPermissionRefused = permissionRefused,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -82,7 +98,12 @@ class OnboardingViewModel @Inject constructor(
     fun onEvent(event: OnboardingEvent) {
         when (event) {
             OnboardingEvent.Refresh -> refreshes.update { it + 1 }
-            OnboardingEvent.StartImport -> importer.start()
+            OnboardingEvent.StartImport -> {
+                importPermissionRefused.value = false
+                importer.start()
+            }
+            OnboardingEvent.ImportPermissionRefused -> importPermissionRefused.value = true
+            OnboardingEvent.ImportPermissionGranted -> importPermissionRefused.value = false
             OnboardingEvent.BatterySettingsOpened -> viewModelScope.launch {
                 settings.setBatteryHintShown(true)
             }
@@ -102,6 +123,8 @@ class OnboardingViewModel @Inject constructor(
     fun notificationSettingsIntent(): Intent = access.settingsIntent()
 
     fun batterySettingsIntent(): Intent = battery.settingsIntent()
+
+    fun appSettingsIntent(): Intent = access.appSettingsIntent()
 
     fun importPermissions(): List<String> = importer.requiredPermissions()
 
