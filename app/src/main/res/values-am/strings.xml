@@ -73,6 +73,9 @@
     <string name="today_total_in">ዛሬ የገባ</string>
     <string name="today_total_out">ዛሬ የወጣ</string>
     <string name="today_net">ተጣራ</string>
+    <string name="today_net_ahead_content_description">ገቢ ከወጪ በ%1$s %2$s ይበልጣል</string>
+    <string name="today_net_behind_content_description">ወጪ ከገቢ በ%1$s %2$s ይበልጣል</string>
+    <string name="today_net_even_content_description">ገቢና ወጪ እኩል ናቸው</string>
     <string name="today_record_cash">ጥሬ ገንዘብ መዝግብ</string>
     <string name="today_empty_title">ዛሬ እስካሁን ምንም የለም</string>
     <string name="today_empty_body_quiet_day">ክፍያዎች እንደደረሱ እዚህ ይታያሉ። የመዘገቡት ጥሬ ገንዘብም እዚሁ ይታያል።</string>

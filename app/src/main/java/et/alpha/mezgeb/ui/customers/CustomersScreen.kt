@@ -87,7 +87,14 @@ fun CustomersScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { onEvent(CustomersEvent.AddCustomerRequested) },
-                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                // Named on the icon for the same reason as Today's FAB: Material reads
+                // an extended FAB's name from its icon, not from its label.
+                icon = {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = stringResource(R.string.customers_add),
+                    )
+                },
                 text = { Text(stringResource(R.string.customers_add)) },
             )
         },
