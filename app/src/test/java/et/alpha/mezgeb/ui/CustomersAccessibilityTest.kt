@@ -56,7 +56,13 @@ class CustomersAccessibilityTest {
 
     @Test
     fun `the add customer dialog names and sizes every control`() {
+        // With the dialog open, Compose under Robolectric never reports idle: something
+        // keeps asking for frames, so waiting for idle timed out after 60s in CI. The
+        // clock is driven by hand instead, for long enough to finish any entry
+        // animation, and the tree is read after that.
+        compose.mainClock.autoAdvance = false
         showCustomers(isAddingCustomer = true)
+        compose.mainClock.advanceTimeBy(DIALOG_SETTLE_MILLIS)
 
         checks.assertControlsAreNamedAndLargeEnough()
     }
@@ -181,5 +187,6 @@ class CustomersAccessibilityTest {
     private companion object {
         const val OWES_MINOR = 45_000L
         const val SHOP_OWES_MINOR = 2_000L
+        const val DIALOG_SETTLE_MILLIS = 2_000L
     }
 }
