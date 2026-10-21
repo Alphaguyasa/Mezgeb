@@ -200,7 +200,7 @@ class BackupRoundTripTest : DatabaseTest() {
 
     private suspend fun snapshot() = BackupPayload(
         rawMessages = db.rawMessageDao().getAll(),
-        transactions = db.transactionDao().listFiltered(null, null, null, null, null, null, null),
+        transactions = db.transactionDao().listFiltered(null, null, null, null, null, null, null, null),
         customers = db.customerDao().getAll(),
         creditEntries = db.creditEntryDao().getAll(),
         categories = db.categoryDao().getAll(),

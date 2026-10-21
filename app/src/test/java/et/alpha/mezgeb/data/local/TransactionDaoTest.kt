@@ -46,8 +46,11 @@ class TransactionDaoTest : DatabaseTest() {
         direction: Direction? = null,
         categoryId: String? = null,
         isReconciled: Boolean? = null,
+        isPossibleDuplicate: Boolean? = null,
         query: String? = null,
-    ) = dao.listFiltered(from, to, channel, direction, categoryId, isReconciled, query).map { it.id }
+    ) = dao.listFiltered(
+        from, to, channel, direction, categoryId, isReconciled, isPossibleDuplicate, query,
+    ).map { it.id }
 
     // --- The provider-reference dedup lookup ------------------------------------------
 
@@ -105,6 +108,24 @@ class TransactionDaoTest : DatabaseTest() {
     fun `filter by reconciled flag`() = runTest {
         assertEquals(listOf("t7", "t5"), ids(isReconciled = true))
         assertEquals(listOf("t4", "t3", "t2", "t1"), ids(isReconciled = false))
+    }
+
+    @Test
+    fun `filter by possible-duplicate flag`() = runTest {
+        dao.insertAll(
+            listOf(
+                transaction("t8", amountMinor = 45_000, channel = Channel.TELEBIRR, occurredAt = T0 + 7 * DAY, possibleDuplicateOfId = "t1"),
+                // Flagged but deleted: the shop already dealt with it.
+                transaction("t9", amountMinor = 45_000, channel = Channel.TELEBIRR, occurredAt = T0 + 8 * DAY, possibleDuplicateOfId = "t1", isDeleted = true),
+            ),
+        )
+
+        assertEquals(listOf("t8"), ids(isPossibleDuplicate = true))
+        assertEquals(listOf("t7", "t5", "t4", "t3", "t2", "t1"), ids(isPossibleDuplicate = false))
+
+        // A dismissed flag is cleared, so the row leaves the duplicates view.
+        dao.clearPossibleDuplicate("t8")
+        assertTrue(ids(isPossibleDuplicate = true).isEmpty())
     }
 
     @Test

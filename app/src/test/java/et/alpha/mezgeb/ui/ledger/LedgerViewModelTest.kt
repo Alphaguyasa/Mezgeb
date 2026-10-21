@@ -164,6 +164,23 @@ class LedgerViewModelTest : DatabaseTest() {
     }
 
     @Test
+    fun `the possible-duplicates filter counts as a filter and clears with the rest`() = runTest {
+        viewModel.onEvent(
+            LedgerEvent.FilterChanged(
+                viewModel.state.value.filter.copy(isPossibleDuplicate = true),
+            ),
+        )
+
+        // So an empty result says "nothing matches", not "your ledger is empty".
+        assertTrue(viewModel.state.value.isFiltered)
+
+        viewModel.onEvent(LedgerEvent.ClearFilters)
+
+        assertEquals(TransactionFilter(), viewModel.state.value.filter)
+        assertFalse(viewModel.state.value.isFiltered)
+    }
+
+    @Test
     fun `pull to refresh re-parses the review queue and says what changed`() = runTest {
         // A message that no rule could read when it arrived.
         db.rawMessageDao().insertIgnoringDuplicates(
