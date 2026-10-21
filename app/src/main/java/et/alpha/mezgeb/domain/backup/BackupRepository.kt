@@ -31,7 +31,8 @@ class BackupRepository @Inject constructor(
             rawMessages = database.rawMessageDao().getAll(),
             transactions = database.transactionDao().listFiltered(
                 from = null, to = null, channel = null, direction = null,
-                categoryId = null, isReconciled = null, query = null,
+                categoryId = null, isReconciled = null, isPossibleDuplicate = null,
+                query = null,
             ),
             customers = database.customerDao().getAll(),
             creditEntries = database.creditEntryDao().getAll(),

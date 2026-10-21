@@ -39,7 +39,7 @@ class TransactionDayTotalsTest : DatabaseTest() {
             ),
         )
 
-        val totals = dao.observeDailyTotals(offset, null, null, null, null, null, null, null).first()
+        val totals = dao.observeDailyTotals(offset, null, null, null, null, null, null, null, null).first()
 
         assertEquals(2, totals.size)
         // Newest day first, matching the list order.
@@ -58,7 +58,7 @@ class TransactionDayTotalsTest : DatabaseTest() {
         val occurredAt = T0 + 21 * HOUR
         dao.insert(transaction("a", occurredAt = occurredAt))
 
-        val totals = dao.observeDailyTotals(offset, null, null, null, null, null, null, null).first()
+        val totals = dao.observeDailyTotals(offset, null, null, null, null, null, null, null, null).first()
 
         assertEquals(MezgebDates.startOfDay(occurredAt, zone), totals.single().dayEpochMillis)
     }
@@ -80,11 +80,37 @@ class TransactionDayTotalsTest : DatabaseTest() {
             direction = null,
             categoryId = null,
             isReconciled = null,
+            isPossibleDuplicate = null,
             query = null,
         ).first()
 
         // Otherwise a filtered list would show a subtotal for rows it is not showing.
         assertEquals(45_000L, cashOnly.single().inMinor)
+    }
+
+    @Test
+    fun `the possible-duplicates filter applies to the subtotals`() = runTest {
+        dao.insertAll(
+            listOf(
+                transaction("a", amountMinor = 45_000, occurredAt = T0 + HOUR),
+                transaction("b", amountMinor = 45_000, occurredAt = T0 + 2 * HOUR, possibleDuplicateOfId = "a"),
+            ),
+        )
+
+        val flaggedOnly = dao.observeDailyTotals(
+            offsetMillis = offset,
+            from = null,
+            to = null,
+            channel = null,
+            direction = null,
+            categoryId = null,
+            isReconciled = null,
+            isPossibleDuplicate = true,
+            query = null,
+        ).first()
+
+        // The header over the flagged rows sums only the flagged rows.
+        assertEquals(45_000L, flaggedOnly.single().inMinor)
     }
 
     @Test
@@ -96,7 +122,7 @@ class TransactionDayTotalsTest : DatabaseTest() {
             ),
         )
 
-        val totals = dao.observeDailyTotals(offset, null, null, null, null, null, null, null).first()
+        val totals = dao.observeDailyTotals(offset, null, null, null, null, null, null, null, null).first()
 
         assertEquals(45_000L, totals.single().inMinor)
     }
@@ -104,7 +130,7 @@ class TransactionDayTotalsTest : DatabaseTest() {
     @Test
     fun `an empty ledger has no days`() = runTest {
         assertTrue(
-            dao.observeDailyTotals(offset, null, null, null, null, null, null, null).first().isEmpty(),
+            dao.observeDailyTotals(offset, null, null, null, null, null, null, null, null).first().isEmpty(),
         )
     }
 

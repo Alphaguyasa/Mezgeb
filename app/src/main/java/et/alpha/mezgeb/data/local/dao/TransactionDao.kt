@@ -101,6 +101,10 @@ interface TransactionDao {
      * "don't constrain on this", which keeps one query where six overloads would
      * otherwise accumulate.
      *
+     * [isPossibleDuplicate] matches on the flag set by the lookalike check, so `true`
+     * is "only rows that may be counted twice". A dismissed flag is cleared to null,
+     * which is why a dismissed row drops out of that view.
+     *
      * [query] searches counterparty name, phone, provider reference and note.
      */
     @Query(
@@ -113,6 +117,7 @@ interface TransactionDao {
           AND (:direction IS NULL OR direction = :direction)
           AND (:categoryId IS NULL OR categoryId = :categoryId)
           AND (:isReconciled IS NULL OR isReconciled = :isReconciled)
+          AND (:isPossibleDuplicate IS NULL OR (possibleDuplicateOfId IS NOT NULL) = :isPossibleDuplicate)
           AND (
                 :query IS NULL
                 OR counterpartyName LIKE '%' || :query || '%'
@@ -130,6 +135,7 @@ interface TransactionDao {
         direction: Direction?,
         categoryId: String?,
         isReconciled: Boolean?,
+        isPossibleDuplicate: Boolean?,
         query: String?,
     ): PagingSource<Int, TransactionEntity>
 
@@ -144,6 +150,7 @@ interface TransactionDao {
           AND (:direction IS NULL OR direction = :direction)
           AND (:categoryId IS NULL OR categoryId = :categoryId)
           AND (:isReconciled IS NULL OR isReconciled = :isReconciled)
+          AND (:isPossibleDuplicate IS NULL OR (possibleDuplicateOfId IS NOT NULL) = :isPossibleDuplicate)
           AND (
                 :query IS NULL
                 OR counterpartyName LIKE '%' || :query || '%'
@@ -161,6 +168,7 @@ interface TransactionDao {
         direction: Direction?,
         categoryId: String?,
         isReconciled: Boolean?,
+        isPossibleDuplicate: Boolean?,
         query: String?,
     ): List<TransactionEntity>
 
@@ -223,6 +231,7 @@ interface TransactionDao {
           AND (:direction IS NULL OR direction = :direction)
           AND (:categoryId IS NULL OR categoryId = :categoryId)
           AND (:isReconciled IS NULL OR isReconciled = :isReconciled)
+          AND (:isPossibleDuplicate IS NULL OR (possibleDuplicateOfId IS NOT NULL) = :isPossibleDuplicate)
           AND (
                 :query IS NULL
                 OR counterpartyName LIKE '%' || :query || '%'
@@ -242,6 +251,7 @@ interface TransactionDao {
         direction: Direction?,
         categoryId: String?,
         isReconciled: Boolean?,
+        isPossibleDuplicate: Boolean?,
         query: String?,
     ): Flow<List<DayTotal>>
 
