@@ -22,6 +22,7 @@
     <string name="direction_in">ገቢ</string>
     <string name="direction_out">ወጪ</string>
     <string name="money_content_description">%1$s %2$s %3$s</string>
+    <string name="amount_content_description">%1$s %2$s</string>
 
     <!-- Placeholder screens -->
     <string name="placeholder_ledger_title">መዝገብዎ ባዶ ነው</string>
@@ -209,6 +210,9 @@
     <string name="credit_kind_given">ዱቤ ተሰጥቷል</string>
     <string name="credit_kind_repayment">ክፍያ ተቀብለዋል</string>
     <string name="credit_kind_adjustment">ማስተካከያ</string>
+    <string name="credit_statement_balance_owes_content_description">ከዚህ በኋላ ያለው ቀሪ፦ %1$s %2$s ይፈለግብዎታል</string>
+    <string name="credit_statement_balance_shop_owes_content_description">ከዚህ በኋላ ያለው ቀሪ፦ እርስዎ %1$s %2$s ይፈለጉባቸዋል</string>
+    <string name="credit_statement_balance_settled_content_description">ከዚህ በኋላ ያለው ቀሪ፦ ምንም ዕዳ የለም</string>
     <string name="credit_linked_unlink">ከክፍያ ጋር ተያይዟል — አላቅቅ</string>
     <string name="credit_archive">አስቀምጥ</string>
     <string name="credit_archive_title">ይህ ደንበኛ ይቀመጥ?</string>

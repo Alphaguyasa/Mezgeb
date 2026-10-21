@@ -32,6 +32,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -363,19 +365,44 @@ private fun StatementRow(line: CreditStatementLine, onUnlink: (String) -> Unit) 
             }
         }
 
+        // The signs are for the eye. TalkBack would read "+500.00" as a symbol and a
+        // number, so it hears the amount alone (the kind on the left says which way
+        // it moved) and the balance as a sentence.
+        val unsignedAmount = MoneyFormatter.formatUnsigned(line.entry.amountMinor)
+        val spokenAmount = stringResource(
+            R.string.amount_content_description,
+            unsignedAmount,
+            MoneyFormatter.DEFAULT_CURRENCY,
+        )
+        val balance = line.runningBalanceMinor
+        val spokenBalance = when {
+            balance > 0 -> stringResource(
+                R.string.credit_statement_balance_owes_content_description,
+                MoneyFormatter.formatUnsigned(balance),
+                MoneyFormatter.DEFAULT_CURRENCY,
+            )
+            balance < 0 -> stringResource(
+                R.string.credit_statement_balance_shop_owes_content_description,
+                MoneyFormatter.formatUnsigned(balance),
+                MoneyFormatter.DEFAULT_CURRENCY,
+            )
+            else -> stringResource(R.string.credit_statement_balance_settled_content_description)
+        }
         Column(horizontalAlignment = Alignment.End) {
             Text(
                 text = when (line.entry.kind) {
-                    CreditKind.REPAYMENT -> "−" + MoneyFormatter.formatUnsigned(line.entry.amountMinor)
-                    else -> "+" + MoneyFormatter.formatUnsigned(line.entry.amountMinor)
+                    CreditKind.REPAYMENT -> "−$unsignedAmount"
+                    else -> "+$unsignedAmount"
                 },
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.clearAndSetSemantics { contentDescription = spokenAmount },
             )
             Text(
-                text = MoneyFormatter.format(line.runningBalanceMinor),
+                text = MoneyFormatter.format(balance),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.clearAndSetSemantics { contentDescription = spokenBalance },
             )
         }
     }

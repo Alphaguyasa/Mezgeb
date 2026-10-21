@@ -23,6 +23,9 @@
     <string name="direction_out">Paid out</string>
     <!-- 1: direction, 2: amount, 3: currency code -->
     <string name="money_content_description">%1$s %2$s %3$s</string>
+    <!-- An amount spoken without a sign, where the words beside it carry the direction.
+         1: amount, 2: currency code -->
+    <string name="amount_content_description">%1$s %2$s</string>
 
     <!-- Placeholder screens (replaced from Session 5 onward) -->
     <string name="placeholder_ledger_title">Your ledger is empty</string>
@@ -231,6 +234,10 @@
     <string name="credit_kind_given">Credit given</string>
     <string name="credit_kind_repayment">Payment received</string>
     <string name="credit_kind_adjustment">Adjustment</string>
+    <!-- Spoken for the running balance on a statement line. 1: amount, 2: currency code -->
+    <string name="credit_statement_balance_owes_content_description">Balance after: owes you %1$s %2$s</string>
+    <string name="credit_statement_balance_shop_owes_content_description">Balance after: you owe them %1$s %2$s</string>
+    <string name="credit_statement_balance_settled_content_description">Balance after: nothing owed</string>
     <string name="credit_linked_unlink">Linked to a payment — unlink</string>
     <string name="credit_archive">Archive</string>
     <string name="credit_archive_title">Archive this customer?</string>
