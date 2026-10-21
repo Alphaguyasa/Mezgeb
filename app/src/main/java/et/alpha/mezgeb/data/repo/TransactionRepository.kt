@@ -33,11 +33,14 @@ data class TransactionFilter(
     val direction: Direction? = null,
     val categoryId: String? = null,
     val isReconciled: Boolean? = null,
+    /** `true` shows only rows flagged as possibly counted twice. */
+    val isPossibleDuplicate: Boolean? = null,
     val query: String? = null,
 ) {
     val isActive: Boolean
         get() = from != null || to != null || channel != null || direction != null ||
-            categoryId != null || isReconciled != null || !query.isNullOrBlank()
+            categoryId != null || isReconciled != null || isPossibleDuplicate != null ||
+            !query.isNullOrBlank()
 }
 
 /** Totals for one period, as the reconcile and reports screens need them. */
@@ -65,6 +68,7 @@ class TransactionRepository @Inject constructor(
                 direction = filter.direction,
                 categoryId = filter.categoryId,
                 isReconciled = filter.isReconciled,
+                isPossibleDuplicate = filter.isPossibleDuplicate,
                 query = filter.query?.takeIf { it.isNotBlank() },
             )
         },
@@ -85,6 +89,7 @@ class TransactionRepository @Inject constructor(
             direction = filter.direction,
             categoryId = filter.categoryId,
             isReconciled = filter.isReconciled,
+            isPossibleDuplicate = filter.isPossibleDuplicate,
             query = filter.query?.takeIf { it.isNotBlank() },
         )
 
@@ -96,6 +101,7 @@ class TransactionRepository @Inject constructor(
             direction = filter.direction,
             categoryId = filter.categoryId,
             isReconciled = filter.isReconciled,
+            isPossibleDuplicate = filter.isPossibleDuplicate,
             query = filter.query?.takeIf { it.isNotBlank() },
         ).map { it.toDomain() }
 

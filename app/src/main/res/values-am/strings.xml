@@ -104,6 +104,7 @@
     <string name="ledger_filter_channel_any">ማንኛውም መንገድ</string>
     <string name="ledger_filter_category_any">ማንኛውም ምድብ</string>
     <string name="ledger_filter_reconciled">የተስተካከለ</string>
+    <string name="ledger_filter_possible_duplicates">ድግግሞሽ ሊሆኑ የሚችሉ</string>
     <string name="ledger_error_title">መዝገብዎን መክፈት አልተቻለም</string>
     <string name="ledger_error_body">መዝገብዎን በማንበብ ላይ ችግር ተፈጥሯል። መረጃዎ አሁንም በዚህ ስልክ ላይ ነው፤ ምንም አልጠፋም።</string>
     <string name="action_try_again">እንደገና ሞክር</string>

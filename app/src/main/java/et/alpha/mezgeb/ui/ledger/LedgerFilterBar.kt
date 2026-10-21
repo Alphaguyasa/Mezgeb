@@ -91,6 +91,7 @@ fun LedgerFilterBar(
                 ChannelChipFilter(state.filter, onEvent)
                 CategoryChip(state.filter, state.categories, onEvent)
                 ReconciledChip(state.filter, onEvent)
+                PossibleDuplicatesChip(state.filter, onEvent)
 
                 if (state.isFiltered) {
                     FilterChip(
@@ -220,6 +221,24 @@ private fun ReconciledChip(filter: TransactionFilter, onEvent: (LedgerEvent) -> 
             onEvent(LedgerEvent.FilterChanged(filter.copy(isReconciled = next)))
         },
         label = { Text(stringResource(R.string.ledger_filter_reconciled)) },
+    )
+}
+
+/**
+ * Only the rows flagged as possibly counted twice, so a shop can work through them in
+ * one place instead of scrolling the whole ledger for the red label. A row leaves this
+ * view when the flag is dismissed or the row is deleted.
+ */
+@Composable
+private fun PossibleDuplicatesChip(filter: TransactionFilter, onEvent: (LedgerEvent) -> Unit) {
+    FilterChip(
+        selected = filter.isPossibleDuplicate == true,
+        onClick = {
+            // Like the reconciled chip: on or off, never a third "not flagged" state.
+            val next = if (filter.isPossibleDuplicate == true) null else true
+            onEvent(LedgerEvent.FilterChanged(filter.copy(isPossibleDuplicate = next)))
+        },
+        label = { Text(stringResource(R.string.ledger_filter_possible_duplicates)) },
     )
 }
 

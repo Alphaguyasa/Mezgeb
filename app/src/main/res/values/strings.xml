@@ -115,6 +115,7 @@
     <string name="ledger_filter_channel_any">Any channel</string>
     <string name="ledger_filter_category_any">Any category</string>
     <string name="ledger_filter_reconciled">Reconciled</string>
+    <string name="ledger_filter_possible_duplicates">Possible duplicates</string>
     <string name="ledger_error_title">Could not open your ledger</string>
     <string name="ledger_error_body">Something went wrong reading your records. They are still on this phone — nothing has been lost.</string>
     <string name="action_try_again">Try again</string>
