@@ -35,6 +35,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -231,6 +233,14 @@ private fun CustomerRow(credit: CustomerCredit, onClick: () -> Unit) {
         }
 
         Column(horizontalAlignment = Alignment.End) {
+            // The minus stays on screen, where it lines the column up by eye. TalkBack
+            // would read it as "minus 20", so it hears the amount alone, and the "You
+            // owe them" line under it says which way the money is owed.
+            val spokenBalance = stringResource(
+                R.string.amount_content_description,
+                MoneyFormatter.formatUnsigned(credit.balanceMinor),
+                MoneyFormatter.DEFAULT_CURRENCY,
+            )
             Text(
                 text = MoneyFormatter.format(credit.balanceMinor),
                 style = MaterialTheme.typography.titleMedium,
@@ -239,6 +249,7 @@ private fun CustomerRow(credit: CustomerCredit, onClick: () -> Unit) {
                     credit.shopOwesCustomer -> MaterialTheme.colorScheme.onSurfaceVariant
                     else -> MaterialTheme.colorScheme.onSurface
                 },
+                modifier = Modifier.clearAndSetSemantics { contentDescription = spokenBalance },
             )
             if (credit.isOverdue) {
                 Text(
