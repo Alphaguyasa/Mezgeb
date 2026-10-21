@@ -5,6 +5,63 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-10-21: Sixth daily run (scheduled)
+
+**Start.** CI on `main` was green (`6d7ca8b`). Model check: the models overview still
+lists Opus 5.5 (`claude-opus-5-5`) as the newest Opus. This run used it, so no switch
+was needed. Fable 5.1 was ignored, as Alpha decided.
+
+**Environment.** Same as before: JDK 21, no Android SDK, and Google Maven blocked
+(403). No Gradle build ran locally. CI judged everything below.
+
+**R14 (possible-duplicates ledger filter), PR #29, merged (`0f75778`).**
+- A "Possible duplicates" chip in the ledger filter bar shows only the rows the
+  lookalike check flagged.
+- The ledger query, its list twin and the day subtotals take one more nullable
+  parameter. A header over filtered rows sums only those rows.
+- The chip is on or off. Turning it off shows every row again.
+- A dismissed flag is cleared, so that row leaves the view. Deleted rows never show.
+- Nothing is deleted, merged or matched automatically. No schema change.
+- Tests: DAO, day totals, ViewModel, and the chip itself. Green on the first CI run.
+
+**R17 part 1 (accessibility checks), PR #28, merged (`a5b538c`).**
+- The three checks from R8 now live in a shared `AccessibilityChecks` helper. New
+  tests cover the ledger, the customer list and the credit statement.
+- **Real bugs, fixed.** A statement line showed `+500.00` / `−50.00` as plain text,
+  so TalkBack read "plus 500" / "minus 50". The running balance and a customer the
+  shop owes (`−20.00 ETB`) had the same problem. They are now spoken as words, for
+  example "Balance after: you owe them 20.00 ETB". The screen looks the same. New
+  strings are in English and Amharic. A native speaker should check the Amharic.
+- **Not covered: the add-customer dialog.** With it open, Compose under Robolectric
+  never went idle (a 60s timeout in `setContent`, both flavors). Fix attempt 1, a
+  hand-driven clock, did not help. Fix attempt 2 removed that one new test, which
+  had never passed. Everything else stayed. The PR comment explains this, and R18
+  tracks the dialog.
+- Green on the second fix push.
+
+**Tags.** I created `v2026-10-21-1` (#29) and `v2026-10-21-2` (#28) locally. Pushing
+them failed again, now with an explicit HTTP 403 (A6).
+
+**Dependabot.** #12, #14, #15, #17 and #22 are unchanged and still wait on A7.
+
+**Roadmap.** R14 is done. R17 part 1 is done, and part 2 (reconcile, reports,
+settings, onboarding) stays at the top. Added R18 (the dialog check). 6 items are
+open, 4 of them unblocked (R17, R18, R12, R15). No replan was needed.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R14 possible-duplicates filter (#29). R17 part 1 accessibility checks, with TalkBack fixes on the credit statement and customer list (#28) |
+| Merged | #29 yes (`0f75778`), #28 yes (`a5b538c`). Tags `v2026-10-21-1`/`-2` created but **could not be pushed** (A6, HTTP 403) |
+| Failed or blocked | The add-customer dialog test cannot run under Robolectric yet (now R18). Tag push (A6). No local Gradle |
+| Roadmap | 6 open (4 unblocked). No replan needed. Added R18 |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #17, #22) |
+| Next | R17 part 2 (reconcile, reports, settings, onboarding), then R18 (dialog check) |
+
+---
+
 ## 2026-10-20: Fifth daily run (scheduled)
 
 **Start.** CI on `main` was green (`f6fd503`). Model check: the models overview still
