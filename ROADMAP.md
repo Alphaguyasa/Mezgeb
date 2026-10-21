@@ -14,18 +14,21 @@ Built from the audit on 2026-10-14: the full code read plus the open items in
 
 ## Open
 
-### R17 · P2 · M: Accessibility checks on the other screens
-R8 covers Today, the keypad and the review queue. The Customers screen had the same
-unnamed extended FAB as Today, and only a code search found it. Run the same checks
-(named controls, 48dp targets, no signed amount read as symbols) on the ledger,
-customers, credit detail, reconcile, reports, settings and onboarding screens. Move
-the shared assertions out of `AccessibilitySemanticsTest` into a small helper so
-each screen's test stays short.
+### R17 · P2 · M: Accessibility checks on the other screens (part 2)
+Part 1 (PR #28) moved the shared checks into `AccessibilityChecks` and covered the
+ledger, the customer list and the credit statement. Left: reconcile, reports,
+settings and onboarding, using the same helper. Part 1 found real bugs (signed
+amounts read as symbols), so expect the same on reconcile and reports, which show
+gaps and nets that can go negative.
 
-### R14 · P2 · S: Ledger filter for possible duplicates
-A filter chip in the ledger that shows only flagged rows, so a shop can work through
-them in one place. This extends `listFiltered`/`pagingSourceFiltered` with one nullable
-parameter.
+### R18 · P2 · S: Accessibility check on the add-customer dialog
+The dialog test was taken out of PR #28. With the dialog open, Compose under
+Robolectric never went idle, and `setContent` timed out after 60s in both flavors.
+Driving the clock by hand (`mainClock.autoAdvance = false`) did not help, so the
+cause is not an animation. Find out why the dialog window never settles (try
+`isDialog()` roots, the `ShadowDialog` route, or a test of the dialog's content
+alone), then add the check back. The same applies to the other `AlertDialog`s
+(archive customer, edit customer).
 
 ### R10 · P1 · L: Encrypt the database at rest
 **Blocked: see NEEDS_APPROVAL.md A1.** This needs a new native dependency
@@ -52,6 +55,15 @@ created per use in `DatabaseSeederTest.kt:72`. None is a bug. They hide a new wa
 the same way the 24 version warnings hid the reminder bug (R6).
 
 ## Done
+
+- 2026-10-21 · R17 part 1: Shared `AccessibilityChecks` helper. The ledger, the
+  customer list and the credit statement are covered. Real fixes: a statement line
+  read its amount as "+500.00" and its balance as "−20.00 ETB". Both are now spoken
+  as words ("Balance after: you owe them 20.00 ETB"), and so is a negative balance
+  on the customer list. PR #28. (Tag `v2026-10-21-2` not pushed: A6.)
+- 2026-10-21 · R14: A "Possible duplicates" chip in the ledger shows only flagged
+  rows. The day subtotals follow the filter. A dismissed row leaves the view. PR #29.
+  (Tag `v2026-10-21-1` not pushed: A6.)
 
 - 2026-10-20 · R16: A refused `READ_SMS` in the `direct` build now says that no past
   payments were added, and offers a button to the app's page in system settings.
