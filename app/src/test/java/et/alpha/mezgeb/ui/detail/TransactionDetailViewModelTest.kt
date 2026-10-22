@@ -16,6 +16,7 @@ import et.alpha.mezgeb.domain.model.MatchField
 import et.alpha.mezgeb.domain.model.MatchType
 import et.alpha.mezgeb.util.IdGenerator
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -32,6 +33,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class TransactionDetailViewModelTest : DatabaseTest() {
 
     private val now = Instant.parse("2026-08-02T10:00:00Z").toEpochMilli()

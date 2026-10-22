@@ -23,7 +23,7 @@ class DatabaseSeederTest : DatabaseTest() {
         categoryDao = db.categoryDao(),
         parserRuleDao = db.parserRuleDao(),
         clock = clock,
-        json = Json { ignoreUnknownKeys = true },
+        json = lenientJson,
     )
 
     @Test
@@ -69,7 +69,7 @@ class DatabaseSeederTest : DatabaseTest() {
         val raw = context.assets.open(DatabaseSeeder.RULES_ASSET)
             .bufferedReader().use { it.readText() }
 
-        val parsed = Json { ignoreUnknownKeys = true }.decodeFromString<BundledRulesFile>(raw)
+        val parsed = lenientJson.decodeFromString<BundledRulesFile>(raw)
 
         assertEquals(1, parsed.formatVersion)
         assertTrue("expected bundled rules, got none", parsed.rules.isNotEmpty())
@@ -141,5 +141,10 @@ class DatabaseSeederTest : DatabaseTest() {
 
         // Categories still seeded even if rules failed.
         assertEquals(DatabaseSeeder.SYSTEM_CATEGORIES.size, db.categoryDao().count())
+    }
+
+    private companion object {
+        /** One instance for the class: kotlinx.serialization warns when one is built per use. */
+        val lenientJson = Json { ignoreUnknownKeys = true }
     }
 }

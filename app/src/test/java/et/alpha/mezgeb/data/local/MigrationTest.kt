@@ -306,7 +306,11 @@ class MigrationTest {
                             )
                         }
 
-                        override fun onUpgrade(db: SupportSQLiteDatabase, old: Int, new: Int) = Unit
+                        override fun onUpgrade(
+                            db: SupportSQLiteDatabase,
+                            oldVersion: Int,
+                            newVersion: Int,
+                        ) = Unit
                     },
                 )
                 .build(),
