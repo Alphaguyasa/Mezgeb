@@ -5,6 +5,74 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-10-22: Seventh daily run (scheduled)
+
+**Start.** CI on `main` was green (`ae8cc86`). Model check: the models overview still
+lists Opus 5.5 (`claude-opus-5-5`) as the newest Opus. This run used it, so no switch
+was needed. Fable 5.1 was ignored, as Alpha decided.
+
+**Environment.** Same as before: JDK 21, no Android SDK, and Google Maven blocked.
+No Gradle build ran locally. CI judged everything below.
+
+**R17 part 2 (accessibility checks), PR #31, merged (`1e79bec`).**
+- The shared checks now cover Reconcile, Reports, Settings and Onboarding.
+- **Real bugs, fixed:**
+  - Reconcile read "Credit repaid" as "−50.00 ETB". Each breakdown line is now one
+    sentence, and a subtracted figure says "less".
+  - Reports read a negative net as a symbol. It now uses Today's sentence.
+    `spokenNet` moved to `ui/common` so both screens share it.
+  - The Reports totals said "Received today" over a week or a month. They now say
+    "Received" and "Paid out".
+  - The three Settings switches had no name, so TalkBack said "switch, on". Each row
+    is now the toggle. The PIN acknowledgement checkbox had the same bug and got the
+    same fix (not tested, because it is in a dialog: R18).
+  - Three chip rows were squeezed on a 360dp phone (Reports period, Reconcile
+    period, lock timeout). They now scroll like the ledger's filter bar.
+- Onboarding passed with no change.
+- New strings are in English and Amharic. A native speaker should check the Amharic.
+- **CI:** the first run failed on one assertion in my own test. It expected the
+  Export button's name as a content description, but the button is named by its
+  text, which the control check already covered. Fix attempt 1 removed that line,
+  and CI went green. Every other new check passed the first time in both flavors.
+
+**R15 (test compiler warnings), PR #32, merged (`c56bf67`).**
+- I took this instead of R18, because R18 cannot be investigated without a local
+  Robolectric run (see below).
+- The 42 warnings were taken from the CI log on `main`. The fixes: the 13 ViewModel
+  tests opt in to `ExperimentalCoroutinesApi`, `MigrationTest`'s `onUpgrade` uses
+  Room's parameter names, and `DatabaseSeederTest` shares one `Json`.
+- CI's log for the PR shows 0 Kotlin warnings. Green on the first run.
+
+**R18 skipped.** A dialog under Robolectric hangs for 60s before failing. Without a
+local run, every guess costs a full CI cycle and counts against the 2-attempt limit.
+The roadmap now names the first probe to try.
+
+**Tags.** I created `v2026-10-22-1` (#32) and `v2026-10-22-2` (#31) locally. Pushing
+them failed again (A6).
+
+**Dependabot.** #12, #14, #15, #17 and #22 are unchanged and still wait on A7.
+
+**Roadmap: replanned.** R15 and R17 are done, which left 4 open items. I audited and
+added four new items. R19: the daily-net chart is silent to TalkBack. R20: no screen
+is tested at a large font scale. R21: the `note` column on a reconciliation period
+is never written, so a gap cannot be explained. R22: closed periods cannot be
+exported. 8 items are open now, 6 of them unblocked (R18, R19, R20, R21, R22, and
+R12, which waits on #17).
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R17 part 2 accessibility checks, with five fixes on Reconcile, Reports and Settings (#31). R15 test compiler warnings, 42 to 0 (#32) |
+| Merged | #31 yes (`1e79bec`), #32 yes (`c56bf67`). Tags `v2026-10-22-1`/`-2` created but **could not be pushed** (A6) |
+| Failed or blocked | #31 needed one fix push (a wrong assertion in my test). R18 skipped: no local Robolectric. Tag push (A6). No local Gradle |
+| Roadmap | Replanned: R19 to R22 added. 8 open (6 unblocked) |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #17, #22) |
+| Next | R18 (dialog probe), then R19 (spoken summary for the chart) |
+
+---
+
 ## 2026-10-21: Sixth daily run (scheduled)
 
 **Start.** CI on `main` was green (`6d7ca8b`). Model check: the models overview still
