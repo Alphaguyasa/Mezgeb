@@ -10,16 +10,10 @@ Effort: **S** is under half a day, **M** is about a day, **L** needs splitting i
 several PRs.
 
 Built from the audit on 2026-10-14: the full code read plus the open items in
-`NOTES.md` § "What is left".
+`NOTES.md` § "What is left". Replanned on 2026-10-22, when the open list fell below 5:
+R19 to R22 were added.
 
 ## Open
-
-### R17 · P2 · M: Accessibility checks on the other screens (part 2)
-Part 1 (PR #28) moved the shared checks into `AccessibilityChecks` and covered the
-ledger, the customer list and the credit statement. Left: reconcile, reports,
-settings and onboarding, using the same helper. Part 1 found real bugs (signed
-amounts read as symbols), so expect the same on reconcile and reports, which show
-gaps and nets that can go negative.
 
 ### R18 · P2 · S: Accessibility check on the add-customer dialog
 The dialog test was taken out of PR #28. With the dialog open, Compose under
@@ -29,6 +23,27 @@ cause is not an animation. Find out why the dialog window never settles (try
 `isDialog()` roots, the `ShadowDialog` route, or a test of the dialog's content
 alone), then add the check back. The same applies to the other `AlertDialog`s
 (archive customer, edit customer).
+Note (2026-10-22): the PIN acknowledgement checkbox (PR #31) and the reconcile
+snapshot dialog also wait on this. No Compose dialog has ever been tested in this
+repo, so nothing here proves dialogs work under Robolectric at all. A cloud run has no
+local Robolectric, so each guess costs a CI cycle. Start with one probe: a test that
+opens a bare `AlertDialog` with one `Text`. If that settles, the cause is in the
+dialog's content (the text fields); if not, it is the dialog window.
+
+### R19 · P2 · S: The daily-net chart says nothing to TalkBack
+Found in R17 part 2. `DailyNetChart` is a `Canvas` with no semantics, so a TalkBack
+user hears the "Each day" heading and then nothing. Give it a spoken summary, for
+example "7 days: 5 ahead, 2 behind, best day 880.00 ETB ahead", built from the same
+bars, with the numbers as words like `spokenNet`. English and Amharic. Add the check
+to `ReconcileReportsAccessibilityTest`.
+
+### R20 · P2 · M: Large-text check (font scale 1.5 and 2.0)
+Many shop owners set a large system font. No test runs any screen at a large font
+scale. Run Today, the keypad, Reconcile and the credit statement under
+`@Config(fontScale = 1.5f)` and `2.0f`. Check that controls stay
+at 48dp or more and that the headline totals are not cut off (no `maxLines = 1`
+ellipsis on an amount). R17 part 2 already found chip rows that did not fit at the
+normal scale.
 
 ### R10 · P1 · L: Encrypt the database at rest
 **Blocked: see NEEDS_APPROVAL.md A1.** This needs a new native dependency
@@ -47,14 +62,32 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 `kotlin-and-ksp` group reasoning assume the old scheme. Do this item together with
 #17 once A7 is answered.
 
-### R15 · P2 · S: Clear the compiler warnings in test sources
-CI's log shows about 40 Kotlin warnings, all in `app/src/test`: missing
-`@OptIn(ExperimentalCoroutinesApi::class)` in the ViewModel tests, parameter names in
-`MigrationTest.kt:309` that differ from Room's `Callback`, and a `Json` instance
-created per use in `DatabaseSeederTest.kt:72`. None is a bug. They hide a new warning
-the same way the 24 version warnings hid the reminder bug (R6).
+### R21 · P3 · S: A note when closing a period with a gap
+`reconciliation_sessions.note` exists in the schema, but no screen writes it
+(`ReconcileViewModel` always stores `null`). When a period closes with a gap, the
+owner has nowhere to write why ("gave 200 change from my pocket"). Add an optional
+note field to the close step, and show it in the closed-period snapshot. No schema
+change. ViewModel and UI tests.
+
+### R22 · P3 · M: Export closed reconciliation periods
+The CSV export covers the ledger and the credit book, but not the closed periods,
+which are what an accountant or a partner asks for. Add "Periods (CSV)" to the
+Reports export menu, using the snapshotted columns as stored (never recomputed), plus
+the note from R21. Goes through the same system file picker, so no permission is
+needed. Tests for the CSV writer, including commas and quotes in a note.
 
 ## Done
+
+- 2026-10-22 · R17 part 2: Reconcile, Reports, Settings and Onboarding are covered.
+  Real fixes: reconcile's "Credit repaid" was read as "−50.00 ETB" (each breakdown
+  line is now a sentence that says "less"). The reports net was read as a symbol
+  (it now uses Today's sentence), and its totals said "today" over a week. The
+  settings switches had no name ("switch, on"); each row is now the toggle. Same
+  for the PIN checkbox. Three chip rows were squeezed on a 360dp phone and now
+  scroll. PR #31. (Tag `v2026-10-22-2` not pushed: A6.)
+- 2026-10-22 · R15: The 42 Kotlin warnings in `app/src/test` are gone (13 opt-ins,
+  Room `Callback` parameter names, one shared `Json`). PR #32. (Tag `v2026-10-22-1`
+  not pushed: A6.)
 
 - 2026-10-21 · R17 part 1: Shared `AccessibilityChecks` helper. The ledger, the
   customer list and the credit statement are covered. Real fixes: a statement line
