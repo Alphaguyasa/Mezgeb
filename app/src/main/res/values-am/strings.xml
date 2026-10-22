@@ -240,6 +240,8 @@
     <string name="reconcile_credit_given">የተሰጠ ዱቤ</string>
     <string name="reconcile_credit_repaid">የተከፈለ ዱቤ</string>
     <string name="reconcile_accounted_for">የተመዘገበው ድምር</string>
+    <string name="reconcile_figure_content_description">%1$s፦ %2$s %3$s</string>
+    <string name="reconcile_figure_less_content_description">%1$s፦ %2$s %3$s ተቀናሽ</string>
     <string name="reconcile_gap_short">የጎደለ</string>
     <string name="reconcile_gap_over">ከጠበቁት በላይ</string>
     <string name="reconcile_gap_explain">ሊያብራሩት የሚችሉ ነገሮች፣ በተቻለ መጠን በቅደም ተከተል።</string>
@@ -256,6 +258,8 @@
 
     <!-- Reports and export -->
     <string name="report_summary">ማጠቃለያ</string>
+    <string name="report_total_in">የገባ</string>
+    <string name="report_total_out">የወጣ</string>
     <string name="report_daily_net">በየቀኑ</string>
     <string name="report_by_channel">በመንገድ</string>
     <string name="report_by_category">በምድብ</string>

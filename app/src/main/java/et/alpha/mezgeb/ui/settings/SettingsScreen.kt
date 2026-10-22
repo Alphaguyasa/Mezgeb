@@ -8,6 +8,7 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -39,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
@@ -207,7 +210,12 @@ fun SettingsScreen(
                     text = stringResource(R.string.settings_timeout),
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                // Scrolls rather than squeezes: "300 seconds" did not fit beside the
+                // other two on a 360dp phone.
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                ) {
                     listOf(0, 60, 300).forEach { seconds ->
                         FilterChip(
                             selected = state.lockTimeoutSeconds == seconds,
@@ -353,8 +361,20 @@ private fun SetPinDialog(onDismiss: () -> Unit, onConfirm: (String, Boolean) -> 
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error,
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = acknowledged, onCheckedChange = { acknowledged = it })
+                // The row is the control, for the same reason as in SwitchRow: a bare
+                // Checkbox is read as "checkbox, not checked" with no word of what it
+                // agrees to.
+                Row(
+                    modifier = Modifier
+                        .heightIn(min = MezgebTheme.spacing.touchTarget)
+                        .toggleable(
+                            value = acknowledged,
+                            role = Role.Checkbox,
+                            onValueChange = { acknowledged = it },
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(checked = acknowledged, onCheckedChange = null)
                     Text(
                         text = stringResource(R.string.settings_lock_acknowledge),
                         style = MaterialTheme.typography.bodyMedium,
@@ -434,6 +454,14 @@ private fun ConfirmDialog(
     )
 }
 
+/**
+ * A setting that is on or off. The whole row is the control, and the Switch only
+ * draws its state.
+ *
+ * A Switch with its own click handler is a separate control with no name, so TalkBack
+ * read it as "switch, off" with nothing to say which setting it was. Making the row
+ * toggleable gives the label to the control and makes the whole row a target.
+ */
 @Composable
 private fun SwitchRow(
     label: String,
@@ -445,7 +473,13 @@ private fun SwitchRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = MezgebTheme.spacing.touchTarget),
+            .heightIn(min = MezgebTheme.spacing.touchTarget)
+            .toggleable(
+                value = checked,
+                enabled = enabled,
+                role = Role.Switch,
+                onValueChange = onCheckedChange,
+            ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
@@ -456,7 +490,7 @@ private fun SwitchRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
+        Switch(checked = checked, onCheckedChange = null, enabled = enabled)
     }
 }
 
