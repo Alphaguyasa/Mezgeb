@@ -269,6 +269,10 @@
     <string name="reconcile_credit_given">Credit given</string>
     <string name="reconcile_credit_repaid">Credit repaid</string>
     <string name="reconcile_accounted_for">Accounted for</string>
+    <!-- A line of the breakdown, read by TalkBack as one sentence: label, amount, currency. -->
+    <string name="reconcile_figure_content_description">%1$s: %2$s %3$s</string>
+    <!-- The same, for a figure that is taken off the total, such as credit repaid. -->
+    <string name="reconcile_figure_less_content_description">%1$s: less %2$s %3$s</string>
     <string name="reconcile_gap_short">Missing</string>
     <string name="reconcile_gap_over">More than you expected</string>
     <string name="reconcile_gap_explain">Here is what could account for it, most likely first.</string>
@@ -290,6 +294,8 @@
 
     <!-- Reports and export -->
     <string name="report_summary">Summary</string>
+    <string name="report_total_in">Received</string>
+    <string name="report_total_out">Paid out</string>
     <string name="report_daily_net">Each day</string>
     <string name="report_by_channel">By channel</string>
     <string name="report_by_category">By category</string>

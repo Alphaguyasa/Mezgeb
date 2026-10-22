@@ -7,7 +7,9 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Card
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
@@ -38,6 +41,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -53,6 +58,7 @@ import et.alpha.mezgeb.domain.report.DailyNet
 import et.alpha.mezgeb.domain.report.Report
 import et.alpha.mezgeb.domain.report.ReportPeriod
 import et.alpha.mezgeb.ui.common.rememberDayLabel
+import et.alpha.mezgeb.ui.common.spokenNet
 import et.alpha.mezgeb.util.MoneyFormatter
 
 @Composable
@@ -170,8 +176,12 @@ fun ReportsScreen(
                 .fillMaxSize(),
         ) {
             item("period") {
+                // Scrolls rather than squeezes, as in the ledger's filter bar: four
+                // chips are wider than a 360dp phone, so the last one was cut short.
                 Row(
-                    Modifier.padding(spacing.screenGutter),
+                    Modifier
+                        .horizontalScroll(rememberScrollState())
+                        .padding(spacing.screenGutter),
                     horizontalArrangement = Arrangement.spacedBy(spacing.sm),
                 ) {
                     ReportPeriod.entries.forEach { period ->
@@ -304,9 +314,15 @@ private fun Summary(report: Report, modifier: Modifier = Modifier) {
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            AmountLine(R.string.today_total_in, report.totalInMinor)
-            AmountLine(R.string.today_total_out, report.totalOutMinor)
-            AmountLine(R.string.today_net, report.netMinor, emphasise = true)
+            // Not Today's labels: those say "today", and this period is rarely one day.
+            AmountLine(R.string.report_total_in, report.totalInMinor)
+            AmountLine(R.string.report_total_out, report.totalOutMinor)
+            AmountLine(
+                R.string.today_net,
+                report.netMinor,
+                emphasise = true,
+                spoken = spokenNet(report.netMinor),
+            )
             Text(
                 text = pluralStringResource(
                     R.plurals.report_transaction_count,
@@ -320,8 +336,17 @@ private fun Summary(report: Report, modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * A label and an amount. [spoken] replaces what TalkBack reads for the amount; the
+ * net needs it, because it can go below zero and a minus sign is read as a symbol.
+ */
 @Composable
-private fun AmountLine(labelRes: Int, amountMinor: Long, emphasise: Boolean = false) {
+private fun AmountLine(
+    labelRes: Int,
+    amountMinor: Long,
+    emphasise: Boolean = false,
+    spoken: String? = null,
+) {
     Row(Modifier.fillMaxWidth()) {
         Text(
             text = stringResource(labelRes),
@@ -329,14 +354,24 @@ private fun AmountLine(labelRes: Int, amountMinor: Long, emphasise: Boolean = fa
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f),
         )
-        Text(
-            text = MoneyFormatter.format(amountMinor),
-            style = if (emphasise) {
-                MaterialTheme.typography.titleMedium
+        // On a wrapper, as on Today, so the description replaces the Text's own
+        // semantics rather than sitting beside them on the same node.
+        Box(
+            if (spoken != null) {
+                Modifier.clearAndSetSemantics { contentDescription = spoken }
             } else {
-                MaterialTheme.typography.bodyMedium
+                Modifier
             },
-        )
+        ) {
+            Text(
+                text = MoneyFormatter.format(amountMinor),
+                style = if (emphasise) {
+                    MaterialTheme.typography.titleMedium
+                } else {
+                    MaterialTheme.typography.bodyMedium
+                },
+            )
+        }
     }
 }
 

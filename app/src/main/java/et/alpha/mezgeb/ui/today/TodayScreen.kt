@@ -55,6 +55,7 @@ import et.alpha.mezgeb.domain.model.Channel
 import et.alpha.mezgeb.domain.model.Direction
 import et.alpha.mezgeb.ui.common.TransactionRow
 import et.alpha.mezgeb.ui.common.TransactionUiModel
+import et.alpha.mezgeb.ui.common.spokenNet
 import et.alpha.mezgeb.util.MoneyFormatter
 
 @Composable
@@ -286,22 +287,6 @@ private fun TodayTotals(
             }
         }
     }
-}
-
-/** The day's net as a sentence: which side is ahead, and by how much. */
-@Composable
-private fun spokenNet(netMinor: Long): String = when {
-    netMinor > 0 -> stringResource(
-        R.string.today_net_ahead_content_description,
-        MoneyFormatter.formatUnsigned(netMinor),
-        MoneyFormatter.DEFAULT_CURRENCY,
-    )
-    netMinor < 0 -> stringResource(
-        R.string.today_net_behind_content_description,
-        MoneyFormatter.formatUnsigned(netMinor),
-        MoneyFormatter.DEFAULT_CURRENCY,
-    )
-    else -> stringResource(R.string.today_net_even_content_description)
 }
 
 /**

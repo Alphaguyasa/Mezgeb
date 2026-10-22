@@ -1,6 +1,7 @@
 package et.alpha.mezgeb.ui.reconcile
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CheckCircle
@@ -38,6 +40,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -152,7 +156,12 @@ private fun PeriodPicker(state: ReconcileUiState, onEvent: (ReconcileEvent) -> U
             text = stringResource(R.string.reconcile_pick_period),
             style = MaterialTheme.typography.bodyLarge,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
+        // Scrolls rather than squeezes, as in the ledger's filter bar. In Amharic the
+        // three chips can be wider than a 360dp phone.
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+        ) {
             PeriodChoice.entries.forEach { choice ->
                 FilterChip(
                     selected = state.periodChoice == choice,
@@ -296,7 +305,11 @@ private fun Breakdown(figures: PeriodReconciliation) {
             FigureRow(R.string.reconcile_captured_in, figures.capturedInMinor)
             FigureRow(R.string.reconcile_cash_recorded, figures.cashRecordedMinor)
             FigureRow(R.string.reconcile_credit_given, figures.creditGivenMinor)
-            FigureRow(R.string.reconcile_credit_repaid, -figures.creditRepaidMinor)
+            FigureRow(
+                R.string.reconcile_credit_repaid,
+                figures.creditRepaidMinor,
+                subtracted = true,
+            )
             HorizontalDivider(Modifier.padding(vertical = spacing.sm))
             FigureRow(R.string.reconcile_accounted_for, figures.accountedForMinor, emphasise = true)
         }
@@ -496,7 +509,11 @@ private fun SnapshotDialog(session: ReconciliationSession, onDismiss: () -> Unit
                 FigureRow(R.string.reconcile_captured_in, session.capturedInMinor)
                 FigureRow(R.string.reconcile_cash_recorded, session.cashRecordedMinor)
                 FigureRow(R.string.reconcile_credit_given, session.creditGivenMinor)
-                FigureRow(R.string.reconcile_credit_repaid, -session.creditRepaidMinor)
+                FigureRow(
+                    R.string.reconcile_credit_repaid,
+                    session.creditRepaidMinor,
+                    subtracted = true,
+                )
                 Text(
                     text = stringResource(R.string.reconcile_snapshot_note),
                     style = MaterialTheme.typography.bodySmall,
@@ -511,21 +528,47 @@ private fun SnapshotDialog(session: ReconciliationSession, onDismiss: () -> Unit
     )
 }
 
+/**
+ * One line of the breakdown: a label and an amount, read by TalkBack as one sentence.
+ *
+ * [subtracted] marks a figure that counts against the total, such as credit repaid.
+ * The eye gets a minus sign. TalkBack gets the word, because it reads "−500.00" as a
+ * symbol in front of digits, and some speech engines drop the sign altogether, which
+ * would make a subtraction sound like an addition.
+ */
 @Composable
-private fun FigureRow(labelRes: Int, amountMinor: Long, emphasise: Boolean = false) {
+private fun FigureRow(
+    labelRes: Int,
+    amountMinor: Long,
+    subtracted: Boolean = false,
+    emphasise: Boolean = false,
+) {
+    val label = stringResource(labelRes)
+    val shownMinor = if (subtracted) -amountMinor else amountMinor
+    val spoken = stringResource(
+        if (shownMinor < 0) {
+            R.string.reconcile_figure_less_content_description
+        } else {
+            R.string.reconcile_figure_content_description
+        },
+        label,
+        MoneyFormatter.formatUnsigned(shownMinor),
+        MoneyFormatter.DEFAULT_CURRENCY,
+    )
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(vertical = MezgebTheme.spacing.xs),
+            .padding(vertical = MezgebTheme.spacing.xs)
+            .clearAndSetSemantics { contentDescription = spoken },
     ) {
         Text(
-            text = stringResource(labelRes),
+            text = label,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f),
         )
         Text(
-            text = MoneyFormatter.format(amountMinor),
+            text = MoneyFormatter.format(shownMinor),
             style = if (emphasise) {
                 MaterialTheme.typography.titleMedium
             } else {
