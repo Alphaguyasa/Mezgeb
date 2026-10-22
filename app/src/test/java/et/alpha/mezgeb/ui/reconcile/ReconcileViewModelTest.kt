@@ -16,6 +16,7 @@ import et.alpha.mezgeb.domain.reconcile.ReconcilePeriodUseCase
 import et.alpha.mezgeb.util.IdGenerator
 import et.alpha.mezgeb.util.MezgebDates
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -33,6 +34,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ReconcileViewModelTest : DatabaseTest() {
 
     private val zone: ZoneId = ZoneId.systemDefault()

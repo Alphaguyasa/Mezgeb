@@ -17,6 +17,7 @@ import et.alpha.mezgeb.domain.credit.SuggestRepaymentMatchesUseCase
 import et.alpha.mezgeb.domain.model.CreditKind
 import et.alpha.mezgeb.util.IdGenerator
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -43,6 +44,7 @@ import java.time.ZoneOffset
  * archiving must not delete a history, and a repayment must only be linked to a
  * payment a person actually chose.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class CreditBookViewModelTest : DatabaseTest() {
 
     @get:Rule

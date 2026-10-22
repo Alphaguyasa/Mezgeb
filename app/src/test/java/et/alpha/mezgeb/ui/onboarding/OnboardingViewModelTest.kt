@@ -11,6 +11,7 @@ import et.alpha.mezgeb.capture.sms.SmsImporter
 import et.alpha.mezgeb.capture.vendor.BatteryOptimizationHelper
 import et.alpha.mezgeb.data.settings.SettingsHarness
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -30,6 +31,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class OnboardingViewModelTest {

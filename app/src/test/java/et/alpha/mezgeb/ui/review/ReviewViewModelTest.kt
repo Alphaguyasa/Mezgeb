@@ -10,6 +10,7 @@ import et.alpha.mezgeb.data.local.rawMessage
 import et.alpha.mezgeb.data.repo.TransactionRepository
 import et.alpha.mezgeb.domain.model.ParseState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -23,6 +24,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ReviewViewModelTest : DatabaseTest() {
 
     private lateinit var transactions: TransactionRepository

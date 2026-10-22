@@ -21,6 +21,7 @@ import et.alpha.mezgeb.parser.rule.ParserRule
 import et.alpha.mezgeb.util.IdGenerator
 import et.alpha.mezgeb.util.MezgebDates
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -40,6 +41,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import et.alpha.mezgeb.parser.model.Channel as EngineChannel
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class LedgerViewModelTest : DatabaseTest() {
 
     @get:Rule

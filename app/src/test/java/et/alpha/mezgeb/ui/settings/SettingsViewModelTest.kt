@@ -14,6 +14,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -31,6 +32,7 @@ import org.junit.Test
  * in the app that decides which database file a shop's data is read from, and getting
  * it wrong in the wrong direction means writing demo rows into a real ledger.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelTest {
 
     private val lockRepository: AppLockRepository = mockk(relaxed = true)

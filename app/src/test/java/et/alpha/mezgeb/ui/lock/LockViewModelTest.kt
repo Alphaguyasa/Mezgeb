@@ -13,6 +13,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -35,6 +36,7 @@ import java.time.ZoneOffset
  * the app is locked out, or that submits a three-digit PIN, is not a cosmetic bug — it
  * is the lockout being decorative.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class LockViewModelTest {
 
     private val repository: AppLockRepository = mockk(relaxed = true)

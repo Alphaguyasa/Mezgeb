@@ -20,6 +20,7 @@ import et.alpha.mezgeb.parser.MessageParser
 import et.alpha.mezgeb.parser.model.SemanticField
 import et.alpha.mezgeb.util.IdGenerator
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -48,6 +49,7 @@ import java.time.ZoneOffset
  * messages already waiting, and recording one message by hand must not save a rule.
  * Those are the two promises the screen makes.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class RuleBuilderViewModelTest : DatabaseTest() {
 
     @get:Rule
