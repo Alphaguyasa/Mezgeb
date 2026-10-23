@@ -15,27 +15,20 @@ R19 to R22 were added.
 
 ## Open
 
-### R18 · P2 · S: Accessibility check on the add-customer dialog
-The dialog test was taken out of PR #28. With the dialog open, Compose under
-Robolectric never went idle, and `setContent` timed out after 60s in both flavors.
-Driving the clock by hand (`mainClock.autoAdvance = false`) did not help, so the
-cause is not an animation. Find out why the dialog window never settles (try
-`isDialog()` roots, the `ShadowDialog` route, or a test of the dialog's content
-alone), then add the check back. The same applies to the other `AlertDialog`s
-(archive customer, edit customer).
-Note (2026-10-22): the PIN acknowledgement checkbox (PR #31) and the reconcile
-snapshot dialog also wait on this. No Compose dialog has ever been tested in this
-repo, so nothing here proves dialogs work under Robolectric at all. A cloud run has no
-local Robolectric, so each guess costs a CI cycle. Start with one probe: a test that
-opens a bare `AlertDialog` with one `Text`. If that settles, the cause is in the
-dialog's content (the text fields); if not, it is the dialog window.
-
-### R19 · P2 · S: The daily-net chart says nothing to TalkBack
-Found in R17 part 2. `DailyNetChart` is a `Canvas` with no semantics, so a TalkBack
-user hears the "Each day" heading and then nothing. Give it a spoken summary, for
-example "7 days: 5 ahead, 2 behind, best day 880.00 ETB ahead", built from the same
-bars, with the numbers as words like `spokenNet`. English and Amharic. Add the check
-to `ReconcileReportsAccessibilityTest`.
+### R18 · P2 · S: Accessibility check on the dialogs with text fields (part 2)
+Part 1 is done (PR #34). The probe on its first push answered the old question. A
+bare `AlertDialog` and a bare `Dialog` both settle under Robolectric, whether shown on
+the first composition or opened later. The archive, remove-PIN and snapshot dialogs
+are now checked. What still hangs is a dialog with `OutlinedTextField`s: the
+add-customer dialog's `AndroidComposeView` kept `layoutRequested=true` for the full
+60s while the looper clock ran on about 30 minutes, so something re-requests layout
+every frame. The same fields in the main window (the customer search) settle fine.
+Left: add customer, edit customer, set PIN (and its acknowledgement checkbox), backup
+and restore passphrase. Next probe, one CI cycle: a bare `AlertDialog` holding (a) one
+`BasicTextField`, (b) one `OutlinedTextField` with no label, (c) one with a label. That
+splits the text field itself from the floating-label animation. If even (a) hangs,
+look at what a text field does differently in a window that has no focus
+(`hasWindowFocus=false` on the dialog under Robolectric).
 
 ### R20 · P2 · M: Large-text check (font scale 1.5 and 2.0)
 Many shop owners set a large system font. No test runs any screen at a large font
@@ -68,6 +61,10 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 owner has nowhere to write why ("gave 200 change from my pocket"). Add an optional
 note field to the close step, and show it in the closed-period snapshot. No schema
 change. ViewModel and UI tests.
+Also found on 2026-10-23: the snapshot dialog's only button says "Cancel", though
+there is nothing to cancel. It should say "Close" (a new string, English and Amharic).
+Note that R21 puts a text field in the close step, and that close step is not a dialog,
+so R18's dialog hang does not apply to it.
 
 ### R22 · P3 · M: Export closed reconciliation periods
 The CSV export covers the ledger and the credit book, but not the closed periods,
@@ -77,6 +74,14 @@ the note from R21. Goes through the same system file picker, so no permission is
 needed. Tests for the CSV writer, including commas and quotes in a note.
 
 ## Done
+
+- 2026-10-23 · R18 part 1: Compose dialogs can be tested under Robolectric. A
+  one-cycle probe showed that only dialogs with text fields hang. The archive,
+  remove-PIN and closed-period snapshot dialogs now get the shared checks. PR #34.
+  (Tag `v2026-10-23-2` not pushed: A6.)
+- 2026-10-23 · R19: The daily-net chart is read by TalkBack as one summary ("5 days:
+  3 ahead, 1 behind, 1 even." then the best and the worst day as sentences), in
+  English and Amharic. PR #35. (Tag `v2026-10-23-1` not pushed: A6.)
 
 - 2026-10-22 · R17 part 2: Reconcile, Reports, Settings and Onboarding are covered.
   Real fixes: reconcile's "Credit repaid" was read as "−50.00 ETB" (each breakdown
