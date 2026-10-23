@@ -297,6 +297,13 @@
     <string name="report_total_in">Received</string>
     <string name="report_total_out">Paid out</string>
     <string name="report_daily_net">Each day</string>
+    <!-- The daily-net chart is drawn, so TalkBack reads this summary of it instead. -->
+    <plurals name="report_daily_net_summary_content_description">
+        <item quantity="one">%1$d day: %2$d ahead, %3$d behind, %4$d even.</item>
+        <item quantity="other">%1$d days: %2$d ahead, %3$d behind, %4$d even.</item>
+    </plurals>
+    <string name="report_daily_net_best_content_description">Best day: %1$s.</string>
+    <string name="report_daily_net_worst_content_description">Worst day: %1$s.</string>
     <string name="report_by_channel">By channel</string>
     <string name="report_by_category">By category</string>
     <string name="report_top_debtors">Who owes you most</string>

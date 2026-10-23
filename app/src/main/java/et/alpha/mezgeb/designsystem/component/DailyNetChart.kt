@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -41,10 +43,15 @@ data class ChartBar(val label: String, val netMinor: Long)
  *   days.
  * - **Long periods.** A month does not fit on a phone at a readable bar width, so the
  *   chart scrolls horizontally instead of squeezing.
+ *
+ * A canvas says nothing to TalkBack, so the caller passes [contentDescription], a
+ * spoken summary of the same bars (see `spokenDailyNet`). It sits on the scrolling
+ * box, so the whole chart is one stop for TalkBack, whatever part of it is on screen.
  */
 @Composable
 fun DailyNetChart(
     bars: List<ChartBar>,
+    contentDescription: String?,
     modifier: Modifier = Modifier,
     height: Dp = 160.dp,
     barWidth: Dp = 20.dp,
@@ -60,6 +67,9 @@ fun DailyNetChart(
 
     Box(
         modifier = modifier
+            .semantics {
+                if (contentDescription != null) this.contentDescription = contentDescription
+            }
             .horizontalScroll(rememberScrollState())
             .padding(vertical = MezgebTheme.spacing.sm),
     ) {
@@ -131,6 +141,7 @@ private fun DailyNetChartPreview() {
                     ChartBar("Sat", 5_000),
                     ChartBar("Sun", 0),
                 ),
+                contentDescription = null,
                 modifier = Modifier.padding(16.dp),
             )
         }
