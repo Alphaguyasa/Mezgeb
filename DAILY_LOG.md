@@ -5,6 +5,63 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-10-23: Eighth daily run (scheduled)
+
+**Start.** CI on `main` was green (`d4ba2be`). Model check: the models overview still
+lists Opus 5.5 (`claude-opus-5-5`) as the newest Opus. This run used it, so no switch
+was needed. Fable 5.1 was ignored, as Alpha decided.
+
+**Environment.** Same as before: JDK 21, no Android SDK. No Gradle build ran locally.
+CI judged everything below.
+
+**R18 part 1 (dialog checks), PR #34, merged (`ba42ace`).**
+- The first push was a deliberate probe: five tests in one CI cycle. Each one recorded
+  the dialog window's state at every step. That push was red, as expected.
+- **Answer:** Compose dialogs do work under Robolectric. A bare `AlertDialog` and a
+  bare `Dialog` both settled, shown on the first composition or opened later. Only the
+  real add-customer dialog hung. Its window was attached and laid out at 328x340, but
+  its compose root kept asking for layout for the full 60s. The difference is the two
+  `OutlinedTextField`s inside a dialog window.
+- Fix attempt 1 replaced the probe with real checks on the three dialogs that have no
+  text field: archive customer, remove PIN, and the closed-period snapshot (which also
+  reads "Credit repaid" as "less"). All passed in both flavors and found no new bug.
+- The dialogs with text fields (add and edit customer, set PIN, passphrases) stay on
+  R18 as part 2, and the roadmap names the next probe.
+
+**R19 (spoken chart summary), PR #35, merged (`b2916ba`).**
+- The Reports chart is a canvas, so TalkBack said nothing after "Each day". It now
+  reads one summary of the same bars, for example "5 days: 3 ahead, 1 behind, 1 even.
+  Best day: 880.00 ETB more received than paid out. Worst day: 300.00 ETB more paid
+  out than received."
+- When no day was ahead (or behind), it names no best (or worst) day.
+- New strings are in English and Amharic. A native speaker should check the Amharic.
+- Two new tests. Green on the first CI run.
+
+**Small find, logged under R21:** the snapshot dialog's only button says "Cancel",
+though nothing can be cancelled there. It should say "Close".
+
+**Tags.** I created `v2026-10-23-1` (#35) and `v2026-10-23-2` (#34) locally. Pushing
+them failed again with HTTP 403 (A6).
+
+**Dependabot.** #12, #14, #15, #17 and #22 are unchanged and still wait on A7.
+
+**Roadmap.** R19 and R18 part 1 are done. 7 items are open, 5 of them unblocked
+(R18 part 2, R20, R21, R22, and R12, which waits on #17). No replan was needed.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R18 part 1: dialogs can be tested now; archive, remove-PIN and snapshot dialogs checked (#34). R19: spoken summary for the Reports chart (#35) |
+| Merged | #35 yes (`b2916ba`), #34 yes (`ba42ace`). Tags `v2026-10-23-1`/`-2` created but **could not be pushed** (A6, HTTP 403) |
+| Failed or blocked | #34's first push was a deliberate red probe; fix attempt 1 went green. Dialogs with text fields still hang (R18 part 2). Tag push (A6). No local Gradle |
+| Roadmap | 7 open (5 unblocked). No replan needed |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #17, #22) |
+| Next | R18 part 2 (text-field probe), then R20 (large-text check) |
+
+---
+
 ## 2026-10-22: Seventh daily run (scheduled)
 
 **Start.** CI on `main` was green (`ae8cc86`). Model check: the models overview still
