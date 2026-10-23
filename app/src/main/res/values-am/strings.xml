@@ -261,6 +261,13 @@
     <string name="report_total_in">የገባ</string>
     <string name="report_total_out">የወጣ</string>
     <string name="report_daily_net">በየቀኑ</string>
+    <!-- Amharic's CLDR rules put 0 and 1 in "one". -->
+    <plurals name="report_daily_net_summary_content_description">
+        <item quantity="one">%1$d ቀን፦ ገቢ የበለጠበት %2$d፣ ወጪ የበለጠበት %3$d፣ እኩል %4$d።</item>
+        <item quantity="other">%1$d ቀናት፦ ገቢ የበለጠባቸው %2$d፣ ወጪ የበለጠባቸው %3$d፣ እኩል %4$d።</item>
+    </plurals>
+    <string name="report_daily_net_best_content_description">ምርጡ ቀን፦ %1$s።</string>
+    <string name="report_daily_net_worst_content_description">ደካማው ቀን፦ %1$s።</string>
     <string name="report_by_channel">በመንገድ</string>
     <string name="report_by_category">በምድብ</string>
     <string name="report_top_debtors">በብዛት የሚፈለጉብዎት</string>

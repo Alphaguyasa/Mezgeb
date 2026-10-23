@@ -108,6 +108,52 @@ class ReconcileReportsAccessibilityTest {
         )
     }
 
+    @Test
+    fun `the daily chart is read as a summary with its best and worst day`() {
+        showReports(
+            netNegative = false,
+            dailyNet = listOf(45_000L, 12_000L, 0L, -30_000L, 88_000L),
+        )
+
+        checks.assertNoSignedAmountIsSpoken()
+        checks.assertSpoken(
+            listOf(
+                summary(days = 5, ahead = 3, behind = 1, even = 1),
+                context.getString(
+                    R.string.report_daily_net_best_content_description,
+                    net(R.string.today_net_ahead_content_description, 88_000),
+                ),
+                context.getString(
+                    R.string.report_daily_net_worst_content_description,
+                    net(R.string.today_net_behind_content_description, 30_000),
+                ),
+            ).joinToString(" "),
+        )
+    }
+
+    @Test
+    fun `a chart of quiet days names no best or worst day`() {
+        showReports(netNegative = false, dailyNet = listOf(0L, 0L))
+
+        checks.assertSpoken(summary(days = 2, ahead = 0, behind = 0, even = 2))
+    }
+
+    private fun summary(days: Int, ahead: Int, behind: Int, even: Int): String =
+        context.resources.getQuantityString(
+            R.plurals.report_daily_net_summary_content_description,
+            days,
+            days,
+            ahead,
+            behind,
+            even,
+        )
+
+    private fun net(@StringRes sentence: Int, amountMinor: Long): String = context.getString(
+        sentence,
+        MoneyFormatter.formatUnsigned(amountMinor),
+        MoneyFormatter.DEFAULT_CURRENCY,
+    )
+
     private fun showReconcile(state: ReconcileUiState) {
         checks.show {
             ReconcileScreen(state = state, onEvent = {}, onBack = {}, onExplanationTapped = {})
@@ -144,8 +190,10 @@ class ReconcileReportsAccessibilityTest {
         )
     }
 
-    private fun showReports(netNegative: Boolean) {
+    private fun showReports(netNegative: Boolean, dailyNet: List<Long>? = null) {
         val outMinor = if (netNegative) OUT_MINOR else SMALL_OUT_MINOR
+        val days = (dailyNet ?: listOf(IN_MINOR - outMinor))
+            .mapIndexed { index, netMinor -> DailyNet(START + index * DAY_MS, netMinor) }
         checks.show {
             ReportsScreen(
                 state = ReportsUiState(
@@ -159,7 +207,7 @@ class ReconcileReportsAccessibilityTest {
                         transactionCount = 9,
                         byChannel = listOf(BreakdownSlice("TELEBIRR", IN_MINOR, 1f, 6)),
                         byCategory = listOf(BreakdownSlice("Sales", IN_MINOR, 1f, 6)),
-                        dailyNet = listOf(DailyNet(START, IN_MINOR - outMinor)),
+                        dailyNet = days,
                         topDebtors = emptyList(),
                     ),
                 ),
@@ -205,5 +253,6 @@ class ReconcileReportsAccessibilityTest {
         const val IN_MINOR = 245_000L
         const val OUT_MINOR = 327_000L
         const val SMALL_OUT_MINOR = 82_000L
+        const val DAY_MS = 86_400_000L
     }
 }

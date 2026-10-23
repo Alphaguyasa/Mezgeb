@@ -58,6 +58,7 @@ import et.alpha.mezgeb.domain.report.DailyNet
 import et.alpha.mezgeb.domain.report.Report
 import et.alpha.mezgeb.domain.report.ReportPeriod
 import et.alpha.mezgeb.ui.common.rememberDayLabel
+import et.alpha.mezgeb.ui.common.spokenDailyNet
 import et.alpha.mezgeb.ui.common.spokenNet
 import et.alpha.mezgeb.util.MoneyFormatter
 
@@ -219,6 +220,9 @@ fun ReportsScreen(
                             )
                             DailyNetChart(
                                 bars = report.dailyNet.map { ChartBar("", it.netMinor) },
+                                contentDescription = spokenDailyNet(
+                                    report.dailyNet.map { it.netMinor },
+                                ),
                             )
                         }
                     }
