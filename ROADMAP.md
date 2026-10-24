@@ -16,19 +16,23 @@ R19 to R22 were added.
 ## Open
 
 ### R18 · P2 · S: Accessibility check on the dialogs with text fields (part 2)
-Part 1 is done (PR #34). The probe on its first push answered the old question. A
-bare `AlertDialog` and a bare `Dialog` both settle under Robolectric, whether shown on
-the first composition or opened later. The archive, remove-PIN and snapshot dialogs
-are now checked. What still hangs is a dialog with `OutlinedTextField`s: the
-add-customer dialog's `AndroidComposeView` kept `layoutRequested=true` for the full
-60s while the looper clock ran on about 30 minutes, so something re-requests layout
-every frame. The same fields in the main window (the customer search) settle fine.
-Left: add customer, edit customer, set PIN (and its acknowledgement checkbox), backup
-and restore passphrase. Next probe, one CI cycle: a bare `AlertDialog` holding (a) one
-`BasicTextField`, (b) one `OutlinedTextField` with no label, (c) one with a label. That
-splits the text field itself from the floating-label animation. If even (a) hangs,
-look at what a text field does differently in a window that has no focus
-(`hasWindowFocus=false` on the dialog under Robolectric).
+Part 1 is done (PR #34). Left: add customer, edit customer, set PIN (and its
+acknowledgement checkbox), backup and restore passphrase.
+**Probe on 2026-10-24 (PR #37, open, red on purpose):** the trigger is the floating
+label. On a paused clock over 60 frames, a `BasicTextField` and an unlabelled
+`OutlinedTextField` in a dialog settle (4 measures). A labelled one keeps re-measuring
+(6 after 5 frames, 30 after 60). In the main window the same labelled field settles
+(1 measure). A guess, not verified: the label size is state written during measure,
+and the dialog measures under changing constraints.
+**Warning:** a test that waits for idle on such a dialog is not just slow. It lays
+text out until Robolectric's `NativeObjRegistry` overflows, which then fails every
+Compose test after it in the same JVM (37 failures on PR #37's first push).
+**Next:** a paused clock alone did not let `setContent` settle (see the note in
+`CustomersAccessibilityTest`), so never call `waitForIdle` with one of these
+dialogs up. Read the dialog's semantics straight from its compose root instead (the
+dialog's `AndroidComposeView` is a `RootForTest`, and its `semanticsOwner` holds the
+tree), after a fixed number of frames. Then run the shared checks on that list. Reuse
+PR #37's branch.
 
 ### R20 · P2 · M: Large-text check (font scale 1.5 and 2.0)
 Many shop owners set a large system font. No test runs any screen at a large font
@@ -55,25 +59,21 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 `kotlin-and-ksp` group reasoning assume the old scheme. Do this item together with
 #17 once A7 is answered.
 
-### R21 · P3 · S: A note when closing a period with a gap
-`reconciliation_sessions.note` exists in the schema, but no screen writes it
-(`ReconcileViewModel` always stores `null`). When a period closes with a gap, the
-owner has nowhere to write why ("gave 200 change from my pocket"). Add an optional
-note field to the close step, and show it in the closed-period snapshot. No schema
-change. ViewModel and UI tests.
-Also found on 2026-10-23: the snapshot dialog's only button says "Cancel", though
-there is nothing to cancel. It should say "Close" (a new string, English and Amharic).
-Note that R21 puts a text field in the close step, and that close step is not a dialog,
-so R18's dialog hang does not apply to it.
-
 ### R22 · P3 · M: Export closed reconciliation periods
 The CSV export covers the ledger and the credit book, but not the closed periods,
 which are what an accountant or a partner asks for. Add "Periods (CSV)" to the
 Reports export menu, using the snapshotted columns as stored (never recomputed), plus
-the note from R21. Goes through the same system file picker, so no permission is
-needed. Tests for the CSV writer, including commas and quotes in a note.
+the note from R21 (done: `reconciliation_sessions.note`, at most 200 characters, and
+it may hold commas, quotes and line breaks). Goes through the same system file
+picker, so no permission is needed. Tests for the CSV writer, including commas,
+quotes and a line break in a note.
 
 ## Done
+
+- 2026-10-24 · R21: A period that closes with a gap can carry the owner's note
+  (optional, trimmed, up to 200 characters). The closed-period snapshot shows it, and
+  its button now says "Close" instead of "Cancel". English and Amharic. No schema
+  change. PR #38. (Tag `v2026-10-24-1` not pushed: A6.)
 
 - 2026-10-23 · R18 part 1: Compose dialogs can be tested under Robolectric. A
   one-cycle probe showed that only dialogs with text fields hang. The archive,

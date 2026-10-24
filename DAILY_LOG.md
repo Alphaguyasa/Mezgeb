@@ -5,6 +5,65 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-10-24: Ninth daily run (scheduled)
+
+**Start.** CI on `main` was green (`3b8e771`). Model check: the models overview still
+lists Opus 5.5 (`claude-opus-5-5`) as the newest Opus. This run used it, so no switch
+was needed. Fable 5.1 was ignored, as Alpha decided.
+
+**Environment.** Same as before: JDK 21, no Android SDK. No Gradle build ran locally.
+CI judged everything below. CI artifacts and full run logs could not be downloaded
+(the proxy refuses their storage hosts), so only the last 5,000 lines of a job log
+were readable.
+
+**R21 (a note on a period with a gap), PR #38, merged (`564010b`).**
+- The close step shows "Note (optional)" while the period has a gap. It is hidden on
+  a balanced period.
+- On close, the note is trimmed and capped at 200 characters as it is typed. A blank
+  note is stored as none. A note is kept only if the period still has a gap, so a note
+  typed before the gap closed is never saved out of sight.
+- The closed-period snapshot shows "Your note: ...". Its only button now says "Close"
+  instead of "Cancel".
+- New strings are in English and Amharic. A native speaker should check the Amharic.
+- No schema change (the column already existed). Five ViewModel tests and three
+  screen tests. Green on the first CI run.
+
+**R18 part 2 (dialogs with text fields), PR #37, open, not merged.**
+- Push 1 was the planned probe: one kind of text field per bare dialog, waiting for
+  idle. The dialogs that hung kept laying text out until Robolectric's native-object
+  registry overflowed. That failed 37 unrelated Compose tests later in the same JVM,
+  and the probe's own results were cut from the log.
+- Push 2 (fix attempt 1) ran each probe on a paused clock for 60 frames and wrote the
+  counts into a deliberate failure. Every other test passed.
+- **Answer:** the floating label is the trigger. A `BasicTextField` and an unlabelled
+  `OutlinedTextField` settle in a dialog. A labelled one keeps re-measuring (30
+  measures after 60 frames), but only in a dialog window, not in the main window.
+- I stopped there instead of spending the last attempt on code I cannot compile
+  locally. The roadmap names the next approach: read the dialog's semantics straight
+  from its compose root, without ever waiting for idle. The PR stays open for it, and
+  a comment on it holds the results table.
+
+**Tags.** I created `v2026-10-24-1` (#38) locally. Pushing it failed again (A6).
+
+**Dependabot.** #12, #14, #15, #17 and #22 are unchanged and still wait on A7.
+
+**Roadmap.** R21 is done. 6 items are open, 3 of them unblocked (R18 part 2, R20,
+R22). R12 waits on #17. No replan was needed.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R21: optional note when a period closes with a gap; snapshot button says Close (#38). R18 part 2: probe found the cause (floating label in a dialog) (#37) |
+| Merged | #38 yes (`564010b`). Tag `v2026-10-24-1` created but **could not be pushed** (A6). #37 not merged: probe, red on purpose |
+| Failed or blocked | #37's first push failed 37 unrelated tests (the hung dialogs exhausted Robolectric's registry); the second push isolated the cause. Dialog checks still not written. Tag push (A6). No local Gradle. CI artifacts not downloadable |
+| Roadmap | 6 open (3 unblocked). No replan needed |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #17, #22) |
+| Next | R18 part 2 on PR #37 (read the dialog's semantics without waiting for idle), then R20 (large-text check) |
+
+---
+
 ## 2026-10-23: Eighth daily run (scheduled)
 
 **Start.** CI on `main` was green (`d4ba2be`). Model check: the models overview still
