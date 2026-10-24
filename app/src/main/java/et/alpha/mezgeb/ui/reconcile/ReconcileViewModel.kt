@@ -23,6 +23,12 @@ import java.time.Clock
 import java.time.ZoneId
 import javax.inject.Inject
 
+/**
+ * The longest note a closed period keeps. A sentence or two is enough for "gave 200
+ * change from my own pocket", and a short cell keeps an exported period readable.
+ */
+internal const val NOTE_MAX_LENGTH = 200
+
 /** The periods a shop actually reconciles. */
 enum class PeriodChoice {
     TODAY,
@@ -40,6 +46,8 @@ data class ReconcileUiState(
     /** What the user has typed as the expected total, before it is stored. */
     val expectedInput: String = "",
     val expectedIsInvalid: Boolean = false,
+    /** The owner's own words on why the period has a gap, kept with it when it closes. */
+    val noteInput: String = "",
     val isBusy: Boolean = false,
     /** The closed period being read, if one is open on screen. */
     val viewingSnapshot: ReconciliationSession? = null,
@@ -47,6 +55,9 @@ data class ReconcileUiState(
 ) {
     val hasOpenPeriod: Boolean get() = openSession != null
     val isBalanced: Boolean get() = reconciliation?.isBalanced == true
+
+    /** A note explains a gap, so it is asked for only when there is one. */
+    val canAddNote: Boolean get() = reconciliation?.gapMinor != null && !isBalanced
     val canClose: Boolean get() = openSession != null && reconciliation?.gapMinor != null && !isBusy
 }
 
@@ -57,6 +68,8 @@ sealed interface ReconcileEvent {
 
     data class ExpectedChanged(val text: String) : ReconcileEvent
     data object SaveExpected : ReconcileEvent
+
+    data class NoteChanged(val text: String) : ReconcileEvent
 
     data object ClosePeriod : ReconcileEvent
     data class ViewSnapshot(val session: ReconciliationSession) : ReconcileEvent
@@ -105,6 +118,7 @@ class ReconcileViewModel @Inject constructor(
                 ?: open?.expectedTotalMinor?.let { MoneyFormatter.formatPlain(it) }
                 ?: "",
             expectedIsInvalid = localState.expectedIsInvalid,
+            noteInput = localState.noteInput,
             isBusy = localState.isBusy,
             viewingSnapshot = localState.viewingSnapshot,
             justClosedId = localState.justClosedId,
@@ -133,6 +147,11 @@ class ReconcileViewModel @Inject constructor(
             }
 
             ReconcileEvent.SaveExpected -> saveExpected()
+
+            is ReconcileEvent.NoteChanged -> local.update {
+                it.copy(noteInput = event.text.take(NOTE_MAX_LENGTH))
+            }
+
             ReconcileEvent.ClosePeriod -> closePeriod()
 
             is ReconcileEvent.ViewSnapshot -> local.update {
@@ -191,10 +210,16 @@ class ReconcileViewModel @Inject constructor(
      * From here the numbers are history: editing a transaction inside this period is
      * allowed and changes nothing here. It shows up in the *next* period's "edited
      * since" explanation instead, which is the honest place for it.
+     *
+     * The note is kept only when the period closes with a gap. The field is hidden on
+     * a balanced period, and a note typed before the gap closed would otherwise be
+     * saved where the owner can no longer see it.
      */
     private fun closePeriod() {
         val open = state.value.openSession ?: return
         val figures = state.value.reconciliation ?: return
+        val note = local.value.noteInput.trim()
+            .takeIf { it.isNotEmpty() && state.value.canAddNote }
         local.update { it.copy(isBusy = true) }
 
         viewModelScope.launch {
@@ -208,10 +233,16 @@ class ReconcileViewModel @Inject constructor(
                     creditRepaidMinor = figures.creditRepaidMinor,
                     status = SessionStatus.CLOSED,
                     closedAt = clock.millis(),
+                    note = note,
                 ),
             )
             local.update {
-                it.copy(isBusy = false, justClosedId = open.id, expectedInput = null)
+                it.copy(
+                    isBusy = false,
+                    justClosedId = open.id,
+                    expectedInput = null,
+                    noteInput = "",
+                )
             }
         }
     }
@@ -236,6 +267,7 @@ class ReconcileViewModel @Inject constructor(
         val customRange: LongRange? = null,
         val expectedInput: String? = null,
         val expectedIsInvalid: Boolean = false,
+        val noteInput: String = "",
         val isBusy: Boolean = false,
         val viewingSnapshot: ReconciliationSession? = null,
         val justClosedId: String? = null,

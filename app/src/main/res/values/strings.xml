@@ -72,6 +72,7 @@
     <!-- Shared actions -->
     <string name="action_save">Save</string>
     <string name="action_cancel">Cancel</string>
+    <string name="action_close">Close</string>
 
     <!-- Days -->
     <string name="day_today">Today</string>
@@ -279,6 +280,9 @@
     <string name="reconcile_balanced_title">Everything adds up</string>
     <string name="reconcile_balanced_body">What you took and what Mezgeb recorded agree to the santim.</string>
     <string name="reconcile_close_period">Close this period</string>
+    <string name="reconcile_note_label">Note (optional)</string>
+    <string name="reconcile_note_hint">Why is there a gap? For example: gave change from my own pocket.</string>
+    <string name="reconcile_snapshot_owner_note">Your note: %1$s</string>
     <string name="reconcile_history">Periods you have closed</string>
     <string name="reconcile_snapshot_note">These figures were saved when the period closed. Later changes do not affect them.</string>
     <!-- 1: number of messages -->

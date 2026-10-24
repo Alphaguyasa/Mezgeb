@@ -2,6 +2,7 @@ package et.alpha.mezgeb.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import et.alpha.mezgeb.R
 import et.alpha.mezgeb.domain.model.ReconciliationSession
 import et.alpha.mezgeb.domain.model.SessionStatus
@@ -53,6 +54,22 @@ class ReconcileReportsAccessibilityTest {
         showOpenPeriod()
 
         checks.assertControlsAreNamedAndLargeEnough()
+    }
+
+    @Test
+    fun `a period with a gap asks for a note`() {
+        showOpenPeriod()
+        compose.onNodeWithText(context.getString(R.string.reconcile_note_label)).assertExists()
+    }
+
+    @Test
+    fun `a balanced period has no note field`() {
+        // Expected exactly what is accounted for, so the gap is zero.
+        showOpenPeriod(expectedTotalMinor = CAPTURED_MINOR + CASH_MINOR - REPAID_MINOR)
+        compose.onNodeWithText(context.getString(R.string.reconcile_balanced_title))
+            .assertExists()
+        compose.onNodeWithText(context.getString(R.string.reconcile_note_label))
+            .assertDoesNotExist()
     }
 
     @Test
@@ -160,7 +177,7 @@ class ReconcileReportsAccessibilityTest {
         }
     }
 
-    private fun showOpenPeriod() {
+    private fun showOpenPeriod(expectedTotalMinor: Long = 300_000) {
         showReconcile(
             ReconcileUiState(
                 isLoading = false,
@@ -172,7 +189,7 @@ class ReconcileReportsAccessibilityTest {
                 reconciliation = PeriodReconciliation(
                     periodStart = START,
                     periodEnd = END,
-                    expectedTotalMinor = 300_000,
+                    expectedTotalMinor = expectedTotalMinor,
                     capturedInMinor = CAPTURED_MINOR,
                     capturedOutMinor = 15_000,
                     cashRecordedMinor = CASH_MINOR,

@@ -115,6 +115,30 @@ class DialogAccessibilityTest {
         )
     }
 
+    @Test
+    fun `a closed period's snapshot shows its note and is closed, not cancelled`() {
+        val withNote = CLOSED.copy(note = "gave 100 change from my own pocket")
+        checks.show {
+            ReconcileScreen(
+                state = ReconcileUiState(
+                    isLoading = false,
+                    closedSessions = listOf(withNote),
+                    viewingSnapshot = withNote,
+                ),
+                onEvent = {},
+                onBack = {},
+                onExplanationTapped = {},
+            )
+        }
+
+        compose.onNodeWithText(
+            context.getString(R.string.reconcile_snapshot_owner_note, withNote.note),
+        ).assertExists()
+        compose.onNodeWithText(context.getString(R.string.action_close)).assertExists()
+        compose.onNodeWithText(context.getString(R.string.action_cancel)).assertDoesNotExist()
+        checks.assertControlsAreNamedAndLargeEnough()
+    }
+
     private fun credit() = CustomerCredit(
         customer = Customer("1", "ABEBE", phone = null, note = null, createdAt = 0L),
         balanceMinor = 45_000,
