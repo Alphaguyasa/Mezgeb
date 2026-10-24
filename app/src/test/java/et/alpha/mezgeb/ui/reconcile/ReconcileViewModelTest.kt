@@ -252,6 +252,76 @@ class ReconcileViewModelTest : DatabaseTest() {
         }
     }
 
+    // --- The note on a closed period ---------------------------------------------------
+
+    @Test
+    fun `a period that closes with a gap keeps the owner's note, trimmed`() = runTest {
+        seedToday(capturedInMinor = 20_000, cashMinor = 10_000)
+        closeTodayExpecting("400.00", note = "  gave 100 change from my own pocket \n")
+
+        assertEquals("gave 100 change from my own pocket", firstClosedSession().note)
+    }
+
+    @Test
+    fun `a blank note is kept as no note`() = runTest {
+        seedToday(capturedInMinor = 20_000, cashMinor = 10_000)
+        closeTodayExpecting("400.00", note = "   ")
+
+        assertNull(firstClosedSession().note)
+    }
+
+    @Test
+    fun `a balanced period asks for no note and keeps none`() = runTest {
+        // Typed while there was a gap, then the gap closed: the field is gone, so
+        // whatever was in it must not be saved out of sight.
+        seedToday(capturedInMinor = 20_000, cashMinor = 10_000)
+        viewModel.state.test {
+            awaitItemWhere { !it.isLoading }
+            viewModel.onEvent(ReconcileEvent.OpenPeriod)
+            awaitItemWhere { it.hasOpenPeriod }
+
+            viewModel.onEvent(ReconcileEvent.ExpectedChanged("400.00"))
+            viewModel.onEvent(ReconcileEvent.SaveExpected)
+            assertTrue(awaitItemWhere { it.reconciliation?.gapMinor != null }.canAddNote)
+            viewModel.onEvent(ReconcileEvent.NoteChanged("short by 100"))
+
+            viewModel.onEvent(ReconcileEvent.ExpectedChanged("300.00"))
+            viewModel.onEvent(ReconcileEvent.SaveExpected)
+            assertFalse(awaitItemWhere { it.isBalanced }.canAddNote)
+
+            viewModel.onEvent(ReconcileEvent.ClosePeriod)
+            awaitItemWhere { it.closedSessions.isNotEmpty() }
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        assertNull(firstClosedSession().note)
+    }
+
+    @Test
+    fun `a note longer than the limit is cut as it is typed`() = runTest {
+        viewModel.state.test {
+            awaitItemWhere { !it.isLoading }
+            viewModel.onEvent(ReconcileEvent.NoteChanged("x".repeat(NOTE_MAX_LENGTH + 50)))
+
+            assertEquals(
+                NOTE_MAX_LENGTH,
+                awaitItemWhere { it.noteInput.isNotEmpty() }.noteInput.length,
+            )
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `the note is cleared once its period has closed`() = runTest {
+        seedToday(capturedInMinor = 20_000, cashMinor = 10_000)
+        closeTodayExpecting("400.00", note = "short by 100")
+
+        viewModel.state.test {
+            assertEquals("", awaitItemWhere { it.closedSessions.isNotEmpty() }.noteInput)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
     // --- Fixtures -----------------------------------------------------------------------
 
     private suspend fun seedToday(capturedInMinor: Long, cashMinor: Long) {
@@ -278,7 +348,7 @@ class ReconcileViewModelTest : DatabaseTest() {
         )
     }
 
-    private suspend fun closeTodayExpecting(expected: String) {
+    private suspend fun closeTodayExpecting(expected: String, note: String? = null) {
         viewModel.state.test {
             awaitItemWhere { !it.isLoading }
             viewModel.onEvent(ReconcileEvent.OpenPeriod)
@@ -287,6 +357,7 @@ class ReconcileViewModelTest : DatabaseTest() {
             viewModel.onEvent(ReconcileEvent.ExpectedChanged(expected))
             viewModel.onEvent(ReconcileEvent.SaveExpected)
             awaitItemWhere { it.reconciliation?.expectedTotalMinor != null }
+            note?.let { viewModel.onEvent(ReconcileEvent.NoteChanged(it)) }
 
             viewModel.onEvent(ReconcileEvent.ClosePeriod)
             awaitItemWhere { it.closedSessions.isNotEmpty() }

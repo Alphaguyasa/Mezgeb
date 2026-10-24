@@ -284,6 +284,16 @@ private fun OpenPeriod(
                 )
             }
 
+            if (state.canAddNote) {
+                OutlinedTextField(
+                    value = state.noteInput,
+                    onValueChange = { onEvent(ReconcileEvent.NoteChanged(it)) },
+                    label = { Text(stringResource(R.string.reconcile_note_label)) },
+                    supportingText = { Text(stringResource(R.string.reconcile_note_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
             Button(
                 onClick = { onEvent(ReconcileEvent.ClosePeriod) },
                 enabled = state.canClose,
@@ -514,6 +524,13 @@ private fun SnapshotDialog(session: ReconciliationSession, onDismiss: () -> Unit
                     session.creditRepaidMinor,
                     subtracted = true,
                 )
+                session.note?.let { note ->
+                    Text(
+                        text = stringResource(R.string.reconcile_snapshot_owner_note, note),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = MezgebTheme.spacing.sm),
+                    )
+                }
                 Text(
                     text = stringResource(R.string.reconcile_snapshot_note),
                     style = MaterialTheme.typography.bodySmall,
@@ -523,7 +540,8 @@ private fun SnapshotDialog(session: ReconciliationSession, onDismiss: () -> Unit
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+            // Nothing here can be changed, so there is nothing to cancel.
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) }
         },
     )
 }

@@ -62,6 +62,7 @@
     <!-- Shared actions -->
     <string name="action_save">አስቀምጥ</string>
     <string name="action_cancel">ተወው</string>
+    <string name="action_close">ዝጋ</string>
 
     <!-- Days -->
     <string name="day_today">ዛሬ</string>
@@ -248,6 +249,9 @@
     <string name="reconcile_balanced_title">ሁሉም ተመጣጥኗል</string>
     <string name="reconcile_balanced_body">የተቀበሉትና መዝገብ የመዘገበው እስከ ሳንቲሙ ይስማማሉ።</string>
     <string name="reconcile_close_period">ይህን ጊዜ ዝጋ</string>
+    <string name="reconcile_note_label">ማስታወሻ (አማራጭ)</string>
+    <string name="reconcile_note_hint">ልዩነቱ ለምን ተፈጠረ? ለምሳሌ፦ መልስ ከኪሴ ሰጠሁ።</string>
+    <string name="reconcile_snapshot_owner_note">የእርስዎ ማስታወሻ፦ %1$s</string>
     <string name="reconcile_history">የዘጓቸው ጊዜያት</string>
     <string name="reconcile_snapshot_note">እነዚህ ቁጥሮች ጊዜው ሲዘጋ ተቀምጠዋል። ከዚያ በኋላ የተደረጉ ለውጦች አይነኩዋቸውም።</string>
     <string name="reconcile_explain_roughly">በአጠቃላይ በግምት %1$s</string>
