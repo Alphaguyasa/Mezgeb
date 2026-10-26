@@ -356,6 +356,8 @@
     <string name="settings_backup">Backup</string>
     <string name="settings_backup_body">A backup is one encrypted file holding everything. Keep it somewhere safe — anyone with the file and the passphrase has your records.</string>
     <string name="settings_backup_action">Save a backup</string>
+    <string name="settings_last_backup">Last backup: %1$s</string>
+    <string name="settings_last_backup_never">Last backup: never</string>
     <string name="settings_backup_passphrase_body">Choose a passphrase. It is not stored anywhere, and without it the backup cannot be opened.</string>
     <string name="settings_passphrase_label">Passphrase</string>
     <string name="settings_restore_action">Restore from a backup</string>
@@ -483,4 +485,9 @@
         <item quantity="one">Restored %1$d record.</item>
         <item quantity="other">Restored %1$d records.</item>
     </plurals>
+    <string name="today_backup_reminder_title">Save a backup</string>
+    <string name="today_backup_reminder_body_never">Nothing on this phone has been backed up yet. If the phone is lost or broken, your ledger and credit book go with it.</string>
+    <string name="today_backup_reminder_body_stale">Your last backup is more than 30 days old. If the phone is lost or broken, everything since then goes with it.</string>
+    <string name="today_backup_reminder_action">Back up now</string>
+    <string name="today_backup_reminder_dismiss">Not now</string>
 </resources>

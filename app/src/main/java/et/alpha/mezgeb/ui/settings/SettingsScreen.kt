@@ -38,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -55,6 +56,8 @@ import et.alpha.mezgeb.designsystem.component.BackButton
 import et.alpha.mezgeb.designsystem.component.MezgebScaffold
 import et.alpha.mezgeb.domain.backup.RestoreFailure
 import et.alpha.mezgeb.domain.lock.PinCredential
+import et.alpha.mezgeb.util.MezgebDates
+import java.time.ZoneId
 
 @Composable
 fun SettingsRoute(
@@ -236,6 +239,10 @@ fun SettingsScreen(
                 text = stringResource(R.string.settings_backup_body),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = lastBackupText(state.lastBackupAt),
+                style = MaterialTheme.typography.bodyMedium,
             )
             OutlinedButton(
                 onClick = { onEvent(SettingsEvent.BackupRequested) },
@@ -548,6 +555,22 @@ private fun restartApp(context: Context) {
     launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
     context.startActivity(launch)
     Runtime.getRuntime().exit(0)
+}
+
+/**
+ * "Last backup: Mon, 12 Oct 2026" or "Last backup: never" (ROADMAP R23).
+ *
+ * The full date with the year: a backup can be old enough for the year to matter, and
+ * that is exactly the case this line is here to show.
+ */
+@Composable
+private fun lastBackupText(lastBackupAt: Long?): String {
+    if (lastBackupAt == null) return stringResource(R.string.settings_last_backup_never)
+    val locale = LocalConfiguration.current.locales[0]
+    val date = remember(lastBackupAt, locale) {
+        MezgebDates.formatFullDate(lastBackupAt, ZoneId.systemDefault(), locale)
+    }
+    return stringResource(R.string.settings_last_backup, date)
 }
 
 /** `ACTION_CREATE_DOCUMENT` with a fixed type; the backup is only ever one thing. */
