@@ -29,6 +29,7 @@ import et.alpha.mezgeb.ui.reconcile.ReconcileScreen
 import et.alpha.mezgeb.ui.reconcile.ReconcileUiState
 import et.alpha.mezgeb.ui.today.TodayScreen
 import et.alpha.mezgeb.ui.today.TodayUiState
+import et.alpha.mezgeb.util.MoneyFormatter
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -73,7 +74,7 @@ abstract class LargeTextTest(private val fontScale: Float) {
         }
 
         assertEquals(fontScale, composedScale, 0.01f)
-        // A real font makes "2,450.00 ETB" far wider than a pixel per character.
+        // A real font makes "+12,450.00" far wider than a pixel per character.
         val headline = amountLayouts().first()
         val density = checks.context.resources.displayMetrics.density
         assertTrue(
@@ -88,6 +89,27 @@ abstract class LargeTextTest(private val fontScale: Float) {
 
         checks.assertControlsAreNamedAndLargeEnough()
         assertNoAmountWrapsOrRunsOver()
+    }
+
+    /**
+     * At 2.0 the five-figure headline measured 278dp of 296dp (PR #41), so these two
+     * would have broken inside the number. Now the currency moves under the amount
+     * instead (ROADMAP R26).
+     */
+    @Test
+    fun `today keeps a six-figure headline whole`() {
+        checks.show { Today(totalInMinor = 10_000_000) }
+
+        assertNoAmountWrapsOrRunsOver()
+        assertCurrencyIsWhole()
+    }
+
+    @Test
+    fun `today keeps a seven-figure headline whole`() {
+        checks.show { Today(totalInMinor = 123_456_789) }
+
+        assertNoAmountWrapsOrRunsOver()
+        assertCurrencyIsWhole()
     }
 
     @Test
@@ -167,13 +189,13 @@ abstract class LargeTextTest(private val fontScale: Float) {
         assertNoAmountWrapsOrRunsOver()
     }
 
-    /** Today in its busiest state, with five-figure totals. */
+    /** Today in its busiest state, with five-figure totals unless told otherwise. */
     @Composable
-    private fun Today() {
+    private fun Today(totalInMinor: Long = 1_245_000) {
         TodayScreen(
             state = TodayUiState(
                 isLoading = false,
-                totalInMinor = 1_245_000,
+                totalInMinor = totalInMinor,
                 totalOutMinor = 1_032_500,
                 captureHealth = CaptureHealth.NO_ACCESS,
                 reviewQueueCount = 3,
@@ -217,6 +239,25 @@ abstract class LargeTextTest(private val fontScale: Float) {
         }
         assertTrue(
             "at font scale $fontScale these amounts wrap or run over:\n" +
+                broken.joinToString(separator = "\n") { it.describe() },
+            broken.isEmpty(),
+        )
+    }
+
+    /** "ETB" may move to a line of its own, but never split across two. */
+    private fun assertCurrencyIsWhole() {
+        val currencies = compose
+            .onAllNodes(
+                SemanticsMatcher.keyIsDefined(SemanticsActions.GetTextLayoutResult),
+                useUnmergedTree = true,
+            )
+            .fetchSemanticsNodes()
+            .mapNotNull { it.textLayout() }
+            .filter { it.layoutInput.text.text.trim() == MoneyFormatter.DEFAULT_CURRENCY }
+        assertTrue("no currency found on the screen", currencies.isNotEmpty())
+        val broken = currencies.filter { it.lineCount > 1 }
+        assertTrue(
+            "at font scale $fontScale the currency breaks:\n" +
                 broken.joinToString(separator = "\n") { it.describe() },
             broken.isEmpty(),
         )
