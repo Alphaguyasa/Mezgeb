@@ -30,9 +30,10 @@ import org.robolectric.annotation.Config
  * be tested under Robolectric here at all: it can. A bare `AlertDialog` and a bare
  * `Dialog` both went idle, shown on the first composition or opened later. Only the
  * add-customer dialog hung, with its compose root asking for layout on every frame
- * for the full 60s. The difference is its two `OutlinedTextField`s, so the dialogs
- * with text fields (add and edit customer, set PIN, backup passphrase) still wait on
- * R18 and are not here.
+ * for the full 60s. The difference is its two `OutlinedTextField`s (PR #37 narrowed it
+ * to the floating label). The dialogs with text fields are checked in
+ * [TextFieldDialogAccessibilityTest], which reads the dialog's tree without waiting
+ * for idle.
  *
  * Each test first finds the dialog's own text, because the checks would pass on the
  * screen behind it alone if the dialog never opened.

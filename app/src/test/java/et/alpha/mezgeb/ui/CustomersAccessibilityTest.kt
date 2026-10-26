@@ -23,9 +23,9 @@ import org.robolectric.annotation.Config
  * The customer list and one customer's credit statement. The rules are in
  * [AccessibilityChecks].
  *
- * The add-customer dialog is not covered yet. With it open, Compose under Robolectric
- * never went idle, even with the clock driven by hand, so the test timed out in
- * `setContent`. ROADMAP R18 tracks it.
+ * The add-customer dialog is in [TextFieldDialogAccessibilityTest]. Open on the first
+ * composition, it kept Compose under Robolectric from ever going idle, so it needs the
+ * dialog-only reading that test uses (ROADMAP R18).
  *
  * Both screens show balances that can go below zero (the shop holding a customer's
  * money), which is where a minus sign reaches TalkBack if nothing stops it.
