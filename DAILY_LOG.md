@@ -5,6 +5,73 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-10-26: Tenth daily run (scheduled)
+
+**Start.** CI on `main` was green (`575645e`). There was no run on 2026-10-25. Model
+check: the models overview still lists Opus 5.5 (`claude-opus-5-5`) as the newest
+Opus. This run used it, so no switch was needed. Fable 5.1 was ignored, as Alpha
+decided.
+
+**Environment.** Same as before: JDK 21, no Android SDK, and Google Maven blocked.
+No Gradle build ran locally. CI judged everything below. Job logs were readable
+through the GitHub tools.
+
+**R18 part 2 (dialogs with text fields), PR #37, merged (`fdd35e4`).**
+- `AccessibilityChecks.openDialog` composes the screen with the dialog closed and
+  lets it settle. It then opens the dialog on a paused clock, runs 10 frames, and
+  reads the dialog window's merged semantics straight from its compose root
+  (`ShadowDialog` → `ViewRootForTest.semanticsOwner`). It never waits for idle, so the
+  re-measuring floating label can no longer hang the run.
+- Checked: add customer, edit customer, set PIN (field and acknowledgement row),
+  backup passphrase, restore passphrase. Each test first finds its dialog's title and
+  names its fields by their labels.
+- No defect found. The probe test is gone. Green on the first CI run, in both flavors.
+
+**R20 (large text), PR #41, merged (`31db17f`).**
+- `LargeTextTest` runs Today, cash entry with its keypad, Reconcile and the credit
+  statement at font scale 1.5 and 2.0, with native graphics so text is measured with
+  a real font. A guard test checks both the scale and the measurement.
+- **Real bug, fixed:** Today's "Paid out" and "Net" sat in 136dp half-columns. At 1.5
+  the net wrapped, and at 2.0 paid out broke at its comma ("−10,325." over "00"),
+  which reads as a different number. They are now a `FlowRow`, and the net moves
+  under paid out when the two do not fit.
+- Every control stayed at 48dp or more at both scales.
+- **CI:** 3 runs (the first push plus both allowed fix attempts). Run 1 found the bug.
+  It also showed that `TextLayoutResult.hasVisualOverflow` is set for every amount
+  under native graphics, even ones that fit. Fix attempt 1 added the FlowRow, but
+  `didOverflowWidth` turned out to be set everywhere too. Fix attempt 2 judges an
+  amount by its line count, with soft wrap on and no line cap, and went green.
+- Today's headline measured 278dp of 296dp at 2.0, so a six-figure total would wrap.
+  That is the new R26.
+
+**Tags.** I created `v2026-10-26-1` (#37) and `v2026-10-26-2` (#41) locally. Pushing
+them failed again with HTTP 403 (A6).
+
+**Dependabot.** Dependabot closed #17 and opened #40 in its place (the same group, 26
+updates, green). #12, #14, #15, #22 and #40 all wait on A7.
+
+**Replan.** After R18 and R20, only 4 items were open (R10 and R11 blocked, R12
+waiting on A7, R22). New items:
+- R23 (P1): show the last backup and remind after 30 days without one. Nothing in the
+  app records whether a backup was ever made, and the app has no sync.
+- R26: six-figure headline totals at a large font.
+- R24: the large-text check on the remaining screens.
+- R25: the large-text check in Amharic.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R18 part 2: the 5 dialogs with text fields are checked (#37). R20: large-text check, and Today's figures no longer break at font scale 1.5 or 2.0 (#41) |
+| Merged | #37 yes (`fdd35e4`), #41 yes (`31db17f`). Tags `v2026-10-26-1`/`-2` created but **could not be pushed** (A6, HTTP 403) |
+| Failed or blocked | #41 took both fix attempts: TextLayoutResult's overflow flags were unreliable under native graphics. Tag push (A6). No local Gradle |
+| Roadmap | Replanned: R23 to R26 added. 8 open, 5 unblocked (R23, R26, R24, R25, R22) |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #22, #40) |
+| Next | R23 (last backup and reminder), then R26 (six-figure headline at a large font) |
+
+---
+
 ## 2026-10-24: Ninth daily run (scheduled)
 
 **Start.** CI on `main` was green (`3b8e771`). Model check: the models overview still
