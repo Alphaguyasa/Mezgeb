@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -222,6 +224,7 @@ fun TodayScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TodayTotals(
     totalInMinor: Long,
@@ -250,8 +253,16 @@ private fun TodayTotals(
                 showIcon = false,
             )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(spacing.xl)) {
-                Column(Modifier.weight(1f)) {
+            // A flow rather than two half-width columns. At a large system font a
+            // half-width column is too narrow for a five-figure amount, which then
+            // broke at its comma ("−10,325." over "00"), a different number at a
+            // glance. Here each figure keeps its own width, and the net moves under
+            // paid out when the two do not fit side by side (ROADMAP R20).
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(spacing.xl),
+                verticalArrangement = Arrangement.spacedBy(spacing.md),
+            ) {
+                Column {
                     Text(
                         text = stringResource(R.string.today_total_out),
                         style = MaterialTheme.typography.labelMedium,
@@ -264,7 +275,7 @@ private fun TodayTotals(
                         showIcon = false,
                     )
                 }
-                Column(Modifier.weight(1f)) {
+                Column {
                     Text(
                         text = stringResource(R.string.today_net),
                         style = MaterialTheme.typography.labelMedium,

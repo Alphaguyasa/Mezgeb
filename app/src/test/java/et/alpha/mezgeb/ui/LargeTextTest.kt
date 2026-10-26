@@ -207,7 +207,11 @@ abstract class LargeTextTest(private val fontScale: Float) {
         val amounts = amountLayouts()
         // Guards the test itself: no amount found would pass everything below.
         assertTrue("no amount found on the screen", amounts.isNotEmpty())
-        val broken = amounts.filter { it.lineCount > 1 || it.hasVisualOverflow }
+        // Width only. Under native graphics every single-line amount also reports a
+        // height overflow, even one well inside its box (PR #41's first run), so that
+        // flag says nothing here. A wrap shows up as a second line, a clipped amount
+        // as a width overflow.
+        val broken = amounts.filter { it.lineCount > 1 || it.didOverflowWidth }
         assertTrue(
             "at font scale $fontScale these amounts wrap or run over:\n" +
                 broken.joinToString(separator = "\n") { it.describe() },
@@ -235,7 +239,7 @@ abstract class LargeTextTest(private val fontScale: Float) {
         val density = checks.context.resources.displayMetrics.density
         return "\"${layoutInput.text}\": ${lineCount} lines, " +
             "${size.width / density}dp wide in ${layoutInput.constraints.maxWidth / density}dp, " +
-            "overflow=$hasVisualOverflow"
+            "width overflow=$didOverflowWidth"
     }
 
     private fun line(id: String, kind: CreditKind, amountMinor: Long, running: Long) =
