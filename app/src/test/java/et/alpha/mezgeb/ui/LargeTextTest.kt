@@ -207,11 +207,14 @@ abstract class LargeTextTest(private val fontScale: Float) {
         val amounts = amountLayouts()
         // Guards the test itself: no amount found would pass everything below.
         assertTrue("no amount found on the screen", amounts.isNotEmpty())
-        // Width only. Under native graphics every single-line amount also reports a
-        // height overflow, even one well inside its box (PR #41's first run), so that
-        // flag says nothing here. A wrap shows up as a second line, a clipped amount
-        // as a width overflow.
-        val broken = amounts.filter { it.lineCount > 1 || it.didOverflowWidth }
+        // Not TextLayoutResult's overflow flags: under native graphics both of them
+        // were set for every amount, even one a third the width of its box (PR #41's
+        // first two runs). Instead the amount must wrap freely and have no line cap.
+        // Then one that does not fit can only show as a second line, which is what
+        // a cut-off amount looked like on the first run ("−10,325." over "00").
+        val broken = amounts.filter {
+            it.lineCount > 1 || !it.layoutInput.softWrap || it.layoutInput.maxLines != Int.MAX_VALUE
+        }
         assertTrue(
             "at font scale $fontScale these amounts wrap or run over:\n" +
                 broken.joinToString(separator = "\n") { it.describe() },
@@ -239,7 +242,7 @@ abstract class LargeTextTest(private val fontScale: Float) {
         val density = checks.context.resources.displayMetrics.density
         return "\"${layoutInput.text}\": ${lineCount} lines, " +
             "${size.width / density}dp wide in ${layoutInput.constraints.maxWidth / density}dp, " +
-            "width overflow=$didOverflowWidth"
+            "softWrap=${layoutInput.softWrap}, maxLines=${layoutInput.maxLines}"
     }
 
     private fun line(id: String, kind: CreditKind, amountMinor: Long, running: Long) =
