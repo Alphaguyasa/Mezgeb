@@ -2,6 +2,8 @@ package et.alpha.mezgeb.designsystem.component
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
@@ -17,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -36,6 +39,7 @@ import et.alpha.mezgeb.util.MoneyFormatter
  * [amountMinor] is always supplied as a positive magnitude; [direction] carries the
  * sign, matching how `TransactionEntity` stores it.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MoneyText(
     amountMinor: Long,
@@ -54,9 +58,11 @@ fun MoneyText(
         Direction.IN -> amountMinor
         Direction.OUT -> -amountMinor
     }
+    // The currency is a Text of its own, not part of the amount's string, so that it
+    // can move to the next line as a whole when the two do not fit (see below).
     val formatted = MoneyFormatter.format(
         amountMinor = signedMinor,
-        currency = if (showCurrency) MoneyFormatter.DEFAULT_CURRENCY else null,
+        currency = null,
         signed = true,
     )
 
@@ -91,13 +97,29 @@ fun MoneyText(
             )
             Spacer(Modifier.width(MezgebTheme.spacing.xxs))
         }
-        Text(
-            text = formatted,
-            style = style,
-            color = tint,
-        )
+        if (showCurrency) {
+            // A flow rather than one string. Today's headline at the largest system
+            // font measured 278dp of the 296dp it has with "+12,450.00 ETB", so a
+            // six-figure total would wrap inside the number. Here the amount keeps
+            // the whole width, and only "ETB" moves under it (ROADMAP R26). The gap
+            // is a space's width at this size, so a line that fits reads as before.
+            val gap = with(LocalDensity.current) { (style.fontSize * SPACE_EM).toDp() }
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(gap)) {
+                Text(text = formatted, style = style, color = tint)
+                Text(text = MoneyFormatter.DEFAULT_CURRENCY, style = style, color = tint)
+            }
+        } else {
+            Text(
+                text = formatted,
+                style = style,
+                color = tint,
+            )
+        }
     }
 }
+
+/** About the width of a space in the app's font, as a fraction of the font size. */
+private const val SPACE_EM = 0.25f
 
 @Preview(name = "MoneyText light", showBackground = true)
 @Preview(name = "MoneyText dark", showBackground = true, uiMode = 0x20)
