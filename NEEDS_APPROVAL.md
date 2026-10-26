@@ -71,6 +71,8 @@ can then be added on request.
   `v2026-10-23-2` (`ba42ace`, #34). Fifteen tags are missing now.
 - 2026-10-24: the same failure ("remote end hung up") for `v2026-10-24-1`
   (`564010b`, #38). Sixteen tags are missing now.
+- 2026-10-26: the same failure ("remote end hung up") for `v2026-10-26-1`
+  (`fdd35e4`, #37) and `v2026-10-26-2` (#41). Eighteen tags are missing now.
 - **Effect:** you can still roll back. Every merge is a squash commit on `main` with
   its PR number, and the log lists each one. Only the named tags are missing.
 - **Options:** (a) do nothing (the log stays the rollback list); (b) create the tags
@@ -93,6 +95,10 @@ can then be added on request.
   Gradle 9.5.0 → 9.8.1). CI is green on it. It waits on this answer too.
 - 2026-10-19: Dependabot opened #22 (`actions/setup-java` 4→6, green). #13 (4→5)
   is no longer open.
+- 2026-10-26: Dependabot closed #17 and opened #40 in its place: the same grouped
+  update, now 26 updates (Gradle 9.8.2, Compose BOM 2026.09.00, Kotlin 2.4.21, KSP
+  2.3.12, AGP 9.4.1, Robolectric 4.17). CI is green on it. Open now: #12, #14, #15,
+  #22, #40.
 - **Until you answer:** the run reviews Dependabot PRs (CI, and the transitive tree
   for a network stack) and reports them, but leaves them open and unmerged.
 - **Options:** (a) yes, Dependabot may appear as the author of its own update commits;
