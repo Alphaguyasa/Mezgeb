@@ -156,6 +156,29 @@ class SettingsRepository @Inject constructor(
 
     suspend fun firstRunAt(): Long? = observeFirstRunAt().first()
 
+    // --- Backup -----------------------------------------------------------------------
+
+    /**
+     * When a backup file was last written in full. Null means never.
+     *
+     * Kept here rather than in Room: it describes the database, so it must not be
+     * inside it. A restore would otherwise bring back the stamp of whichever backup it
+     * came from, and a backup would carry its own previous date (ROADMAP R23).
+     */
+    fun observeLastBackupAt(): Flow<Long?> = dataStore.data.map { it[LAST_BACKUP_AT] }
+
+    suspend fun recordBackup(at: Long) {
+        dataStore.edit { it[LAST_BACKUP_AT] = at }
+    }
+
+    /** When the owner last said "not now" to Today's backup reminder. */
+    fun observeBackupReminderDismissedAt(): Flow<Long?> =
+        dataStore.data.map { it[BACKUP_REMINDER_DISMISSED_AT] }
+
+    suspend fun dismissBackupReminder(at: Long) {
+        dataStore.edit { it[BACKUP_REMINDER_DISMISSED_AT] = at }
+    }
+
     // --- SMS import (direct flavor only reads these) ---------------------------------
 
     /**
@@ -199,5 +222,7 @@ class SettingsRepository @Inject constructor(
         val WATCHED_PACKAGES = stringSetPreferencesKey("watched_packages")
         val SMS_IMPORT_SINCE = longPreferencesKey("sms_import_since")
         val LAST_SMS_IMPORT_AT = longPreferencesKey("last_sms_import_at")
+        val LAST_BACKUP_AT = longPreferencesKey("last_backup_at")
+        val BACKUP_REMINDER_DISMISSED_AT = longPreferencesKey("backup_reminder_dismissed_at")
     }
 }

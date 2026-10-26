@@ -15,6 +15,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -26,6 +27,11 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneOffset
 
 /**
  * Settings, with demo mode as the part worth the most attention: it is the only switch
@@ -41,6 +47,10 @@ class SettingsViewModelTest {
     private val demoMode: DemoModeController = mockk(relaxed = true)
     private val languages: LanguagePreference = mockk(relaxed = true)
     private val settings: SettingsRepository = mockk(relaxed = true)
+    private val lastBackupAt = MutableStateFlow<Long?>(null)
+
+    private val now = Instant.parse("2026-10-12T09:00:00Z").toEpochMilli()
+    private val clock = Clock.fixed(Instant.ofEpochMilli(now), ZoneOffset.UTC)
 
     @Before
     fun setUp() {
@@ -50,13 +60,14 @@ class SettingsViewModelTest {
         every { lockRepository.timeoutSeconds() } returns 60
         every { demoMode.isEnabled() } returns false
         every { languages.current() } returns AppLanguage.SYSTEM
+        every { settings.observeLastBackupAt() } returns lastBackupAt
     }
 
     @After
     fun tearDown() = Dispatchers.resetMain()
 
     private fun viewModel() =
-        SettingsViewModel(lockRepository, lockState, backups, demoMode, languages, settings)
+        SettingsViewModel(lockRepository, lockState, backups, demoMode, languages, settings, clock)
 
     // --- Initial state -----------------------------------------------------------------
 
@@ -208,6 +219,54 @@ class SettingsViewModelTest {
         viewModel.state.test {
             assertEquals(AppLanguage.AMHARIC, awaitItem().language)
         }
+    }
+
+    // --- Last backup (ROADMAP R23) -------------------------------------------------------
+
+    @Test
+    fun `the last backup starts as never and follows the store`() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.state.test {
+            assertNull(awaitItem().lastBackupAt)
+            lastBackupAt.value = now - 1_000
+            assertEquals(now - 1_000, awaitItem().lastBackupAt)
+        }
+    }
+
+    @Test
+    fun `a backup written in full is stamped with the time`() = runTest {
+        viewModel().writeBackup("correct horse", "content://backup") { ByteArrayOutputStream() }
+
+        coVerify(exactly = 1) { settings.recordBackup(now) }
+    }
+
+    @Test
+    fun `a failed backup is not stamped`() = runTest {
+        coEvery { backups.writeBackup(any(), any()) } throws IOException("disk full")
+
+        val viewModel = viewModel()
+        viewModel.writeBackup("correct horse", "content://backup") { ByteArrayOutputStream() }
+
+        assertEquals(SettingsMessage.BackupFailed, viewModel.state.value.message)
+        coVerify(exactly = 0) { settings.recordBackup(any()) }
+    }
+
+    @Test
+    fun `a backup with no file to write to is not stamped`() = runTest {
+        viewModel().writeBackup("correct horse", "content://backup") { null }
+
+        coVerify(exactly = 0) { settings.recordBackup(any()) }
+    }
+
+    /** A demo backup holds the demo shop. Stamping it would quiet the real reminder. */
+    @Test
+    fun `a backup taken in demo mode is not stamped`() = runTest {
+        every { demoMode.isEnabled() } returns true
+
+        viewModel().writeBackup("correct horse", "content://backup") { ByteArrayOutputStream() }
+
+        coVerify(exactly = 0) { settings.recordBackup(any()) }
     }
 
     // --- PIN, which shares the same dialog machinery -----------------------------------
