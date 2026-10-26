@@ -1,29 +1,29 @@
 [versions]
 # --- Build tooling (wizard-generated, known-good — do not bump casually) ---
-agp = "9.3.1"
-kotlin = "2.2.10"
+agp = "9.4.1"
+kotlin = "2.4.21"
 # KSP is versioned as <kotlin>-<ksp>; it must track `kotlin` exactly.
-ksp = "2.2.10-2.0.2"
+ksp = "2.3.12"
 
 # --- AndroidX core ---
-coreKtx = "1.19.0"
+coreKtx = "1.19.1"
 lifecycle = "2.11.0"
 activityCompose = "1.13.0"
-composeBom = "2026.02.01"
-navigationCompose = "2.9.8"
-paging = "3.5.0"
+composeBom = "2026.09.00"
+navigationCompose = "2.10.2"
+paging = "3.5.3"
 
 # --- Persistence & background ---
-room = "2.8.4"
-workManager = "2.11.2"
-datastore = "1.2.1"
+room = "2.8.5"
+workManager = "2.12.0"
+datastore = "1.3.0"
 
 # --- DI ---
 hilt = "2.60.1"
 androidxHilt = "1.4.0"
 
 # --- Serialization & coroutines ---
-kotlinxSerialization = "1.11.0"
+kotlinxSerialization = "1.12.0"
 coroutines = "1.11.0"
 
 # --- Security (wired up in Session 10) ---
@@ -31,18 +31,18 @@ coroutines = "1.11.0"
 biometric = "1.1.0"
 # security-crypto 1.0.0 is the last stable line; 1.1.0 has been alpha for years.
 # Used only to hold the PIN hash behind a Keystore-backed key.
-securityCrypto = "1.0.0"
+securityCrypto = "1.1.0"
 
 # --- Testing ---
 junit4 = "4.13.2"
-junitJupiter = "6.1.2"
-junitPlatform = "6.1.2"
+junitJupiter = "6.1.3"
+junitPlatform = "6.1.3"
 androidxJunit = "1.3.0"
 androidxTestCore = "1.7.0"
 espressoCore = "3.7.0"
 turbine = "1.2.1"
 mockk = "1.14.11"
-robolectric = "4.16.1"
+robolectric = "4.17"
 # The instrumented android-all jar Robolectric runs tests against. Pinned so Gradle
 # resolves it up front instead of Robolectric fetching it mid-test-run.
 robolectricAndroidAll = "14-robolectric-10818077-i7"
