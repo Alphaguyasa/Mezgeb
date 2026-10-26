@@ -1,11 +1,16 @@
 package et.alpha.mezgeb.ui
 
 import android.content.Context
+import android.view.View
+import android.view.ViewGroup
 import androidx.annotation.StringRes
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getAllSemanticsNodes
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.isRoot
@@ -17,6 +22,9 @@ import et.alpha.mezgeb.R
 import et.alpha.mezgeb.designsystem.MezgebTheme
 import et.alpha.mezgeb.util.MoneyFormatter
 import org.junit.Assert.assertTrue
+import org.robolectric.shadows.ShadowDialog
+import org.robolectric.shadows.ShadowLooper
+import java.util.concurrent.TimeUnit
 
 /**
  * The three accessibility rules every screen test checks, on the semantics tree
@@ -44,8 +52,72 @@ class AccessibilityChecks(private val compose: ComposeContentTestRule) {
         compose.waitForIdle()
     }
 
+    /**
+     * Opens a dialog and returns what TalkBack can read in it: the merged semantics of
+     * the dialog's own window, read straight from its compose root. [content] gets
+     * whether the dialog is open. ROADMAP R18.
+     *
+     * Needed for any dialog with a labelled text field. Under Robolectric such a dialog
+     * never settles: the probe on PR #37 counted 30 measures of the field in 60 frames,
+     * where the same field in the main window was measured once. Anything that waits for
+     * idle, which includes every `onNode` finder, then lays text out until Robolectric's
+     * native-object registry overflows, and that fails every Compose test after it in
+     * the same JVM. So nothing here waits once the dialog is up. The screen is composed
+     * with the dialog closed and allowed to settle, then the dialog opens on a paused
+     * clock and runs a fixed number of frames, which is enough for its window to be
+     * composed and laid out. The tree is read after that, without touching the rule.
+     */
+    fun openDialog(content: @Composable (open: Boolean) -> Unit): List<SemanticsNode> {
+        val open = mutableStateOf(false)
+        show { content(open.value) }
+        compose.mainClock.autoAdvance = false
+        compose.runOnUiThread { open.value = true }
+        repeat(DIALOG_FRAMES) {
+            compose.mainClock.advanceTimeByFrame()
+            // The dialog is its own window, laid out by the view system's frames, which
+            // follow Robolectric's clock rather than the Compose test clock.
+            ShadowLooper.idleMainLooper(FRAME_MILLIS, TimeUnit.MILLISECONDS)
+        }
+        val dialog = checkNotNull(ShadowDialog.getLatestDialog()) { "no dialog was shown" }
+        val root = checkNotNull(dialog.window?.decorView?.findComposeRoot()) {
+            "the dialog window holds no compose root"
+        }
+        return root.semanticsOwner.getAllSemanticsNodes(mergingEnabled = true)
+    }
+
     fun assertControlsAreNamedAndLargeEnough() {
-        val controls = compose.onAllNodes(hasClickAction()).fetchSemanticsNodes()
+        checkControls(compose.onAllNodes(hasClickAction()).fetchSemanticsNodes())
+    }
+
+    /** The same rules, on a tree read by [openDialog]. */
+    fun assertControlsAreNamedAndLargeEnough(tree: List<SemanticsNode>) {
+        checkControls(tree.filter { hasClickAction().matches(it) })
+    }
+
+    /**
+     * The dialog really is the one under test. The checks would pass on an empty or
+     * wrong tree, so each dialog test first finds its own title.
+     */
+    fun assertShows(tree: List<SemanticsNode>, text: String) {
+        val texts = tree.flatMap { node ->
+            node.config.getOrNull(SemanticsProperties.Text).orEmpty().map { it.text }
+        }
+        assertTrue("\"$text\" is not in the dialog; it shows $texts", texts.any { it == text })
+    }
+
+    /**
+     * Some control is read with [name] in it. A text field is read by its label, so this
+     * is how a test says which field it means: "Name, edit box" rather than "edit box".
+     */
+    fun assertControlNamed(tree: List<SemanticsNode>, name: String) {
+        val controls = tree.filter { hasClickAction().matches(it) }
+        assertTrue(
+            "no control is read as \"$name\": ${controls.describe()}",
+            controls.any { name in it.spokenName() },
+        )
+    }
+
+    private fun checkControls(controls: List<SemanticsNode>) {
         // Guards the test itself: no controls found would pass everything below.
         assertTrue("no controls found; is the screen on the tree at all?", controls.isNotEmpty())
 
@@ -114,7 +186,18 @@ class AccessibilityChecks(private val compose: ComposeContentTestRule) {
         "\"${it.spokenName()}\" (${it.widthDp()}x${it.heightDp()}dp) ${it.config}"
     }
 
+    private fun View.findComposeRoot(): ViewRootForTest? = when (this) {
+        is ViewRootForTest -> this
+        is ViewGroup ->
+            (0 until childCount).firstNotNullOfOrNull { getChildAt(it).findComposeRoot() }
+        else -> null
+    }
+
     private companion object {
         val MIN_TARGET_DP = 48.dp.value
+
+        /** A dialog is composed, shown and laid out well within this; see [openDialog]. */
+        const val DIALOG_FRAMES = 10
+        const val FRAME_MILLIS = 16L
     }
 }
