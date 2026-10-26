@@ -5,6 +5,63 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-10-26: Eleventh daily run (scheduled, second run that day)
+
+**Start.** CI on `main` was green (`c962faa`). Model check: the models overview still
+lists Opus 5.5 (`claude-opus-5-5`) as the newest Opus. This run used it, so no switch
+was needed. Fable 5.1 was ignored, as Alpha decided.
+
+**Environment.** Same as before: JDK 21, no Android SDK. No Gradle build ran
+locally. CI judged everything below.
+
+**R23 (last backup and a reminder), PR #43, merged (`1ba07b2`).**
+- Settings → Backup now says "Last backup: Mon, 12 Oct 2026" or "Last backup: never".
+- Today shows a card ("Save a backup") when the ledger has a transaction and there
+  has been no backup for 30 days. If there was never a backup, the 30 days count from
+  the first run, so a new install is not asked on day one. "Back up now" opens
+  Settings; "Not now" hides the card for 30 days, then it comes back.
+- The time is stored only when the whole file was written, and never in demo mode
+  (a demo backup holds the demo shop, and would hide the reminder for the real one).
+- Both times are in DataStore, not Room: no schema change, and a restore cannot bring
+  back an old date. No new permission, no flavor change.
+- Tests: the reminder rule at every boundary, the Today and Settings ViewModels, and
+  the card's buttons in the accessibility check. New strings in English and Amharic;
+  a native speaker should check the Amharic. Green on the first CI run.
+
+**R26 (six-figure headline at a large font), PR #44, merged (`a116a3b`).**
+- `MoneyText` with a currency now puts the amount and "ETB" in a flow. When they do
+  not fit on one line, only "ETB" moves down; the digits stay together. When they fit,
+  the line looks the same as before. This also covers the transaction detail, the
+  rule builder and the day subtotals.
+- `LargeTextTest` now checks Today with 100,000.00 and 1,234,567.89 at font scale 1.5
+  and 2.0: no amount wraps and "ETB" is never split. Green on the first CI run. I
+  merged `main` (with #43) into the branch first, so CI tested the two together.
+
+**Found.** `BackupRepository.SCHEMA_VERSION` is 5 while the database is at 6. Restores
+work today, but the version in new backup files is wrong. Added as R27 (P1).
+
+**Tags.** I created `v2026-10-26-3` (#43) and `v2026-10-26-4` (#44) locally. Pushing
+them failed again with HTTP 403 (A6).
+
+**Dependabot.** #12, #14, #15, #22 and #40 are unchanged and still wait on A7.
+
+**Roadmap.** R23 and R26 are done; R27 is new. 7 items are open, 4 unblocked (R27,
+R24, R25, R22). No replan was needed.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R23: last backup date in Settings, and a 30-day backup reminder on Today (#43). R26: a big total no longer breaks at a large font (#44) |
+| Merged | #43 yes (`1ba07b2`), #44 yes (`a116a3b`). Tags `v2026-10-26-3`/`-4` created but **could not be pushed** (A6, HTTP 403) |
+| Failed or blocked | Nothing failed in CI. Tag push (A6). No local Gradle |
+| Roadmap | 7 open, 4 unblocked (R27, R24, R25, R22). New: R27 (backup schema version). No replan needed |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #22, #40) |
+| Next | R27 (backup schema version and a guard test), then R24 (large-text check on the remaining screens) |
+
+---
+
 ## 2026-10-26: Tenth daily run (scheduled)
 
 **Start.** CI on `main` was green (`575645e`). There was no run on 2026-10-25. Model
