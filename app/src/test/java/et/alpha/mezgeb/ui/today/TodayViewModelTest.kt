@@ -16,12 +16,15 @@ import et.alpha.mezgeb.data.local.transaction
 import et.alpha.mezgeb.data.repo.RuleRepository
 import et.alpha.mezgeb.data.repo.TransactionRepository
 import et.alpha.mezgeb.data.settings.SettingsHarness
+import et.alpha.mezgeb.domain.backup.BackupReminder
+import et.alpha.mezgeb.domain.backup.BackupReminderPolicy
 import et.alpha.mezgeb.domain.model.Channel
 import et.alpha.mezgeb.domain.model.Direction
 import et.alpha.mezgeb.domain.model.ParseState
 import et.alpha.mezgeb.util.MezgebDates
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -29,6 +32,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -177,12 +181,96 @@ class TodayViewModelTest : DatabaseTest() {
         assertEquals(null, viewModel.healthFixIntent(CaptureHealth.HEALTHY))
     }
 
+    // --- Backup reminder (ROADMAP R23) ---------------------------------------------------
+
+    @Test
+    fun `an empty ledger is never asked for a backup`() = runTest {
+        settingsHarness.repository.markFirstRun(now - 90 * DAY)
+
+        viewModel().state.test {
+            assertNull(awaitLoaded().backupReminder)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a ledger never backed up asks after a month, and says never`() = runTest {
+        settingsHarness.repository.markFirstRun(now - 31 * DAY)
+        db.transactionDao().insert(transaction("t1", occurredAt = now))
+
+        viewModel().state.test {
+            val state = awaitItemWhere { it.recent.isNotEmpty() }
+            assertEquals(BackupReminder.NEVER_BACKED_UP, state.backupReminder)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a recent backup asks nothing`() = runTest {
+        settingsHarness.repository.markFirstRun(now - 90 * DAY)
+        settingsHarness.repository.recordBackup(now - 2 * DAY)
+        db.transactionDao().insert(transaction("t1", occurredAt = now))
+
+        viewModel().state.test {
+            assertNull(awaitItemWhere { it.recent.isNotEmpty() }.backupReminder)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a backup older than a month is stale`() = runTest {
+        settingsHarness.repository.markFirstRun(now - 90 * DAY)
+        settingsHarness.repository.recordBackup(now - 45 * DAY)
+        db.transactionDao().insert(transaction("t1", occurredAt = now))
+
+        viewModel().state.test {
+            val state = awaitItemWhere { it.recent.isNotEmpty() }
+            assertEquals(BackupReminder.STALE, state.backupReminder)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `not now hides the reminder and stamps the dismissal`() = runTest {
+        settingsHarness.repository.markFirstRun(now - 90 * DAY)
+        db.transactionDao().insert(transaction("t1", occurredAt = now))
+        val viewModel = viewModel()
+
+        viewModel.state.test {
+            assertEquals(
+                BackupReminder.NEVER_BACKED_UP,
+                awaitItemWhere { it.backupReminder != null }.backupReminder,
+            )
+
+            viewModel.onEvent(TodayEvent.BackupReminderDismissed)
+
+            assertNull(awaitItemWhere { it.backupReminder == null }.backupReminder)
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertEquals(now, settingsHarness.repository.observeBackupReminderDismissedAt().first())
+    }
+
+    @Test
+    fun `a dismissal from over a month ago no longer hides it`() = runTest {
+        settingsHarness.repository.markFirstRun(now - 90 * DAY)
+        settingsHarness.repository.recordBackup(now - 60 * DAY)
+        settingsHarness.repository.dismissBackupReminder(now - BackupReminderPolicy.INTERVAL_MILLIS)
+        db.transactionDao().insert(transaction("t1", occurredAt = now))
+
+        viewModel().state.test {
+            val state = awaitItemWhere { it.recent.isNotEmpty() }
+            assertEquals(BackupReminder.STALE, state.backupReminder)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
     private fun viewModel() = TodayViewModel(
         transactions = transactions,
         rules = rules,
         captureHealth = CaptureHealthMonitor(settingsHarness.repository, access, clock),
         access = access,
         battery = BatteryOptimizationHelper(ApplicationProvider.getApplicationContext<Context>()),
+        settings = settingsHarness.repository,
         clock = clock,
         zone = zone,
     )
@@ -196,6 +284,10 @@ class TodayViewModelTest : DatabaseTest() {
         var item = awaitItem()
         while (!predicate(item)) item = awaitItem()
         return item
+    }
+
+    private companion object {
+        const val DAY = 24L * 60 * 60 * 1000
     }
 
     private class FakeCaptureAccess(var granted: Boolean = true) : CaptureAccess {

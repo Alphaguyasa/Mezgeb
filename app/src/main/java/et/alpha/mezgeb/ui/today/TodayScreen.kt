@@ -53,6 +53,7 @@ import et.alpha.mezgeb.designsystem.MezgebTheme
 import et.alpha.mezgeb.designsystem.component.EmptyState
 import et.alpha.mezgeb.designsystem.component.MezgebScaffold
 import et.alpha.mezgeb.designsystem.component.MoneyText
+import et.alpha.mezgeb.domain.backup.BackupReminder
 import et.alpha.mezgeb.domain.model.Channel
 import et.alpha.mezgeb.domain.model.Direction
 import et.alpha.mezgeb.ui.common.TransactionRow
@@ -181,6 +182,21 @@ fun TodayScreen(
                     CaptureHealthBanner(
                         health = state.captureHealth,
                         onFix = onFixCapture,
+                        modifier = Modifier.padding(
+                            start = spacing.screenGutter,
+                            end = spacing.screenGutter,
+                            bottom = spacing.lg,
+                        ),
+                    )
+                }
+            }
+
+            state.backupReminder?.let { reminder ->
+                item("backup") {
+                    BackupReminderCard(
+                        reminder = reminder,
+                        onBackUp = onOpenSettings,
+                        onDismiss = { onEvent(TodayEvent.BackupReminderDismissed) },
                         modifier = Modifier.padding(
                             start = spacing.screenGutter,
                             end = spacing.screenGutter,
@@ -364,6 +380,66 @@ private fun CaptureHealthBanner(
     }
 }
 
+/**
+ * Asks for a backup when there has been none for a month (ROADMAP R23).
+ *
+ * Unlike [CaptureHealthBanner] this one can be put off, because nothing is going
+ * wrong yet: the ledger is fine until the phone is lost. "Not now" quiets it for one
+ * interval, after which it comes back. "Back up now" goes to Settings, where the
+ * passphrase and the file are chosen, rather than starting a backup from here.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun BackupReminderCard(
+    reminder: BackupReminder,
+    onBackUp: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val spacing = MezgebTheme.spacing
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(spacing.xs),
+        ) {
+            Text(
+                text = stringResource(R.string.today_backup_reminder_title),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Text(
+                text = stringResource(
+                    when (reminder) {
+                        BackupReminder.NEVER_BACKED_UP -> R.string.today_backup_reminder_body_never
+                        BackupReminder.STALE -> R.string.today_backup_reminder_body_stale
+                    },
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            // A flow, so the two buttons stack rather than squeeze at a large font.
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                TextButton(
+                    onClick = onBackUp,
+                    modifier = Modifier.heightIn(min = spacing.touchTarget),
+                ) {
+                    Text(stringResource(R.string.today_backup_reminder_action))
+                }
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.heightIn(min = spacing.touchTarget),
+                ) {
+                    Text(stringResource(R.string.today_backup_reminder_dismiss))
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun ReviewQueueRow(count: Int, onClick: () -> Unit) {
     val spacing = MezgebTheme.spacing
@@ -402,6 +478,7 @@ private fun TodayScreenPreview() {
                 reviewQueueCount = 3,
                 recent = previewRows(),
                 hasEverCaptured = true,
+                backupReminder = BackupReminder.STALE,
             ),
             onEvent = {},
             onOpenReview = {},

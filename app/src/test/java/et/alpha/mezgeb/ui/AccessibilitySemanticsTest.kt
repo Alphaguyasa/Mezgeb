@@ -1,11 +1,14 @@
 package et.alpha.mezgeb.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import et.alpha.mezgeb.R
 import et.alpha.mezgeb.capture.CaptureHealth
 import et.alpha.mezgeb.designsystem.component.AmountKeypad
+import et.alpha.mezgeb.domain.backup.BackupReminder
 import et.alpha.mezgeb.domain.model.Channel
 import et.alpha.mezgeb.domain.model.Direction
 import et.alpha.mezgeb.domain.model.UnmatchedGroup
@@ -43,6 +46,12 @@ class AccessibilitySemanticsTest {
         checks.assertControlsAreNamedAndLargeEnough()
         // The FAB is named from its icon: Material clears the label's own semantics.
         checks.assertSpoken(context.getString(R.string.today_record_cash))
+        // The backup reminder's two buttons are on screen, so the checks above saw them
+        // (ROADMAP R23).
+        compose.onNodeWithText(context.getString(R.string.today_backup_reminder_action))
+            .assertHasClickAction()
+        compose.onNodeWithText(context.getString(R.string.today_backup_reminder_dismiss))
+            .assertHasClickAction()
     }
 
     @Test
@@ -117,8 +126,9 @@ class AccessibilitySemanticsTest {
     }
 
     /**
-     * The screen in its busiest state: a capture problem, a review queue, money in
-     * and money out, so every kind of control and amount is on it at once.
+     * The screen in its busiest state: a capture problem, a backup reminder, a review
+     * queue, money in and money out, so every kind of control and amount is on it at
+     * once.
      */
     @Composable
     private fun BusiestToday(
@@ -158,6 +168,7 @@ class AccessibilitySemanticsTest {
                     ),
                 ),
                 hasEverCaptured = true,
+                backupReminder = BackupReminder.STALE,
             ),
             onEvent = {},
             onOpenReview = {},

@@ -314,6 +314,8 @@
     <string name="settings_backup">ምትኬ</string>
     <string name="settings_backup_body">ምትኬ ሁሉንም የያዘ አንድ የተመሰጠረ ፋይል ነው። በአስተማማኝ ቦታ ያስቀምጡት — ፋይሉና የይለፍ ሐረጉ ያለው ሰው መዝገብዎ አለው።</string>
     <string name="settings_backup_action">ምትኬ አስቀምጥ</string>
+    <string name="settings_last_backup">የመጨረሻው ምትኬ፦ %1$s</string>
+    <string name="settings_last_backup_never">የመጨረሻው ምትኬ፦ ገና አልተቀመጠም</string>
     <string name="settings_backup_passphrase_body">የይለፍ ሐረግ ይምረጡ። የትም አይቀመጥም፤ ያለሱ ምትኬው አይከፈትም።</string>
     <string name="settings_passphrase_label">የይለፍ ሐረግ</string>
     <string name="settings_restore_action">ከምትኬ መልስ</string>
@@ -432,4 +434,9 @@
         <item quantity="one">%1$d መዝገብ ተመልሷል።</item>
         <item quantity="other">%1$d መዝገቦች ተመልሰዋል።</item>
     </plurals>
+    <string name="today_backup_reminder_title">ምትኬ ያስቀምጡ</string>
+    <string name="today_backup_reminder_body_never">በዚህ ስልክ ላይ ያለው ምንም ነገር ገና ምትኬ አልተቀመጠለትም። ስልኩ ከጠፋ ወይም ከተሰበረ መዝገብዎና የዱቤ ደብተርዎ አብረው ይጠፋሉ።</string>
+    <string name="today_backup_reminder_body_stale">የመጨረሻው ምትኬዎ ከ30 ቀን በላይ ሆኖታል። ስልኩ ከጠፋ ወይም ከተሰበረ ከዚያ ወዲህ የተመዘገበው ሁሉ አብሮ ይጠፋል።</string>
+    <string name="today_backup_reminder_action">አሁን ምትኬ አስቀምጥ</string>
+    <string name="today_backup_reminder_dismiss">አሁን አይደለም</string>
 </resources>

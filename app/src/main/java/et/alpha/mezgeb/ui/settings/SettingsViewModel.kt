@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.InputStream
 import java.io.OutputStream
+import java.time.Clock
 import javax.inject.Inject
 
 /** Which dialog, if any, is in front of the settings list. */
@@ -40,6 +41,8 @@ data class SettingsUiState(
     val language: AppLanguage = AppLanguage.SYSTEM,
     /** What the shop calls itself, for the header of an exported summary. */
     val shopName: String = "",
+    /** When a backup was last written in full. Null means never. */
+    val lastBackupAt: Long? = null,
     /**
      * Set once the database file the app should open has changed. The route restarts
      * the process; the flag lives in state rather than in a one-shot channel so that a
@@ -98,6 +101,7 @@ class SettingsViewModel @Inject constructor(
     private val demoMode: DemoModeController,
     private val languages: LanguagePreference,
     private val settings: SettingsRepository,
+    private val clock: Clock,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
@@ -117,6 +121,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val stored = settings.shopName().orEmpty()
             if (stored.isNotEmpty()) _state.update { it.copy(shopName = stored) }
+        }
+        // Collected, unlike the shop name: nothing on this screen types into it, and
+        // the line under Backup should change the moment a backup is written.
+        viewModelScope.launch {
+            settings.observeLastBackupAt().collect { at ->
+                _state.update { it.copy(lastBackupAt = at) }
+            }
         }
     }
 
@@ -243,6 +254,12 @@ class SettingsViewModel @Inject constructor(
             val result = runCatching {
                 val stream = openStream() ?: error("no output stream")
                 stream.use { backups.writeBackup(passphrase.toCharArray(), it) }
+            }
+            // Only a whole file counts, and only a file of the real ledger: a backup
+            // taken in demo mode holds the demo shop, and stamping it would quiet the
+            // reminder for a ledger that was never saved (ROADMAP R23).
+            if (result.isSuccess && !demoMode.isEnabled()) {
+                settings.recordBackup(clock.millis())
             }
             _state.update {
                 it.copy(

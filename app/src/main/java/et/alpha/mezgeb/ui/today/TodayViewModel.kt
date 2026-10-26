@@ -10,6 +10,9 @@ import et.alpha.mezgeb.capture.notification.CaptureAccess
 import et.alpha.mezgeb.capture.vendor.BatteryOptimizationHelper
 import et.alpha.mezgeb.data.repo.RuleRepository
 import et.alpha.mezgeb.data.repo.TransactionRepository
+import et.alpha.mezgeb.data.settings.SettingsRepository
+import et.alpha.mezgeb.domain.backup.BackupReminder
+import et.alpha.mezgeb.domain.backup.BackupReminderPolicy
 import et.alpha.mezgeb.domain.model.Direction
 import et.alpha.mezgeb.ui.common.TransactionUiModel
 import et.alpha.mezgeb.ui.common.toUiModel
@@ -23,6 +26,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.time.Clock
 import java.time.ZoneId
 import javax.inject.Inject
@@ -42,6 +46,8 @@ data class TodayUiState(
     val reviewQueueCount: Int = 0,
     val recent: List<TransactionUiModel> = emptyList(),
     val hasEverCaptured: Boolean = false,
+    /** Null when no backup reminder is due, or the owner said "not now" recently. */
+    val backupReminder: BackupReminder? = null,
     val errorMessage: ErrorKind? = null,
 ) {
     val netMinor: Long get() = totalInMinor - totalOutMinor
@@ -53,6 +59,9 @@ data class TodayUiState(
 sealed interface TodayEvent {
     /** Re-checks notification access and rolls the day over if it has changed. */
     data object Refresh : TodayEvent
+
+    /** "Not now" on the backup reminder. It comes back after another interval. */
+    data object BackupReminderDismissed : TodayEvent
 }
 
 @HiltViewModel
@@ -62,6 +71,7 @@ class TodayViewModel @Inject constructor(
     private val captureHealth: CaptureHealthMonitor,
     private val access: CaptureAccess,
     private val battery: BatteryOptimizationHelper,
+    private val settings: SettingsRepository,
     private val clock: Clock,
     private val zone: ZoneId,
 ) : ViewModel() {
@@ -96,12 +106,21 @@ class TodayViewModel @Inject constructor(
             list.map { it.toUiModel(categoryName = namesById[it.categoryId]) }
         }
 
+        val backupStamps = combine(
+            settings.observeLastBackupAt(),
+            settings.observeFirstRunAt(),
+            settings.observeBackupReminderDismissedAt(),
+        ) { lastBackupAt, firstRunAt, dismissedAt ->
+            BackupStamps(lastBackupAt, firstRunAt, dismissedAt)
+        }
+
         combine(
             totals,
             recent,
             transactions.observeUnmatchedCount(),
             captureHealth.observe(),
-        ) { (inMinor, outMinor), rows, unmatched, health ->
+            backupStamps,
+        ) { (inMinor, outMinor), rows, unmatched, health, stamps ->
             TodayUiState(
                 isLoading = false,
                 totalInMinor = inMinor,
@@ -112,6 +131,15 @@ class TodayViewModel @Inject constructor(
                 // Anything at all in the ledger, today or not, means capture has worked
                 // at least once. An empty Today then means a quiet day, not a dead app.
                 hasEverCaptured = rows.isNotEmpty(),
+                // The same "anything in the ledger" test: an empty ledger has nothing
+                // to lose, so it is not asked to back anything up.
+                backupReminder = BackupReminderPolicy.reminderFor(
+                    now = clock.millis(),
+                    lastBackupAt = stamps.lastBackupAt,
+                    firstRunAt = stamps.firstRunAt,
+                    dismissedAt = stamps.dismissedAt,
+                    hasTransactions = rows.isNotEmpty(),
+                ),
             )
         }
     }
@@ -122,6 +150,10 @@ class TodayViewModel @Inject constructor(
                 captureHealth.refresh()
                 refreshes.update { it + 1 }
             }
+
+            TodayEvent.BackupReminderDismissed -> viewModelScope.launch {
+                settings.dismissBackupReminder(clock.millis())
+            }
         }
     }
 
@@ -131,6 +163,12 @@ class TodayViewModel @Inject constructor(
         CaptureHealth.SILENT_TOO_LONG -> battery.settingsIntent()
         CaptureHealth.HEALTHY -> null
     }
+
+    private data class BackupStamps(
+        val lastBackupAt: Long?,
+        val firstRunAt: Long?,
+        val dismissedAt: Long?,
+    )
 
     private companion object {
         const val RECENT_LIMIT = 10
