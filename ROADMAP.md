@@ -11,36 +11,35 @@ several PRs.
 
 Built from the audit on 2026-10-14: the full code read plus the open items in
 `NOTES.md` § "What is left". Replanned on 2026-10-22, when the open list fell below 5:
-R19 to R22 were added.
+R19 to R22 were added. Replanned again on 2026-10-26: R23 to R26 were added.
 
 ## Open
 
-### R18 · P2 · S: Accessibility check on the dialogs with text fields (part 2)
-Part 1 is done (PR #34). Left: add customer, edit customer, set PIN (and its
-acknowledgement checkbox), backup and restore passphrase.
-**Probe on 2026-10-24 (PR #37, open, red on purpose):** the trigger is the floating
-label. On a paused clock over 60 frames, a `BasicTextField` and an unlabelled
-`OutlinedTextField` in a dialog settle (4 measures). A labelled one keeps re-measuring
-(6 after 5 frames, 30 after 60). In the main window the same labelled field settles
-(1 measure). A guess, not verified: the label size is state written during measure,
-and the dialog measures under changing constraints.
-**Warning:** a test that waits for idle on such a dialog is not just slow. It lays
-text out until Robolectric's `NativeObjRegistry` overflows, which then fails every
-Compose test after it in the same JVM (37 failures on PR #37's first push).
-**Next:** a paused clock alone did not let `setContent` settle (see the note in
-`CustomersAccessibilityTest`), so never call `waitForIdle` with one of these
-dialogs up. Read the dialog's semantics straight from its compose root instead (the
-dialog's `AndroidComposeView` is a `RootForTest`, and its `semanticsOwner` holds the
-tree), after a fixed number of frames. Then run the shared checks on that list. Reuse
-PR #37's branch.
+### R23 · P1 · S: Say when the last backup was made, and remind when there is none
+The app is offline and has no sync, so a lost or broken phone loses every ledger and
+credit entry that was never backed up. Today nothing records whether a backup was
+ever made. Store the time of the last successful backup in DataStore (not Room, so no
+schema change). Show it under Backup in Settings ("Last backup: 12 Oct" or "Never").
+On Today, show a dismissable card when there has been no backup for 30 days and the
+ledger has at least one transaction. No new permission and no change to either flavor.
+ViewModel tests for never, recent, stale and dismissed. English and Amharic.
 
-### R20 · P2 · M: Large-text check (font scale 1.5 and 2.0)
-Many shop owners set a large system font. No test runs any screen at a large font
-scale. Run Today, the keypad, Reconcile and the credit statement under
-`@Config(fontScale = 1.5f)` and `2.0f`. Check that controls stay
-at 48dp or more and that the headline totals are not cut off (no `maxLines = 1`
-ellipsis on an amount). R17 part 2 already found chip rows that did not fit at the
-normal scale.
+### R26 · P2 · S: Today's headline at a six-figure total and a large font
+The R20 check (PR #41) measured Today's "+12,450.00 ETB" at 278dp of the 296dp it has,
+at font scale 2.0. A total of 100,000.00 ETB or more would wrap. Add that case to
+`LargeTextTest`, then fix it if it fails: for example, let the currency move to its
+own line, or step the headline down one type size when it cannot fit. Never cut it
+off or ellipsize it.
+
+### R24 · P2 · S: Large-text check on the remaining screens
+R20 covered Today, cash entry, Reconcile and the credit statement. Add the ledger, the
+customer list, Reports, Settings, onboarding, the review queue, the transaction detail
+and the dialogs (through `AccessibilityChecks.openDialog`) to `LargeTextTest`.
+
+### R25 · P2 · S: Large text in Amharic
+Ethiopic labels are often longer than the English ones, and the glyphs are taller.
+Run `LargeTextTest`'s screens with the `am` locale at font scale 2.0
+(`qualifiers = "am-w360dp-h1600dp"`). Fix what wraps badly.
 
 ### R10 · P1 · L: Encrypt the database at rest
 **Blocked: see NEEDS_APPROVAL.md A1.** This needs a new native dependency
@@ -57,7 +56,8 @@ whether the current KSP supports built-in Kotlin, and remove the flag if it does
 Note (2026-10-18): Dependabot PR #17 moves KSP to `2.3.12`, which is no longer
 versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 `kotlin-and-ksp` group reasoning assume the old scheme. Do this item together with
-#17 once A7 is answered.
+#17 once A7 is answered. (2026-10-26: #17 is superseded by #40, the same group with
+26 updates, Gradle 9.8.2 and Compose BOM 2026.09.00. CI is green on it.)
 
 ### R22 · P3 · M: Export closed reconciliation periods
 The CSV export covers the ledger and the credit book, but not the closed periods,
@@ -69,6 +69,16 @@ picker, so no permission is needed. Tests for the CSV writer, including commas,
 quotes and a line break in a note.
 
 ## Done
+
+- 2026-10-26 · R20: Large-text check (font scale 1.5 and 2.0, native graphics) on
+  Today, cash entry, Reconcile and the credit statement. Real fix: Today's "Paid out"
+  and "Net" sat in 136dp half-columns and broke at a large font ("−10,325." over
+  "00"); they are now a FlowRow. Every control stayed at 48dp or more. PR #41. (Tag
+  `v2026-10-26-2` not pushed: A6.)
+- 2026-10-26 · R18 part 2: The add and edit customer, set PIN and both passphrase
+  dialogs get the shared checks. `AccessibilityChecks.openDialog` reads the dialog's
+  semantics straight from its compose root without waiting for idle. No defect found.
+  PR #37. (Tag `v2026-10-26-1` not pushed: A6.)
 
 - 2026-10-24 · R21: A period that closes with a gap can carry the owner's note
   (optional, trimmed, up to 200 characters). The closed-period snapshot shows it, and
