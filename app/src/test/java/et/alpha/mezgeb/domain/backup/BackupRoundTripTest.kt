@@ -11,8 +11,13 @@ import et.alpha.mezgeb.data.local.transaction
 import et.alpha.mezgeb.domain.model.CreditKind
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -166,6 +171,56 @@ class BackupRoundTripTest : DatabaseTest() {
             RestoreFailure.UNSUPPORTED_SCHEMA,
             (result.exceptionOrNull() as RestoreException).reason,
         )
+    }
+
+    @Test
+    fun `the backup schema version tracks the database version`() {
+        // The in-memory database is built from the same @Database annotation as the
+        // real one, so its version is the one that ships. When this fails, bump
+        // SCHEMA_VERSION together with MezgebDatabase, and make sure a file written
+        // at the old version still restores (see the next test).
+        assertEquals(db.openHelper.readableDatabase.version, BackupRepository.SCHEMA_VERSION)
+    }
+
+    @Test
+    fun `a new backup says which schema wrote it`() = runTest {
+        seed()
+        val file = ByteArrayOutputStream()
+        repository.writeBackup(passphrase, file)
+
+        val result = repository.restore(ByteArrayInputStream(file.toByteArray()), passphrase)
+
+        assertEquals(db.openHelper.readableDatabase.version, result.getOrThrow().schemaVersion)
+    }
+
+    @Test
+    fun `a backup written at schema 5 still restores`() = runTest {
+        seed()
+        val before = snapshot()
+
+        // A v5 file has no possibleDuplicateOfId on its transactions. Strip it
+        // explicitly rather than trusting that a null default is never encoded.
+        val v6 = Json.parseToJsonElement(Json.encodeToString(before)).jsonObject
+        val v5Transactions = JsonArray(
+            v6.getValue("transactions").jsonArray.map {
+                JsonObject(it.jsonObject - "possibleDuplicateOfId")
+            },
+        )
+        val v5 = JsonObject(v6 + ("transactions" to v5Transactions))
+        val file = ByteArrayOutputStream()
+        BackupCrypto.write(
+            json = v5.toString(),
+            passphrase = passphrase,
+            schemaVersion = 5,
+            output = file,
+        )
+        wipe()
+
+        val result = repository.restore(ByteArrayInputStream(file.toByteArray()), passphrase)
+
+        assertEquals(5, result.getOrThrow().schemaVersion)
+        assertEquals(before, snapshot())
+        assertNull(db.transactionDao().getById("t1")?.possibleDuplicateOfId)
     }
 
     @Test
