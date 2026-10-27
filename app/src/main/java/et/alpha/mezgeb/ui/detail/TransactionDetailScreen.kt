@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Create
@@ -44,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -224,6 +226,7 @@ private fun ViewMode(
                 DetailRow(
                     label = stringResource(R.string.detail_field_balance),
                     value = et.alpha.mezgeb.util.MoneyFormatter.format(it),
+                    valueIsAmount = true,
                 )
             }
             transaction.note?.let {
@@ -237,10 +240,18 @@ private fun ViewMode(
 
     CategorySection(state = state, onEvent = onEvent)
 
+    // The row is the control, as in Settings (ROADMAP R17). A Switch with its own
+    // click handler is a separate control with no name, read as "switch, off" with
+    // nothing to say what it marks.
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = spacing.touchTarget),
+            .heightIn(min = spacing.touchTarget)
+            .toggleable(
+                value = transaction.isReconciled,
+                role = Role.Switch,
+                onValueChange = { onEvent(TransactionDetailEvent.ToggleReconciled) },
+            ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -248,10 +259,7 @@ private fun ViewMode(
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.weight(1f),
         )
-        Switch(
-            checked = transaction.isReconciled,
-            onCheckedChange = { onEvent(TransactionDetailEvent.ToggleReconciled) },
-        )
+        Switch(checked = transaction.isReconciled, onCheckedChange = null)
     }
 
     OriginalMessageSection(state = state, onEvent = onEvent)
@@ -316,14 +324,20 @@ private fun CategorySection(
             }
         }
         if (state.canCreateCategoryRule) {
+            // The row alone is the control, for the same reason as the Reconciled switch:
+            // a Checkbox with its own handler was a second, nameless target.
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { alwaysApply = !alwaysApply }
-                    .heightIn(min = spacing.touchTarget),
+                    .heightIn(min = spacing.touchTarget)
+                    .toggleable(
+                        value = alwaysApply,
+                        role = Role.Checkbox,
+                        onValueChange = { alwaysApply = it },
+                    ),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Checkbox(checked = alwaysApply, onCheckedChange = { alwaysApply = it })
+                Checkbox(checked = alwaysApply, onCheckedChange = null)
                 Text(
                     text = stringResource(R.string.detail_category_always),
                     style = MaterialTheme.typography.bodyMedium,
@@ -538,7 +552,7 @@ private fun EditMode(
 }
 
 @Composable
-private fun DetailRow(label: String, value: String) {
+private fun DetailRow(label: String, value: String, valueIsAmount: Boolean = false) {
     val spacing = MezgebTheme.spacing
     Column {
         Row(
@@ -553,11 +567,15 @@ private fun DetailRow(label: String, value: String) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
+            // A name or a note may wrap in its share of the row. An amount must not:
+            // at the largest system font a six-figure balance with "ETB" is wider than
+            // that share, and a balance over two lines is misread. So an amount takes
+            // the width it needs, and the label wraps instead (ROADMAP R24).
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1.4f),
+                modifier = if (valueIsAmount) Modifier else Modifier.weight(1.4f),
             )
         }
         HorizontalDivider()

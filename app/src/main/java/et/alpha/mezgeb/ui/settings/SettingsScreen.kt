@@ -11,6 +11,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -117,6 +119,7 @@ fun SettingsRoute(
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     state: SettingsUiState,
@@ -157,7 +160,14 @@ fun SettingsScreen(
                 text = stringResource(R.string.settings_language),
                 style = MaterialTheme.typography.titleSmall,
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
+            // Wraps rather than squeezes. In a plain Row at a large system font,
+            // "Phone language" and "English" took the whole width and the Amharic
+            // chip was laid out 0dp wide: invisible, and it is the way back for
+            // someone who reads only Amharic (ROADMAP R24).
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(spacing.sm),
+            ) {
                 AppLanguage.entries.forEach { language ->
                     FilterChip(
                         selected = state.language == language,

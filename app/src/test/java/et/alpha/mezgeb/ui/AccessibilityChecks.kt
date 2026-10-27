@@ -129,13 +129,15 @@ class AccessibilityChecks(private val compose: ComposeContentTestRule) {
     }
 
     /**
-     * No text on the merged tree may be a sign followed by a digit. The merged tree is
+     * No text on the merged tree may be a signed amount, "+2,450.00". The merged tree is
      * what TalkBack reads. The unmerged tree is the wrong place to look: it still holds
      * the visible "+2,450.00" Text under a MoneyText, whose clearAndSetSemantics drops
      * it from what is spoken.
      */
     fun assertNoSignedAmountIsSpoken() {
-        val signedAmount = Regex("""[+−]\d""")
+        // An amount has two decimals. Without them this also caught "+251900000001",
+        // a phone number in E.164, which TalkBack reads correctly as "plus 2 5 1...".
+        val signedAmount = Regex("""[+−]\d{1,3}(,\d{3})*\.\d\d""")
         val all = compose.onAllNodes(isRoot().not()).fetchSemanticsNodes()
         val offenders = all.flatMap { node ->
             node.config.getOrNull(SemanticsProperties.Text).orEmpty().map { it.text } +

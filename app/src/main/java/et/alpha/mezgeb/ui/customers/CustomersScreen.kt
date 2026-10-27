@@ -3,6 +3,8 @@ package et.alpha.mezgeb.ui.customers
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -163,6 +165,7 @@ fun CustomersScreen(
 }
 
 /** The number a shop owner opens this screen for: how much is out there. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun OutstandingHeader(
     totalMinor: Long,
@@ -180,11 +183,30 @@ private fun OutstandingHeader(
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(
-                text = MoneyFormatter.format(totalMinor),
-                style = MaterialTheme.typography.displaySmall,
-                color = MaterialTheme.colorScheme.onSurface,
+            // The amount and "ETB" as a flow, like Today's headline (ROADMAP R26). As
+            // one string, a six-figure total at the largest system font is wider than
+            // the card and wraps, which can break inside the number. As two Texts,
+            // only "ETB" moves under the amount. Read as one amount, as before.
+            val spokenTotal = stringResource(
+                R.string.amount_content_description,
+                MoneyFormatter.formatUnsigned(totalMinor),
+                MoneyFormatter.DEFAULT_CURRENCY,
             )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                modifier = Modifier.clearAndSetSemantics { contentDescription = spokenTotal },
+            ) {
+                Text(
+                    text = MoneyFormatter.format(totalMinor, currency = null),
+                    style = MaterialTheme.typography.displaySmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = MoneyFormatter.DEFAULT_CURRENCY,
+                    style = MaterialTheme.typography.displaySmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
             Text(
                 text = pluralStringResource(
                     R.plurals.customers_in_debt,
