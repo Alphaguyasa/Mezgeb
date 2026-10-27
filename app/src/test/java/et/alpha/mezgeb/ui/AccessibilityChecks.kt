@@ -129,7 +129,7 @@ class AccessibilityChecks(private val compose: ComposeContentTestRule) {
     }
 
     /**
-     * No text on the merged tree may be a sign followed by a digit. The merged tree is
+     * No text on the merged tree may be a signed amount, "+2,450.00". The merged tree is
      * what TalkBack reads. The unmerged tree is the wrong place to look: it still holds
      * the visible "+2,450.00" Text under a MoneyText, whose clearAndSetSemantics drops
      * it from what is spoken.
