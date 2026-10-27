@@ -75,6 +75,9 @@ can then be added on request.
   (`fdd35e4`, #37) and `v2026-10-26-2` (#41). Eighteen tags are missing now.
 - 2026-10-26 (second run): the same failure (HTTP 403) for `v2026-10-26-3`
   (`1ba07b2`, #43) and `v2026-10-26-4` (`a116a3b`, #44). Twenty tags are missing now.
+- 2026-10-27: the same failure ("remote end hung up", then HTTP 403) for
+  `v2026-10-27-1` (`451baa7`, #46) and `v2026-10-27-2` (`c576084`, #47). Twenty-two
+  tags are missing now.
 - **Effect:** you can still roll back. Every merge is a squash commit on `main` with
   its PR number, and the log lists each one. Only the named tags are missing.
 - **Options:** (a) do nothing (the log stays the rollback list); (b) create the tags
@@ -101,6 +104,9 @@ can then be added on request.
   update, now 26 updates (Gradle 9.8.2, Compose BOM 2026.09.00, Kotlin 2.4.21, KSP
   2.3.12, AGP 9.4.1, Robolectric 4.17). CI is green on it. Open now: #12, #14, #15,
   #22, #40.
+- 2026-10-27: CI now warns that four actions target the deprecated Node.js 20
+  (`checkout@v4`, `setup-java@v4`, `upload-artifact@v4`, `setup-gradle@v4`). #12, #14,
+  #15 and #22 move all four, so answering this also clears that warning.
 - **Until you answer:** the run reviews Dependabot PRs (CI, and the transitive tree
   for a network stack) and reports them, but leaves them open and unmerged.
 - **Options:** (a) yes, Dependabot may appear as the author of its own update commits;

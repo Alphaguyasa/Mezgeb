@@ -12,28 +12,21 @@ several PRs.
 Built from the audit on 2026-10-14: the full code read plus the open items in
 `NOTES.md` § "What is left". Replanned on 2026-10-22, when the open list fell below 5:
 R19 to R22 were added. Replanned again on 2026-10-26: R23 to R26 were added. R27 was found on the second
-2026-10-26 run.
+2026-10-26 run. R28 was found on 2026-10-27.
 
 ## Open
-
-### R27 · P1 · S: The backup file says schema 5 while the database is at 6
-`BackupRepository.SCHEMA_VERSION` is still 5, but `MezgebDatabase` has been at
-version 6 since R5 (PR #6). Its own comment says "bump both together". Today a
-restore still works, because the v6 column (`isPossibleDuplicate`) has a default.
-But a future build that migrates old backups by their version would treat a v6 file
-as v5. Set it to 6, and add a guard test that fails when the two differ (read the
-version from the `@Database` annotation or from the newest file in `app/schemas/`).
-Check that a file written as v5 still restores.
-
-### R24 · P2 · S: Large-text check on the remaining screens
-R20 covered Today, cash entry, Reconcile and the credit statement. Add the ledger, the
-customer list, Reports, Settings, onboarding, the review queue, the transaction detail
-and the dialogs (through `AccessibilityChecks.openDialog`) to `LargeTextTest`.
 
 ### R25 · P2 · S: Large text in Amharic
 Ethiopic labels are often longer than the English ones, and the glyphs are taller.
 Run `LargeTextTest`'s screens with the `am` locale at font scale 2.0
 (`qualifiers = "am-w360dp-h1600dp"`). Fix what wraps badly.
+
+### R28 · P2 · S: The original message row on the transaction detail does not say whether it is open
+The "Original message from …" row expands and collapses the message body, but
+TalkBack hears only its label. The arrow icon has no description and the row has no
+state. Give the row `stateDescription` ("expanded"/"collapsed", in English and
+Amharic) or `Role.Button` with an expand/collapse action, and assert it in
+`TransactionDetailAccessibilityTest`.
 
 ### R10 · P1 · L: Encrypt the database at rest
 **Blocked: see NEEDS_APPROVAL.md A1.** This needs a new native dependency
@@ -63,6 +56,19 @@ picker, so no permission is needed. Tests for the CSV writer, including commas,
 quotes and a line break in a note.
 
 ## Done
+
+- 2026-10-27 · R27: Backup files carry schema 6 (`BackupRepository.SCHEMA_VERSION`
+  was still 5). A test compares it with the version of the database Room builds,
+  and a file written at schema 5 (no `possibleDuplicateOfId`) still restores
+  exactly. PR #46. (Tag `v2026-10-27-1` not pushed: A6.)
+- 2026-10-27 · R24: `LargeTextTest` covers every remaining screen (ledger,
+  customers, Reports, Settings, onboarding, review queue, transaction detail and
+  editor) and seven dialogs. Real fixes: the Amharic language chip in Settings was
+  0dp wide at font scale 1.5 and 2.0 (the row is now a FlowRow). The transaction
+  detail's "Reconciled" switch and "always use this category" checkbox were
+  nameless second controls (the rows are now the toggles). The customer list's
+  outstanding total and the detail's balance no longer wrap at a large font. PR #47.
+  (Tag `v2026-10-27-2` not pushed: A6.)
 
 - 2026-10-26 (second run) · R23: Settings shows "Last backup: <date>" or "never".
   Today shows a card when the ledger has transactions and there has been no backup

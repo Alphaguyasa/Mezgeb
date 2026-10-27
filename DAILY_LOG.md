@@ -5,6 +5,75 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-10-27: Twelfth daily run (scheduled)
+
+**Start.** CI on `main` was green (`3e2cd57`). Model check: the models overview still
+lists Opus 5.5 (`claude-opus-5-5`) as the newest Opus. This run used it, so no switch
+was needed. Fable 5.1 was ignored, as Alpha decided.
+
+**Environment.** Same as before: JDK 21, no Android SDK. No Gradle build ran
+locally. CI judged everything below. A subagent read the failed job's log through
+the GitHub tools (the log storage host is still refused by the proxy).
+
+**R27 (backup schema version), PR #46, merged (`451baa7`).**
+- `BackupRepository.SCHEMA_VERSION` is now 6, the same as `MezgebDatabase`.
+- New tests: the backup version equals the version of the database Room builds from
+  the `@Database` annotation, so the two cannot drift apart unnoticed again; a new
+  backup reports the schema that wrote it; a file written at schema 5, with
+  `possibleDuplicateOfId` stripped from every transaction, restores exactly.
+- Backups written between R5 and today say "5" but hold v6 rows. They restore,
+  because the one v6 column is nullable with a default. Green on the first CI run.
+
+**R24 (large text on the remaining screens), PR #47, merged (`c576084`).**
+- `LargeTextTest` (font scale 1.5 and 2.0) now covers the ledger, the customer list,
+  Reports, Settings, onboarding, the review queue, the transaction detail and its
+  editor. It also covers seven dialogs: delete transaction, archive customer, remove
+  PIN, the closed-period snapshot, add customer, set PIN and restore passphrase.
+- **Real bug, found by CI:** in Settings, "Phone language" and "English" filled the
+  language row at a large font, and the Amharic chip was laid out **0dp wide**. It
+  was invisible, and it is the way back for someone who reads only Amharic. The row is
+  now a FlowRow, so the chips wrap.
+- **Real bug, found while reading the code:** the transaction detail had never been
+  under the accessibility checks. Its "Reconciled" switch and "Always use this
+  category" checkbox each had their own click handler, so each was a second control
+  with no name ("switch, off"), the same defect R17 fixed in Settings. The rows are
+  now the toggles. New `TransactionDetailAccessibilityTest`.
+- Changed before CI could catch them, from the R20/R26 measurements: the customer
+  list's outstanding total is a flow of amount and "ETB" (as `MoneyText` since R26),
+  and the detail's balance row gives the amount the width it needs.
+- The signed-amount check now needs two decimals, so a `+251…` phone number on the
+  detail is not taken for an amount. Every amount the app shows has two decimals.
+- **CI:** 2 runs. The first failed on the Amharic chip (4 tests) and on the phone
+  number (1 test), in both flavors. Fix attempt 1 went green.
+
+**Found.** The "Original message" row on the transaction detail does not say whether
+it is open. Added as R28.
+
+**Tags.** I created `v2026-10-27-1` (#46) and `v2026-10-27-2` (#47) locally. Pushing
+them failed again ("remote end hung up", then HTTP 403) (A6).
+
+**Dependabot.** #12, #14, #15, #22 and #40 are unchanged and still wait on A7. CI now
+warns that `actions/checkout@v4`, `setup-java@v4`, `upload-artifact@v4` and
+`gradle/actions/setup-gradle@v4` target the deprecated Node.js 20. #12, #14, #15 and
+#22 move all four.
+
+**Roadmap.** R27 and R24 are done; R28 is new. 6 items are open, 3 unblocked (R25,
+R28, R22). No replan was needed.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R27: backup files say schema 6, guarded by a test (#46). R24: large-text check on every remaining screen and dialog; the Amharic language chip was invisible at a large font, and two nameless toggles on the transaction detail are fixed (#47) |
+| Merged | #46 yes (`451baa7`), #47 yes (`c576084`). Tags `v2026-10-27-1`/`-2` created but **could not be pushed** (A6) |
+| Failed or blocked | #47 needed 1 of its 2 fix attempts (real bugs found by the new tests). Tag push (A6). No local Gradle |
+| Roadmap | 6 open, 3 unblocked (R25, R28, R22). New: R28 (original message row state). No replan needed |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #22, #40) |
+| Next | R25 (large text in Amharic), then R28 (original message row state) |
+
+---
+
 ## 2026-10-26: Eleventh daily run (scheduled, second run that day)
 
 **Start.** CI on `main` was green (`c962faa`). Model check: the models overview still
