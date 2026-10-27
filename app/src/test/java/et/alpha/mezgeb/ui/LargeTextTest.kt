@@ -7,8 +7,14 @@ import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.paging.PagingData
+import et.alpha.mezgeb.R
 import et.alpha.mezgeb.capture.CaptureHealth
+import et.alpha.mezgeb.capture.sms.SmsImportStatus
+import et.alpha.mezgeb.data.repo.TransactionFilter
 import et.alpha.mezgeb.domain.credit.CustomerCredit
 import et.alpha.mezgeb.domain.model.Channel
 import et.alpha.mezgeb.domain.model.CreditEntry
@@ -18,18 +24,39 @@ import et.alpha.mezgeb.domain.model.Customer
 import et.alpha.mezgeb.domain.model.Direction
 import et.alpha.mezgeb.domain.model.ReconciliationSession
 import et.alpha.mezgeb.domain.model.SessionStatus
+import et.alpha.mezgeb.domain.model.UnmatchedGroup
 import et.alpha.mezgeb.domain.reconcile.GapExplanation
 import et.alpha.mezgeb.domain.reconcile.PeriodReconciliation
+import et.alpha.mezgeb.domain.report.BreakdownSlice
+import et.alpha.mezgeb.domain.report.DailyNet
+import et.alpha.mezgeb.domain.report.Report
+import et.alpha.mezgeb.domain.report.ReportPeriod
 import et.alpha.mezgeb.ui.cash.CashEntryScreen
 import et.alpha.mezgeb.ui.cash.CashEntryUiState
 import et.alpha.mezgeb.ui.common.TransactionUiModel
 import et.alpha.mezgeb.ui.customers.CustomerDetailScreen
 import et.alpha.mezgeb.ui.customers.CustomerDetailUiState
+import et.alpha.mezgeb.ui.customers.CustomersScreen
+import et.alpha.mezgeb.ui.customers.CustomersUiState
+import et.alpha.mezgeb.ui.ledger.DateRange
+import et.alpha.mezgeb.ui.ledger.LedgerItem
+import et.alpha.mezgeb.ui.ledger.LedgerScreen
+import et.alpha.mezgeb.ui.ledger.LedgerUiState
+import et.alpha.mezgeb.ui.onboarding.OnboardingScreen
+import et.alpha.mezgeb.ui.onboarding.OnboardingUiState
 import et.alpha.mezgeb.ui.reconcile.ReconcileScreen
 import et.alpha.mezgeb.ui.reconcile.ReconcileUiState
+import et.alpha.mezgeb.ui.reports.ReportsScreen
+import et.alpha.mezgeb.ui.reports.ReportsUiState
+import et.alpha.mezgeb.ui.review.ReviewScreen
+import et.alpha.mezgeb.ui.review.ReviewUiState
+import et.alpha.mezgeb.ui.settings.SettingsDialog
+import et.alpha.mezgeb.ui.settings.SettingsScreen
+import et.alpha.mezgeb.ui.settings.SettingsUiState
 import et.alpha.mezgeb.ui.today.TodayScreen
 import et.alpha.mezgeb.ui.today.TodayUiState
 import et.alpha.mezgeb.util.MoneyFormatter
+import kotlinx.coroutines.flow.flowOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -41,7 +68,8 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * The screens with the biggest numbers, at the large system font many shop owners
- * use. ROADMAP R20. Each subclass below sets one font scale.
+ * use. ROADMAP R20, extended to every other screen and the dialogs in R24. Each
+ * subclass below sets one font scale.
  *
  * Two things are checked. Every control is still named and at least 48dp each way
  * (the shared [AccessibilityChecks]). And no amount wraps onto a second line or runs
@@ -189,6 +217,278 @@ abstract class LargeTextTest(private val fontScale: Float) {
         assertNoAmountWrapsOrRunsOver()
     }
 
+    // --- The remaining screens and the dialogs (ROADMAP R24) ---------------------------
+
+    @Test
+    fun `the ledger keeps its controls large and its amounts whole`() {
+        val rows = listOf(
+            LedgerItem.Header(AT, inMinor = 12_450_000, outMinor = 1_032_500),
+            LedgerItem.Row(row("1", Direction.IN, 12_450_000, "ABEBE")),
+            LedgerItem.Row(row("2", Direction.OUT, 1_032_500, counterparty = null)),
+        )
+        checks.show {
+            LedgerScreen(
+                state = LedgerUiState(
+                    isLoading = false,
+                    searchQuery = "abe",
+                    dateRange = DateRange.LAST_7_DAYS,
+                    filter = TransactionFilter(direction = Direction.IN, query = "abe"),
+                ),
+                items = flowOf(PagingData.from(rows)),
+                onEvent = {},
+                onOpenTransaction = {},
+            )
+        }
+        // Paging hands the rows over a frame or two after the first composition.
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithText("ABEBE").fetchSemanticsNodes().isNotEmpty()
+        }
+
+        checks.assertControlsAreNamedAndLargeEnough()
+        assertNoAmountWrapsOrRunsOver()
+    }
+
+    /** A six-figure outstanding total, which "ETB" would push past the card's edge. */
+    @Test
+    fun `the customer list keeps its controls large and its balances whole`() {
+        checks.show {
+            CustomersScreen(
+                state = CustomersUiState(
+                    isLoading = false,
+                    customers = listOf(
+                        credit("1", "ABEBE", 12_345_000, days = 41, overdue = true),
+                        credit("2", "CHALTU", 12_500, days = 6, overdue = false),
+                        credit("3", "KEBEDE", -250_000, days = null, overdue = false),
+                    ),
+                    totalOutstandingMinor = 12_357_500,
+                    customersInDebt = 2,
+                    searchQuery = "e",
+                ),
+                onEvent = {},
+                onOpenCustomer = {},
+            )
+        }
+
+        checks.assertControlsAreNamedAndLargeEnough()
+        assertNoAmountWrapsOrRunsOver()
+        assertCurrencyIsWhole()
+    }
+
+    @Test
+    fun `reports keep their controls large and their totals whole`() {
+        checks.show {
+            ReportsScreen(
+                state = ReportsUiState(
+                    isLoading = false,
+                    period = ReportPeriod.WEEK,
+                    report = Report(
+                        periodStart = AT,
+                        periodEnd = AT + 7 * DAY_MS - 1,
+                        totalInMinor = 12_450_000,
+                        totalOutMinor = 13_270_000,
+                        transactionCount = 9,
+                        byChannel = listOf(BreakdownSlice("TELEBIRR", 12_450_000, 1f, 6)),
+                        byCategory = listOf(BreakdownSlice("Sales", 12_450_000, 1f, 6)),
+                        dailyNet = listOf(
+                            DailyNet(AT, 1_245_000),
+                            DailyNet(AT + DAY_MS, -2_065_000),
+                        ),
+                        topDebtors = emptyList(),
+                    ),
+                ),
+                onEvent = {},
+                onExport = {},
+            )
+        }
+
+        checks.assertControlsAreNamedAndLargeEnough()
+        assertNoAmountWrapsOrRunsOver()
+    }
+
+    @Test
+    fun `settings keeps its controls large`() {
+        checks.show { Settings(SettingsUiState(isLockEnabled = true, isBiometricEnabled = true)) }
+
+        checks.assertControlsAreNamedAndLargeEnough()
+    }
+
+    @Test
+    fun `onboarding keeps its controls large`() {
+        checks.show {
+            OnboardingScreen(
+                state = OnboardingUiState(
+                    isLoading = false,
+                    hasNotificationAccess = false,
+                    canImportPastMessages = true,
+                    importStatus = SmsImportStatus.Idle,
+                    showBatteryHint = true,
+                    importPermissionRefused = true,
+                ),
+                onEvent = {},
+                onOpenNotificationSettings = {},
+                onOpenBatterySettings = {},
+                onOpenAppSettings = {},
+                onStartImport = {},
+                onFinish = {},
+            )
+        }
+
+        checks.assertControlsAreNamedAndLargeEnough()
+    }
+
+    @Test
+    fun `the review queue keeps its controls large`() {
+        checks.show {
+            ReviewScreen(
+                state = ReviewUiState(
+                    isLoading = false,
+                    groups = listOf(
+                        UnmatchedGroup("AWASH", 14, AT),
+                        UnmatchedGroup("DASHEN", 2, AT - DAY_MS),
+                    ),
+                ),
+                onEvent = {},
+                onBack = {},
+                onTeachRule = {},
+            )
+        }
+
+        checks.assertControlsAreNamedAndLargeEnough()
+    }
+
+    /** A six-figure balance, which used to get only part of the row's width. */
+    @Test
+    fun `the transaction detail keeps its controls large and its amounts whole`() {
+        checks.show { DetailScreen(busiestTransactionDetail()) }
+
+        checks.assertControlsAreNamedAndLargeEnough()
+        assertNoAmountWrapsOrRunsOver()
+        assertCurrencyIsWhole()
+    }
+
+    @Test
+    fun `the transaction editor keeps its controls large`() {
+        checks.show { DetailScreen(busiestTransactionDetail(editing = true)) }
+
+        checks.assertControlsAreNamedAndLargeEnough()
+    }
+
+    @Test
+    fun `the delete confirmation keeps its controls large`() {
+        checks.show { DetailScreen(busiestTransactionDetail().copy(isConfirmingDelete = true)) }
+
+        compose.onNodeWithText(checks.context.getString(R.string.detail_delete_title))
+            .assertExists()
+        checks.assertControlsAreNamedAndLargeEnough()
+    }
+
+    @Test
+    fun `the archive confirmation keeps its controls large`() {
+        checks.show {
+            CustomerDetailScreen(
+                state = CustomerDetailUiState(
+                    isLoading = false,
+                    credit = credit("1", "ABEBE", 1_245_000, days = 41, overdue = true),
+                    isConfirmingArchive = true,
+                ),
+                onEvent = {},
+                onBack = {},
+                onAddCredit = {},
+                onRecordRepayment = {},
+                onSendReminder = {},
+            )
+        }
+
+        compose.onNodeWithText(checks.context.getString(R.string.credit_archive_title))
+            .assertExists()
+        checks.assertControlsAreNamedAndLargeEnough()
+    }
+
+    @Test
+    fun `the remove PIN confirmation keeps its controls large`() {
+        checks.show {
+            Settings(SettingsUiState(isLockEnabled = true, dialog = SettingsDialog.RemovePin))
+        }
+
+        compose.onNodeWithText(checks.context.getString(R.string.settings_lock_remove_title))
+            .assertExists()
+        checks.assertControlsAreNamedAndLargeEnough()
+    }
+
+    @Test
+    fun `a closed period's snapshot keeps its controls large and its figures whole`() {
+        val closed = SESSION.copy(
+            status = SessionStatus.CLOSED,
+            closedAt = AT + DAY_MS - 1,
+            note = "gave 100 change from my own pocket",
+        )
+        checks.show {
+            ReconcileScreen(
+                state = ReconcileUiState(
+                    isLoading = false,
+                    closedSessions = listOf(closed),
+                    viewingSnapshot = closed,
+                ),
+                onEvent = {},
+                onBack = {},
+                onExplanationTapped = {},
+            )
+        }
+
+        compose.onNodeWithText(checks.context.getString(R.string.reconcile_snapshot_note))
+            .assertExists()
+        checks.assertControlsAreNamedAndLargeEnough()
+        assertNoAmountWrapsOrRunsOver()
+    }
+
+    @Test
+    fun `the add customer dialog keeps its controls large`() {
+        val dialog = checks.openDialog { open ->
+            CustomersScreen(
+                state = CustomersUiState(isLoading = false, isAddingCustomer = open),
+                onEvent = {},
+                onOpenCustomer = {},
+            )
+        }
+
+        checks.assertShows(dialog, checks.context.getString(R.string.customers_add))
+        checks.assertControlsAreNamedAndLargeEnough(dialog)
+    }
+
+    @Test
+    fun `the set PIN dialog keeps its controls large`() {
+        val dialog = checks.openDialog { open ->
+            Settings(SettingsUiState(dialog = if (open) SettingsDialog.SetPin else null))
+        }
+
+        checks.assertShows(dialog, checks.context.getString(R.string.settings_lock_set_title))
+        checks.assertControlsAreNamedAndLargeEnough(dialog)
+    }
+
+    @Test
+    fun `the restore passphrase dialog keeps its controls large`() {
+        val restore = SettingsDialog.RestorePassphrase(uri = "content://backup")
+        val dialog = checks.openDialog { open ->
+            Settings(SettingsUiState(dialog = if (open) restore else null))
+        }
+
+        checks.assertShows(dialog, checks.context.getString(R.string.settings_restore_action))
+        checks.assertControlsAreNamedAndLargeEnough(dialog)
+    }
+
+    @Composable
+    private fun Settings(state: SettingsUiState) {
+        SettingsScreen(
+            state = state,
+            onEvent = {},
+            onBack = {},
+            onBackupConfirmed = {},
+            onRestoreRequested = {},
+            onRestoreConfirmed = { _, _ -> },
+            onLanguageChosen = {},
+        )
+    }
+
     /** Today in its busiest state, with five-figure totals unless told otherwise. */
     @Composable
     private fun Today(totalInMinor: Long = 1_245_000) {
@@ -285,6 +585,29 @@ abstract class LargeTextTest(private val fontScale: Float) {
             "${size.width / density}dp wide in ${layoutInput.constraints.maxWidth / density}dp, " +
             "softWrap=${layoutInput.softWrap}, maxLines=${layoutInput.maxLines}"
     }
+
+    private fun row(id: String, direction: Direction, amountMinor: Long, counterparty: String?) =
+        TransactionUiModel(
+            id = id,
+            direction = direction,
+            amountMinor = amountMinor,
+            channel = if (direction == Direction.IN) Channel.TELEBIRR else Channel.CASH,
+            counterparty = counterparty,
+            occurredAt = AT + 3_600_000L,
+            categoryName = "Sales",
+            isEdited = true,
+            isReconciled = false,
+            isPossibleDuplicate = direction == Direction.OUT,
+        )
+
+    private fun credit(id: String, name: String, balanceMinor: Long, days: Int?, overdue: Boolean) =
+        CustomerCredit(
+            customer = Customer(id, name, phone = null, note = null, createdAt = 0L),
+            balanceMinor = balanceMinor,
+            oldestUnpaidAt = null,
+            daysOutstanding = days,
+            isOverdue = overdue,
+        )
 
     private fun line(id: String, kind: CreditKind, amountMinor: Long, running: Long) =
         CreditStatementLine(
