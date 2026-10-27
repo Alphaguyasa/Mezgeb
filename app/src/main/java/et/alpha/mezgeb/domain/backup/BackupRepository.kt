@@ -106,8 +106,13 @@ class BackupRepository @Inject constructor(
          * Must track `MezgebDatabase`'s version. A backup carries this so a future
          * build can decide whether it understands the file — and, eventually, migrate
          * it. Bump both together.
+         *
+         * It was left at 5 when the database went to 6, so files written between
+         * those two builds say 5 while holding v6 rows. That is harmless only because
+         * the one v6 column is nullable with a default. `BackupRoundTripTest` now
+         * fails when the two numbers drift apart again.
          */
-        const val SCHEMA_VERSION = 5
+        const val SCHEMA_VERSION = 6
     }
 }
 
