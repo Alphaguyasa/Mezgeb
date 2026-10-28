@@ -56,8 +56,9 @@ sealed interface CaptureOutcome {
     data object DeclinedAsNotFinancial : CaptureOutcome
 
     /**
-     * Already captured. Either the content hash collided (tier one) or the parsed
-     * provider transaction id already belonged to a transaction (tier two).
+     * Already captured. Either the content hash collided (tier one), the parsed
+     * provider transaction id already belonged to a transaction (tier two), or this
+     * very message was already resolved.
      */
     data class Duplicate(val tier: DedupTier) : CaptureOutcome
 }
@@ -102,4 +103,11 @@ enum class QueueReason {
 enum class DedupTier {
     PROVIDER_TXN_ID,
     CONTENT_HASH,
+
+    /**
+     * The message itself was already resolved: it has a transaction, or it left the
+     * review queue some other way. A second tap on Save in the rule builder, or the
+     * backlog reprocessor getting there first, ends here.
+     */
+    SAME_MESSAGE,
 }

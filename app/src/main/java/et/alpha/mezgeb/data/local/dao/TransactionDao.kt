@@ -5,10 +5,12 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import et.alpha.mezgeb.data.local.entity.TransactionEntity
 import et.alpha.mezgeb.domain.model.Channel
 import et.alpha.mezgeb.domain.model.Direction
+import et.alpha.mezgeb.domain.model.ParseState
 import kotlinx.coroutines.flow.Flow
 
 data class CategoryTotal(val categoryId: String?, val totalMinor: Long, val transactionCount: Int)
@@ -95,6 +97,28 @@ interface TransactionDao {
 
     @Query("SELECT * FROM transactions WHERE rawMessageId = :rawMessageId")
     suspend fun getByRawMessageId(rawMessageId: String): TransactionEntity?
+
+    /** The same update as `RawMessageDao.markResolved`, here so it can share a transaction. */
+    @Query("UPDATE raw_messages SET parseState = :state, matchedRuleId = :matchedRuleId WHERE id = :id")
+    suspend fun markRawMessageResolved(id: String, state: ParseState, matchedRuleId: String?)
+
+    /**
+     * Writes a message's transaction and marks the message resolved, as one write.
+     *
+     * Two separate writes left a window in which the transaction existed and the
+     * message still read UNMATCHED. Anything that resolved the message in that window
+     * (the backlog reprocessor, a second tap on Save) recorded it again.
+     */
+    @Transaction
+    suspend fun insertAndResolveMessage(
+        transaction: TransactionEntity,
+        rawMessageId: String,
+        state: ParseState,
+        matchedRuleId: String?,
+    ) {
+        insert(transaction)
+        markRawMessageResolved(rawMessageId, state, matchedRuleId)
+    }
 
     /**
      * The ledger's single filtered query. Every filter is nullable and a null means
