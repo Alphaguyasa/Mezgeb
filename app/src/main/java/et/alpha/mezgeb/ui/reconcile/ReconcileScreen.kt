@@ -4,6 +4,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -554,6 +556,7 @@ private fun SnapshotDialog(session: ReconciliationSession, onDismiss: () -> Unit
  * symbol in front of digits, and some speech engines drop the sign altogether, which
  * would make a subtraction sound like an addition.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FigureRow(
     labelRes: Int,
@@ -573,17 +576,21 @@ private fun FigureRow(
         MoneyFormatter.formatUnsigned(shownMinor),
         MoneyFormatter.DEFAULT_CURRENCY,
     )
-    Row(
-        Modifier
+    // A flow: the label and the figure share a line when they fit, and the figure
+    // moves under the label when they do not. A row gave the label only what the
+    // figure left, and at a large font that broke "Payments received" inside a word.
+    // ROADMAP R25.
+    FlowRow(
+        modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = MezgebTheme.spacing.xs)
             .clearAndSetSemantics { contentDescription = spoken },
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
         )
         Text(
             text = MoneyFormatter.format(shownMinor),

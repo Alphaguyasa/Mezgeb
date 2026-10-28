@@ -137,16 +137,19 @@ fun CustomerDetailScreen(
             }
 
             item("actions") {
-                Row(
+                // One above the other, each the full width. Side by side, each had half
+                // the line, and at the largest font "Record payment" broke inside the
+                // word (ROADMAP R25).
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = spacing.screenGutter),
-                    horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                    verticalArrangement = Arrangement.spacedBy(spacing.sm),
                 ) {
                     Button(
                         onClick = onAddCredit,
                         modifier = Modifier
-                            .weight(1f)
+                            .fillMaxWidth()
                             .heightIn(min = spacing.touchTarget),
                     ) {
                         Text(stringResource(R.string.credit_add_sale))
@@ -154,7 +157,7 @@ fun CustomerDetailScreen(
                     OutlinedButton(
                         onClick = onRecordRepayment,
                         modifier = Modifier
-                            .weight(1f)
+                            .fillMaxWidth()
                             .heightIn(min = spacing.touchTarget),
                     ) {
                         Text(stringResource(R.string.credit_record_repayment))

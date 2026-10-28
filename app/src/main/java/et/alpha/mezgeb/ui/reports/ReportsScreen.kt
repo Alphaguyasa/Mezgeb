@@ -11,6 +11,8 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -344,6 +346,7 @@ private fun Summary(report: Report, modifier: Modifier = Modifier) {
  * A label and an amount. [spoken] replaces what TalkBack reads for the amount; the
  * net needs it, because it can go below zero and a minus sign is read as a symbol.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AmountLine(
     labelRes: Int,
@@ -351,12 +354,13 @@ private fun AmountLine(
     emphasise: Boolean = false,
     spoken: String? = null,
 ) {
-    Row(Modifier.fillMaxWidth()) {
+    // A flow, so the amount moves under its label rather than squeezing it: in a
+    // row "Received" broke inside the word at the largest font (ROADMAP R25).
+    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(
             text = stringResource(labelRes),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
         )
         // On a wrapper, as on Today, so the description replaces the Text's own
         // semantics rather than sitting beside them on the same node.
@@ -379,23 +383,31 @@ private fun AmountLine(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun LabelledAmountRow(label: String, amountMinor: Long, trailing: String? = null) {
     val spacing = MezgebTheme.spacing
-    Row(
+    // The same flow as [AmountLine]: a row left "TELEBIRR" 56dp at the largest font.
+    FlowRow(
         Modifier
             .fillMaxWidth()
             .padding(horizontal = spacing.screenGutter, vertical = spacing.md),
-        horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        Text(MoneyFormatter.format(amountMinor), style = MaterialTheme.typography.bodyMedium)
-        if (trailing != null) {
-            Text(
-                text = trailing,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(end = spacing.sm),
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
+            Text(MoneyFormatter.format(amountMinor), style = MaterialTheme.typography.bodyMedium)
+            if (trailing != null) {
+                Text(
+                    text = trailing,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

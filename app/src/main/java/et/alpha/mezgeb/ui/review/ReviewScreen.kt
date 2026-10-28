@@ -3,6 +3,8 @@ package et.alpha.mezgeb.ui.review
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -177,19 +179,23 @@ private fun ReprocessBanner(status: ReprocessStatus) {
  * One sender, one template, one rule to teach. Grouping is what turns "forty
  * problems" into "three".
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SenderGroupRow(group: UnmatchedGroup, onClick: () -> Unit) {
     val spacing = MezgebTheme.spacing
-    Row(
+    // A flow: "Teach" sits at the end of the line when there is room, and moves under
+    // the summary when there is not. In a row it kept its width and squeezed the
+    // summary until "newest" broke inside the word (ROADMAP R25).
+    FlowRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .heightIn(min = spacing.touchTarget)
             .padding(horizontal = spacing.screenGutter, vertical = spacing.md),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(spacing.md),
+        itemVerticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Column(Modifier.weight(1f)) {
+        Column(Modifier.padding(end = spacing.md)) {
             Text(
                 text = group.sender,
                 style = MaterialTheme.typography.titleMedium,
@@ -206,16 +212,18 @@ private fun SenderGroupRow(group: UnmatchedGroup, onClick: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Text(
-            text = stringResource(R.string.review_teach_rule),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.review_teach_rule),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+        }
     }
 }
 

@@ -3,6 +3,8 @@ package et.alpha.mezgeb.ui.common
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -70,6 +72,7 @@ fun Transaction.toUiModel(categoryName: String?): TransactionUiModel = Transacti
  * The amount is the only thing on the right, at the end of the scan path, because it
  * is what the row is read for.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TransactionRow(
     transaction: TransactionUiModel,
@@ -98,9 +101,15 @@ fun TransactionRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            // A flow, not a row: at a large font, and more so in Amharic, the chip, the
+            // time and up to three labels are wider than what the amount leaves of the
+            // line. A row then squeezed the last ones until they broke inside a word,
+            // one or two glyphs a line. A flow moves them to the next line whole.
+            // ROADMAP R25.
+            FlowRow(
+                itemVerticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(spacing.xs),
             ) {
                 ChannelChip(transaction.channel)
                 Text(
@@ -148,6 +157,7 @@ fun TransactionRow(
 }
 
 /** A day separator with that day's in and out subtotals. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DayHeader(
     dayEpochMillis: Long,
@@ -160,35 +170,39 @@ fun DayHeader(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
-        Row(
-            modifier = Modifier.padding(
-                horizontal = spacing.screenGutter,
-                vertical = spacing.sm,
-            ),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+        // Flows within flows. The day keeps the start of the line and the subtotals
+        // the end when all three fit. At a large font the subtotals move under the
+        // day, and the second one under the first. In a row the day was left 31dp and
+        // "Thu, 2 Jul" ran down six lines (ROADMAP R25).
+        FlowRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = spacing.screenGutter, vertical = spacing.sm),
+            itemVerticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
                 text = rememberDayLabel(dayEpochMillis),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
             )
-            if (inMinor > 0) {
-                MoneyText(
-                    amountMinor = inMinor,
-                    direction = Direction.IN,
-                    style = MaterialTheme.typography.labelLarge,
-                    showIcon = false,
-                )
-            }
-            if (outMinor > 0) {
-                MoneyText(
-                    amountMinor = outMinor,
-                    direction = Direction.OUT,
-                    style = MaterialTheme.typography.labelLarge,
-                    showIcon = false,
-                )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                if (inMinor > 0) {
+                    MoneyText(
+                        amountMinor = inMinor,
+                        direction = Direction.IN,
+                        style = MaterialTheme.typography.labelLarge,
+                        showIcon = false,
+                    )
+                }
+                if (outMinor > 0) {
+                    MoneyText(
+                        amountMinor = outMinor,
+                        direction = Direction.OUT,
+                        style = MaterialTheme.typography.labelLarge,
+                        showIcon = false,
+                    )
+                }
             }
         }
     }
