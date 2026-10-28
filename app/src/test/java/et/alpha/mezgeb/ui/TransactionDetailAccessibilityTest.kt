@@ -2,6 +2,11 @@ package et.alpha.mezgeb.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -18,6 +23,7 @@ import et.alpha.mezgeb.domain.model.Transaction
 import et.alpha.mezgeb.ui.detail.TransactionDetailScreen
 import et.alpha.mezgeb.ui.detail.TransactionDetailUiState
 import et.alpha.mezgeb.ui.detail.TransactionEditor
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -32,6 +38,9 @@ import org.robolectric.annotation.Config
  * the same defect R17 fixed in Settings: the "Reconciled" switch and the "always use
  * this category" checkbox each had their own click handler, so each was a second,
  * nameless control beside its label.
+ *
+ * The "Message from …" row opens and closes the original message. Its arrow showed
+ * the state only to the eye; TalkBack heard the label alone (ROADMAP R28).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], qualifiers = "w360dp-h1600dp")
@@ -81,6 +90,37 @@ class TransactionDetailAccessibilityTest {
 
         compose.onNodeWithText(context.getString(R.string.detail_delete_title)).assertExists()
         checks.assertControlsAreNamedAndLargeEnough()
+    }
+
+    @Test
+    fun `the open original message row is a button that says it is shown`() {
+        checks.show { DetailScreen(busiestTransactionDetail()) }
+
+        assertOriginalMessageRow(
+            state = R.string.detail_original_message_expanded,
+            action = R.string.detail_original_message_hide,
+        )
+    }
+
+    @Test
+    fun `the closed original message row is a button that says it is hidden`() {
+        checks.show { DetailScreen(busiestTransactionDetail().copy(isBodyExpanded = false)) }
+
+        assertOriginalMessageRow(
+            state = R.string.detail_original_message_collapsed,
+            action = R.string.detail_original_message_show,
+        )
+    }
+
+    /** One control, read as "Message from 127, hidden, button, double tap to show". */
+    private fun assertOriginalMessageRow(@StringRes state: Int, @StringRes action: Int) {
+        val label = context.getString(R.string.detail_original_message, "127")
+        val rows = compose.onAllNodes(hasText(label) and hasClickAction()).fetchSemanticsNodes()
+        assertEquals("one control is read as \"$label\"", 1, rows.size)
+        val row = rows.single().config
+        assertEquals(context.getString(state), row.getOrNull(SemanticsProperties.StateDescription))
+        assertEquals(Role.Button, row.getOrNull(SemanticsProperties.Role))
+        assertEquals(context.getString(action), row.getOrNull(SemanticsActions.OnClick)?.label)
     }
 
     private fun assertToggleNamed(@StringRes labelRes: Int) {
