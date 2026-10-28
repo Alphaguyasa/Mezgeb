@@ -46,6 +46,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -361,12 +363,32 @@ private fun OriginalMessageSection(
 ) {
     val spacing = MezgebTheme.spacing
     val raw = state.rawMessage ?: return
+    // The arrow says open or closed only to someone who can see it. TalkBack reads
+    // the row as a button with its state, "Message from 127, hidden", and says what a
+    // double tap will do. ROADMAP R28.
+    val stateLabel = stringResource(
+        if (state.isBodyExpanded) {
+            R.string.detail_original_message_expanded
+        } else {
+            R.string.detail_original_message_collapsed
+        },
+    )
+    val actionLabel = stringResource(
+        if (state.isBodyExpanded) {
+            R.string.detail_original_message_hide
+        } else {
+            R.string.detail_original_message_show
+        },
+    )
 
     Column {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onEvent(TransactionDetailEvent.ToggleBody) }
+                .clickable(role = Role.Button, onClickLabel = actionLabel) {
+                    onEvent(TransactionDetailEvent.ToggleBody)
+                }
+                .semantics { stateDescription = stateLabel }
                 .heightIn(min = spacing.touchTarget),
             verticalAlignment = Alignment.CenterVertically,
         ) {

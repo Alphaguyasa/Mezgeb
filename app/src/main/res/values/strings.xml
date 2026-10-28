@@ -152,6 +152,10 @@
     <string name="detail_reconciled">Reconciled</string>
     <!-- 1: sender the message came from -->
     <string name="detail_original_message">Message from %1$s</string>
+    <string name="detail_original_message_expanded">Shown</string>
+    <string name="detail_original_message_collapsed">Hidden</string>
+    <string name="detail_original_message_show">Show the message</string>
+    <string name="detail_original_message_hide">Hide the message</string>
     <string name="detail_amount_invalid">Enter an amount greater than zero</string>
     <string name="detail_delete">Delete</string>
     <string name="detail_delete_title">Delete this transaction?</string>

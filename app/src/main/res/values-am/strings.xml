@@ -139,6 +139,10 @@
     <string name="detail_category_always">ለዚህ ስም ሁልጊዜ ይህን ምድብ ተጠቀም</string>
     <string name="detail_reconciled">የተስተካከለ</string>
     <string name="detail_original_message">ከ%1$s የደረሰ መልእክት</string>
+    <string name="detail_original_message_expanded">ይታያል</string>
+    <string name="detail_original_message_collapsed">ተደብቋል</string>
+    <string name="detail_original_message_show">መልእክቱን አሳይ</string>
+    <string name="detail_original_message_hide">መልእክቱን ደብቅ</string>
     <string name="detail_amount_invalid">ከዜሮ የሚበልጥ መጠን ያስገቡ</string>
     <string name="detail_delete">ሰርዝ</string>
     <string name="detail_delete_title">ይህ ግብይት ይሰረዝ?</string>
