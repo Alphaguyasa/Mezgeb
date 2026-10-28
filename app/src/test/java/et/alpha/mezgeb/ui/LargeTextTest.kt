@@ -82,11 +82,19 @@ import org.robolectric.annotation.GraphicsMode
  * legacy graphics stub out text measurement, and then nothing would ever wrap. The
  * first test checks both the scale and the measurement, so a broken setup fails
  * loudly instead of passing everything.
+ *
+ * ROADMAP R25 adds a third check and an Amharic run. No word may break across two
+ * lines: a label squeezed narrower than its longest word ends up one or two glyphs a
+ * line, which reads as nothing at all. Ethiopic labels are often longer than the
+ * English ones and their glyphs are wider, so the Amharic run is where that shows.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [34], qualifiers = "w360dp-h1600dp")
-abstract class LargeTextTest(private val fontScale: Float) {
+abstract class LargeTextTest(
+    private val fontScale: Float,
+    private val amharic: Boolean = false,
+) {
 
     @get:Rule
     val compose = createComposeRule()
@@ -109,6 +117,17 @@ abstract class LargeTextTest(private val fontScale: Float) {
             "text is not measured with a real font: ${headline.describe()}",
             headline.size.width / density > headline.layoutInput.text.length * MIN_GLYPH_DP,
         )
+        if (amharic) {
+            // The run really is in Amharic, and Ethiopic is drawn with the app's own
+            // Noto Sans Ethiopic rather than measured as empty boxes or not at all.
+            val label = textLayouts().firstOrNull { ETHIOPIC.containsMatchIn(it.layoutInput.text) }
+            assertTrue("no Ethiopic text on the screen; is the locale am?", label != null)
+            val ethiopicGlyphs = ETHIOPIC.findAll(label!!.layoutInput.text).count()
+            assertTrue(
+                "Ethiopic is not measured with a real font: ${label.describe()}",
+                label.size.width / density > ethiopicGlyphs * MIN_GLYPH_DP,
+            )
+        }
     }
 
     @Test
@@ -117,6 +136,7 @@ abstract class LargeTextTest(private val fontScale: Float) {
 
         checks.assertControlsAreNamedAndLargeEnough()
         assertNoAmountWrapsOrRunsOver()
+        assertNoWordIsBroken()
     }
 
     /**
@@ -152,6 +172,7 @@ abstract class LargeTextTest(private val fontScale: Float) {
 
         checks.assertControlsAreNamedAndLargeEnough()
         assertNoAmountWrapsOrRunsOver()
+        assertNoWordIsBroken()
     }
 
     @Test
@@ -184,6 +205,7 @@ abstract class LargeTextTest(private val fontScale: Float) {
 
         checks.assertControlsAreNamedAndLargeEnough()
         assertNoAmountWrapsOrRunsOver()
+        assertNoWordIsBroken()
     }
 
     @Test
@@ -215,6 +237,7 @@ abstract class LargeTextTest(private val fontScale: Float) {
 
         checks.assertControlsAreNamedAndLargeEnough()
         assertNoAmountWrapsOrRunsOver()
+        assertNoWordIsBroken()
     }
 
     // --- The remaining screens and the dialogs (ROADMAP R24) ---------------------------
@@ -246,6 +269,7 @@ abstract class LargeTextTest(private val fontScale: Float) {
 
         checks.assertControlsAreNamedAndLargeEnough()
         assertNoAmountWrapsOrRunsOver()
+        assertNoWordIsBroken()
     }
 
     /** A six-figure outstanding total, which "ETB" would push past the card's edge. */
@@ -272,6 +296,7 @@ abstract class LargeTextTest(private val fontScale: Float) {
         checks.assertControlsAreNamedAndLargeEnough()
         assertNoAmountWrapsOrRunsOver()
         assertCurrencyIsWhole()
+        assertNoWordIsBroken()
     }
 
     @Test
@@ -303,6 +328,7 @@ abstract class LargeTextTest(private val fontScale: Float) {
 
         checks.assertControlsAreNamedAndLargeEnough()
         assertNoAmountWrapsOrRunsOver()
+        assertNoWordIsBroken()
     }
 
     @Test
@@ -310,6 +336,7 @@ abstract class LargeTextTest(private val fontScale: Float) {
         checks.show { Settings(SettingsUiState(isLockEnabled = true, isBiometricEnabled = true)) }
 
         checks.assertControlsAreNamedAndLargeEnough()
+        assertNoWordIsBroken()
     }
 
     @Test
@@ -334,6 +361,7 @@ abstract class LargeTextTest(private val fontScale: Float) {
         }
 
         checks.assertControlsAreNamedAndLargeEnough()
+        assertNoWordIsBroken()
     }
 
     @Test
@@ -354,6 +382,7 @@ abstract class LargeTextTest(private val fontScale: Float) {
         }
 
         checks.assertControlsAreNamedAndLargeEnough()
+        assertNoWordIsBroken()
     }
 
     /** A six-figure balance, which used to get only part of the row's width. */
@@ -364,6 +393,7 @@ abstract class LargeTextTest(private val fontScale: Float) {
         checks.assertControlsAreNamedAndLargeEnough()
         assertNoAmountWrapsOrRunsOver()
         assertCurrencyIsWhole()
+        assertNoWordIsBroken()
     }
 
     @Test
@@ -371,6 +401,7 @@ abstract class LargeTextTest(private val fontScale: Float) {
         checks.show { DetailScreen(busiestTransactionDetail(editing = true)) }
 
         checks.assertControlsAreNamedAndLargeEnough()
+        assertNoWordIsBroken()
     }
 
     @Test
@@ -380,6 +411,7 @@ abstract class LargeTextTest(private val fontScale: Float) {
         compose.onNodeWithText(checks.context.getString(R.string.detail_delete_title))
             .assertExists()
         checks.assertControlsAreNamedAndLargeEnough()
+        assertNoWordIsBroken()
     }
 
     @Test
@@ -402,6 +434,7 @@ abstract class LargeTextTest(private val fontScale: Float) {
         compose.onNodeWithText(checks.context.getString(R.string.credit_archive_title))
             .assertExists()
         checks.assertControlsAreNamedAndLargeEnough()
+        assertNoWordIsBroken()
     }
 
     @Test
@@ -413,6 +446,7 @@ abstract class LargeTextTest(private val fontScale: Float) {
         compose.onNodeWithText(checks.context.getString(R.string.settings_lock_remove_title))
             .assertExists()
         checks.assertControlsAreNamedAndLargeEnough()
+        assertNoWordIsBroken()
     }
 
     @Test
@@ -439,6 +473,7 @@ abstract class LargeTextTest(private val fontScale: Float) {
             .assertExists()
         checks.assertControlsAreNamedAndLargeEnough()
         assertNoAmountWrapsOrRunsOver()
+        assertNoWordIsBroken()
     }
 
     @Test
@@ -544,15 +579,37 @@ abstract class LargeTextTest(private val fontScale: Float) {
         )
     }
 
+    /**
+     * Every line of every visible Text ends at a space, a hyphen or a slash, never inside
+     * a word. Android breaks a line inside a word only when the word alone is wider than
+     * its box, so a broken word means the box was squeezed: "ጥሬ ገን" over "ዘብ", or a
+     * label one glyph wide. Amounts have their own, stricter check above.
+     */
+    private fun assertNoWordIsBroken() {
+        val texts = textLayouts()
+        assertTrue("no text found on the screen", texts.isNotEmpty())
+        val broken = texts.filter { it.breaksInsideAWord() }
+        assertTrue(
+            "at font scale $fontScale${if (amharic) " in Amharic" else ""} these texts " +
+                "break inside a word:\n" + broken.joinToString(separator = "\n") { it.describe() },
+            broken.isEmpty(),
+        )
+    }
+
+    private fun TextLayoutResult.breaksInsideAWord(): Boolean {
+        val text = layoutInput.text.text
+        return (1 until lineCount).any { line ->
+            val start = getLineStart(line)
+            start in 1 until text.length &&
+                !text[start - 1].isWhitespace() &&
+                !text[start].isWhitespace() &&
+                text[start - 1] !in BREAKS_AFTER
+        }
+    }
+
     /** "ETB" may move to a line of its own, but never split across two. */
     private fun assertCurrencyIsWhole() {
-        val currencies = compose
-            .onAllNodes(
-                SemanticsMatcher.keyIsDefined(SemanticsActions.GetTextLayoutResult),
-                useUnmergedTree = true,
-            )
-            .fetchSemanticsNodes()
-            .mapNotNull { it.textLayout() }
+        val currencies = textLayouts()
             .filter { it.layoutInput.text.text.trim() == MoneyFormatter.DEFAULT_CURRENCY }
         assertTrue("no currency found on the screen", currencies.isNotEmpty())
         val broken = currencies.filter { it.lineCount > 1 }
@@ -564,14 +621,17 @@ abstract class LargeTextTest(private val fontScale: Float) {
     }
 
     /** The layout of every visible Text that is an amount and nothing else. */
-    private fun amountLayouts(): List<TextLayoutResult> = compose
+    private fun amountLayouts(): List<TextLayoutResult> =
+        textLayouts().filter { AMOUNT.matches(it.layoutInput.text.text.trim()) }
+
+    /** The layout of every visible Text on the screen. */
+    private fun textLayouts(): List<TextLayoutResult> = compose
         .onAllNodes(
             SemanticsMatcher.keyIsDefined(SemanticsActions.GetTextLayoutResult),
             useUnmergedTree = true,
         )
         .fetchSemanticsNodes()
         .mapNotNull { it.textLayout() }
-        .filter { AMOUNT.matches(it.layoutInput.text.text.trim()) }
 
     private fun SemanticsNode.textLayout(): TextLayoutResult? {
         val results = mutableListOf<TextLayoutResult>()
@@ -633,6 +693,16 @@ abstract class LargeTextTest(private val fontScale: Float) {
         /** "2,450.00", "+2,450.00", "−32,500.00 ETB": an amount on its own. */
         val AMOUNT = Regex("""[+−-]?\d{1,3}(,\d{3})*\.\d\d( [A-Z]{3})?""")
 
+        /** The Ethiopic block, U+1200 to U+137F. */
+        val ETHIOPIC = Regex("[\u1200-\u137F]")
+
+        /**
+         * Where a line may end without breaking a word: after a hyphen, a dash or a
+         * slash, or after the Ethiopic wordspace "፡", which some texts still use
+         * between words in place of a space.
+         */
+        val BREAKS_AFTER = setOf('-', '–', '—', '/', '\u1361')
+
         val SESSION = ReconciliationSession(
             id = "open",
             periodStart = AT,
@@ -658,3 +728,10 @@ class LargeTextAt150Test : LargeTextTest(fontScale = 1.5f)
 /** The largest font Android offers since version 14. */
 @Config(fontScale = 2.0f)
 class LargeTextAt200Test : LargeTextTest(fontScale = 2.0f)
+
+/**
+ * The same screens in Amharic at the largest font (ROADMAP R25). The qualifiers
+ * replace the base class's, so the screen size is repeated with the locale in front.
+ */
+@Config(fontScale = 2.0f, qualifiers = "am-w360dp-h1600dp")
+class LargeTextAmharicAt200Test : LargeTextTest(fontScale = 2.0f, amharic = true)

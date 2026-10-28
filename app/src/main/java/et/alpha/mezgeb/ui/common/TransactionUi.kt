@@ -3,6 +3,8 @@ package et.alpha.mezgeb.ui.common
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -70,6 +72,7 @@ fun Transaction.toUiModel(categoryName: String?): TransactionUiModel = Transacti
  * The amount is the only thing on the right, at the end of the scan path, because it
  * is what the row is read for.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TransactionRow(
     transaction: TransactionUiModel,
@@ -98,9 +101,15 @@ fun TransactionRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            // A flow, not a row: at a large font, and more so in Amharic, the chip, the
+            // time and up to three labels are wider than what the amount leaves of the
+            // line. A row then squeezed the last ones until they broke inside a word,
+            // one or two glyphs a line. A flow moves them to the next line whole.
+            // ROADMAP R25.
+            FlowRow(
+                itemVerticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(spacing.xs),
             ) {
                 ChannelChip(transaction.channel)
                 Text(
