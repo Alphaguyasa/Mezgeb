@@ -40,7 +40,7 @@ import et.alpha.mezgeb.domain.model.Direction as DomainDirection
  *                        │
  *                     looks like a row already there? ─► flag it, but still record it
  *                        │
- *                     insert Transaction, apply category rules, mark PARSED
+ *                     insert Transaction and mark PARSED (one write), apply category rules
  * ```
  *
  * Notification capture and inbox import both come through here, so there is exactly
@@ -221,6 +221,12 @@ class CaptureCoordinator @Inject constructor(
     ): CaptureOutcome = mutex.withLock {
         val message = transactions.getRawMessage(rawMessageId)
             ?: return@withLock CaptureOutcome.Duplicate(DedupTier.CONTENT_HASH)
+        // Only a message still in the review queue can be resolved. One that was parsed,
+        // ignored, marked a duplicate or resolved by hand already, is not the user's to
+        // record a second time; the screen that offered it was showing an old state.
+        if (message.parseState != ParseState.UNMATCHED) {
+            return@withLock CaptureOutcome.Duplicate(DedupTier.SAME_MESSAGE)
+        }
 
         record(
             rawMessageId = rawMessageId,
@@ -238,6 +244,16 @@ class CaptureCoordinator @Inject constructor(
         ruleId: String?,
         resolvedState: ParseState = ParseState.PARSED,
     ): CaptureOutcome {
+        // One message, one transaction. With no provider reference, nothing below
+        // would stop a message that already has a transaction from getting another;
+        // the lookalike check would only flag it. A message found here still reading
+        // UNMATCHED (an older build wrote the two halves separately) is taken out of
+        // the review queue, since its payment is already in the ledger.
+        if (transactions.getByRawMessageId(rawMessageId) != null) {
+            transactions.markRawMessageResolved(rawMessageId, resolvedState, ruleId)
+            return CaptureOutcome.Duplicate(DedupTier.SAME_MESSAGE)
+        }
+
         // Tier two. The provider's own transaction id is authoritative: when the
         // notification and the inbox render the same payment differently enough to
         // survive the content hash, this is what catches it. Scoped to the channel,
@@ -271,11 +287,14 @@ class CaptureCoordinator @Inject constructor(
         )
 
         val transactionId = ids.newId()
-        transactions.insert(
-            fields.toTransaction(transactionId, rawMessageId, body)
+        // One write, so the message never reads UNMATCHED while its transaction exists.
+        transactions.insertForMessage(
+            transaction = fields.toTransaction(transactionId, rawMessageId, body)
                 .copy(possibleDuplicateOfId = lookalike?.id),
+            rawMessageId = rawMessageId,
+            state = resolvedState,
+            matchedRuleId = ruleId,
         )
-        transactions.markRawMessageResolved(rawMessageId, resolvedState, ruleId)
         ruleId?.let { rules.recordParserRuleMatch(it) }
         return CaptureOutcome.Recorded(rawMessageId, transactionId)
     }

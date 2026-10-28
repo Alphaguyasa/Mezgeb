@@ -145,6 +145,23 @@ class TransactionRepository @Inject constructor(
 
     suspend fun insert(transaction: Transaction) = transactionDao.insert(transaction.toEntity())
 
+    /** The transaction a message became, if it became one. */
+    suspend fun getByRawMessageId(rawMessageId: String): Transaction? =
+        transactionDao.getByRawMessageId(rawMessageId)?.toDomain()
+
+    /** Inserts a message's transaction and marks the message resolved, atomically. */
+    suspend fun insertForMessage(
+        transaction: Transaction,
+        rawMessageId: String,
+        state: ParseState,
+        matchedRuleId: String?,
+    ) = transactionDao.insertAndResolveMessage(
+        transaction.toEntity(),
+        rawMessageId,
+        state,
+        matchedRuleId,
+    )
+
     suspend fun update(transaction: Transaction) = transactionDao.update(transaction.toEntity())
 
     suspend fun softDelete(id: String, now: Long) = transactionDao.softDelete(id, now)

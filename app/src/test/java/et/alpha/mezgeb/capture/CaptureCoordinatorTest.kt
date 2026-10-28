@@ -16,6 +16,7 @@ import et.alpha.mezgeb.domain.model.ParseState
 import et.alpha.mezgeb.domain.model.RawMessage
 import et.alpha.mezgeb.parser.MessageParser
 import et.alpha.mezgeb.parser.model.Channel
+import et.alpha.mezgeb.parser.model.ParsedFields
 import et.alpha.mezgeb.parser.model.SemanticField
 import et.alpha.mezgeb.parser.rule.DirectionStrategy
 import et.alpha.mezgeb.parser.rule.ParserRule
@@ -34,6 +35,7 @@ import org.junit.rules.TemporaryFolder
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import et.alpha.mezgeb.parser.model.Direction as ParserDirection
 
 /**
  * The dedup tests are the point of this file.
@@ -464,7 +466,90 @@ class CaptureCoordinatorTest : DatabaseTest() {
         assertNull(settings.observeLastCaptureAt().first())
     }
 
+    // --- One message, one transaction (R30) -------------------------------------------
+
+    @Test
+    fun `resolving the same message by hand twice records it once`() = runTest {
+        // A double tap on Save in the rule builder. The message has no reference, so
+        // tier two cannot catch the second call; only the message's own state can.
+        val queued = coordinator.capture(
+            notification(UNREADABLE_CBE, sender = "CBE"),
+        ) as CaptureOutcome.Queued
+
+        val first = coordinator.resolveManually(queued.rawMessageId, handTaggedFields())
+        val second = coordinator.resolveManually(queued.rawMessageId, handTaggedFields())
+
+        assertTrue(first is CaptureOutcome.Recorded)
+        assertEquals(CaptureOutcome.Duplicate(DedupTier.SAME_MESSAGE), second)
+        assertEquals(1, allTransactions().size)
+        assertEquals(
+            ParseState.RESOLVED_MANUALLY,
+            transactions.getRawMessage(queued.rawMessageId)?.parseState,
+        )
+    }
+
+    @Test
+    fun `a message the parser already recorded cannot be resolved by hand again`() = runTest {
+        // The rule builder was opened on the message, and the backlog reprocessor
+        // recorded it before the user tapped Save.
+        val recorded = coordinator.capture(
+            notification(CBE_CREDIT, sender = "CBE"),
+        ) as CaptureOutcome.Recorded
+
+        val again = coordinator.resolveManually(recorded.rawMessageId, handTaggedFields())
+
+        assertEquals(CaptureOutcome.Duplicate(DedupTier.SAME_MESSAGE), again)
+        assertEquals(1, allTransactions().size)
+        assertEquals(
+            ParseState.PARSED,
+            transactions.getRawMessage(recorded.rawMessageId)?.parseState,
+        )
+    }
+
+    @Test
+    fun `a message that already has a transaction is not recorded again by a re-parse`() =
+        runTest {
+            // The state a crash between the two old writes could leave behind: the
+            // transaction exists and the message still reads UNMATCHED.
+            val rawMessageId = (
+                coordinator.capture(
+                    notification(CBE_CREDIT, sender = "CBE"),
+                ) as CaptureOutcome.Recorded
+                ).rawMessageId
+            db.rawMessageDao().markResolved(rawMessageId, ParseState.UNMATCHED, null)
+
+            val summary = coordinator.reparseUnmatched()
+
+            assertEquals(0, summary.recorded)
+            assertEquals(1, allTransactions().size)
+            // And it leaves the review queue: it is not waiting for anyone.
+            assertEquals(ParseState.PARSED, transactions.getRawMessage(rawMessageId)?.parseState)
+        }
+
+    @Test
+    fun `recording a message marks it resolved in the same write`() = runTest {
+        val recorded = coordinator.capture(
+            notification(CBE_CREDIT, sender = "CBE"),
+        ) as CaptureOutcome.Recorded
+
+        val message = transactions.getRawMessage(recorded.rawMessageId)
+        assertEquals(ParseState.PARSED, message?.parseState)
+        assertEquals("cbe_credited", message?.matchedRuleId)
+        assertEquals(
+            recorded.transactionId,
+            transactions.getByRawMessageId(recorded.rawMessageId)?.id,
+        )
+    }
+
     // --- Fixtures --------------------------------------------------------------------
+
+    /** What the rule builder hands over when the user tags a message's fields by hand. */
+    private fun handTaggedFields() = ParsedFields(
+        direction = ParserDirection.IN,
+        amountMinor = 12_000,
+        channel = Channel.BANK,
+        occurredAt = NOW,
+    )
 
     private suspend fun allTransactions() = transactions.listTransactions(TransactionFilter())
 
@@ -506,6 +591,9 @@ class CaptureCoordinatorTest : DatabaseTest() {
 
         /** How the messaging app's notification can render [CBE_CREDIT]: trimmed. */
         const val CBE_CREDIT_SHORT = "Your account has been credited with ETB 450.00 by transfer."
+
+        /** From a financial sender, but no test rule reads it, so it waits for review. */
+        const val UNREADABLE_CBE = "A transfer of ETB 120.00 to your account is pending."
 
         const val CBE_CREDIT_LATER =
             "Your account has been credited with ETB 450.00 on 02/07/2026 at 16:02."
