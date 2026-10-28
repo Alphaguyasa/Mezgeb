@@ -3,6 +3,7 @@ package et.alpha.mezgeb.ui.reconcile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import et.alpha.mezgeb.data.repo.LedgerChanges
 import et.alpha.mezgeb.data.repo.ReconciliationRepository
 import et.alpha.mezgeb.domain.model.ReconciliationSession
 import et.alpha.mezgeb.domain.model.SessionStatus
@@ -12,10 +13,13 @@ import et.alpha.mezgeb.parser.normalize.AmountNormalizer
 import et.alpha.mezgeb.util.IdGenerator
 import et.alpha.mezgeb.util.MezgebDates
 import et.alpha.mezgeb.util.MoneyFormatter
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -81,13 +85,15 @@ sealed interface ReconcileEvent {
  * Reconciliation: what the shop thinks it took, against what the app recorded.
  *
  * The recomputation is deliberately eager — every figure is recalculated whenever the
- * open session changes, rather than cached — because the whole value of the screen is
- * that the number is current. A stale gap is worse than no gap.
+ * open session or the ledger changes, rather than cached — because the whole value of
+ * the screen is that the number is current. A stale gap is worse than no gap. Closing
+ * computes the figures once more, so the snapshot never rests on what was last shown.
  */
 @HiltViewModel
 class ReconcileViewModel @Inject constructor(
     private val sessions: ReconciliationRepository,
     private val reconcile: ReconcilePeriodUseCase,
+    private val ledgerChanges: LedgerChanges,
     private val ids: IdGenerator,
     private val clock: Clock,
     private val zone: ZoneId,
@@ -96,17 +102,29 @@ class ReconcileViewModel @Inject constructor(
     private val local = MutableStateFlow(LocalState())
     private val recomputes = MutableStateFlow(0)
 
-    val state: StateFlow<ReconcileUiState> = combine(
+    /**
+     * The open session and its figures, recomputed when the session changes, when
+     * anything the figures read is written (a payment captured while this screen is
+     * open), or on request. Local UI state is deliberately not a trigger: typing a note
+     * or an expected total must not re-run several queries per keystroke.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val computed: Flow<Computed> = combine(
         sessions.observeOpenSession(),
+        ledgerChanges.observe(),
+        recomputes,
+    ) { open, _, _ -> open }
+        .mapLatest { open ->
+            // A period with no session has nothing to reconcile; the picker is shown
+            // instead, so there is nothing to compute either.
+            Computed(open, open?.let { figuresFor(it) })
+        }
+
+    val state: StateFlow<ReconcileUiState> = combine(
+        computed,
         sessions.observeClosedSessions(),
         local,
-        recomputes,
-    ) { open, closed, localState, _ ->
-        // A period with no session has nothing to reconcile; the picker is shown
-        // instead, so there is nothing to compute either.
-        val figures = open?.let {
-            reconcile(it.periodStart, it.periodEnd, openedAt = it.openedAt)
-        }
+    ) { (open, figures), closed, localState ->
         ReconcileUiState(
             isLoading = false,
             openSession = open,
@@ -216,13 +234,23 @@ class ReconcileViewModel @Inject constructor(
      * saved where the owner can no longer see it.
      */
     private fun closePeriod() {
-        val open = state.value.openSession ?: return
-        val figures = state.value.reconciliation ?: return
-        val note = local.value.noteInput.trim()
-            .takeIf { it.isNotEmpty() && state.value.canAddNote }
+        if (local.value.isBusy) return
+        val shown = state.value.openSession ?: return
+        val typedNote = local.value.noteInput.trim()
         local.update { it.copy(isBusy = true) }
 
         viewModelScope.launch {
+            // The figures are computed again here rather than taken from the screen.
+            // What the screen shows can lag a payment captured a moment ago, and a
+            // snapshot saved from it could close a short period as balanced.
+            val open = sessions.getOpenSession()?.takeIf { it.id == shown.id }
+            val figures = open?.let { figuresFor(it) }
+            if (open == null || figures == null || figures.gapMinor == null) {
+                local.update { it.copy(isBusy = false) }
+                return@launch
+            }
+            val note = typedNote.takeIf { it.isNotEmpty() && !figures.isBalanced }
+
             sessions.closeSession(
                 open.copy(
                     expectedTotalMinor = figures.expectedTotalMinor,
@@ -247,6 +275,9 @@ class ReconcileViewModel @Inject constructor(
         }
     }
 
+    private suspend fun figuresFor(session: ReconciliationSession): PeriodReconciliation =
+        reconcile(session.periodStart, session.periodEnd, openedAt = session.openedAt)
+
     private fun rangeFor(choice: PeriodChoice, custom: LongRange?): LongRange? {
         val now = clock.millis()
         return when (choice) {
@@ -260,6 +291,11 @@ class ReconcileViewModel @Inject constructor(
             PeriodChoice.CUSTOM -> custom
         }
     }
+
+    private data class Computed(
+        val openSession: ReconciliationSession?,
+        val reconciliation: PeriodReconciliation?,
+    )
 
     /** Null [expectedInput] means "show whatever the session holds". */
     private data class LocalState(

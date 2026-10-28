@@ -5,11 +5,13 @@ import app.cash.turbine.test
 import et.alpha.mezgeb.data.local.DatabaseTest
 import et.alpha.mezgeb.data.local.transaction
 import et.alpha.mezgeb.data.repo.CustomerRepository
+import et.alpha.mezgeb.data.repo.LedgerChanges
 import et.alpha.mezgeb.data.repo.ReconciliationRepository
 import et.alpha.mezgeb.data.repo.TransactionRepository
 import et.alpha.mezgeb.domain.model.Channel
 import et.alpha.mezgeb.domain.model.Direction
 import et.alpha.mezgeb.domain.model.SessionStatus
+import et.alpha.mezgeb.domain.reconcile.ExpectedSalesProvider
 import et.alpha.mezgeb.domain.reconcile.GapExplanation
 import et.alpha.mezgeb.domain.reconcile.ManualEntryExpectedSalesProvider
 import et.alpha.mezgeb.domain.reconcile.ReconcilePeriodUseCase
@@ -45,6 +47,7 @@ class ReconcileViewModelTest : DatabaseTest() {
 
     private lateinit var sessions: ReconciliationRepository
     private lateinit var transactions: TransactionRepository
+    private lateinit var countingExpectedSales: CountingExpectedSales
     private lateinit var viewModel: ReconcileViewModel
 
     @Before
@@ -52,13 +55,15 @@ class ReconcileViewModelTest : DatabaseTest() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         sessions = ReconciliationRepository(db.reconciliationSessionDao())
         transactions = TransactionRepository(db.transactionDao(), db.rawMessageDao())
+        countingExpectedSales = CountingExpectedSales(ManualEntryExpectedSalesProvider(sessions))
         viewModel = ReconcileViewModel(
             sessions = sessions,
             reconcile = ReconcilePeriodUseCase(
                 transactions = transactions,
                 customers = CustomerRepository(db.customerDao(), db.creditEntryDao()),
-                expectedSales = ManualEntryExpectedSalesProvider(sessions),
+                expectedSales = countingExpectedSales,
             ),
+            ledgerChanges = LedgerChanges(db),
             // Sequential, not fixed: one test opens a second period after closing the
             // first, and two sessions cannot share a primary key.
             ids = object : IdGenerator {
@@ -322,7 +327,108 @@ class ReconcileViewModelTest : DatabaseTest() {
         }
     }
 
+    // --- Fresh figures (R29) --------------------------------------------------------------
+
+    @Test
+    fun `a payment captured while the period is open moves the gap`() = runTest {
+        seedToday(capturedInMinor = 20_000, cashMinor = 10_000)
+        viewModel.state.test {
+            awaitItemWhere { !it.isLoading }
+            viewModel.onEvent(ReconcileEvent.OpenPeriod)
+            awaitItemWhere { it.hasOpenPeriod }
+
+            viewModel.onEvent(ReconcileEvent.ExpectedChanged("300.00"))
+            viewModel.onEvent(ReconcileEvent.SaveExpected)
+            awaitItemWhere { it.isBalanced }
+
+            captureLatePayment(5_000)
+
+            val state = awaitItemWhere { it.reconciliation?.capturedInMinor == 25_000L }
+            assertEquals(-5_000L, state.reconciliation?.gapMinor)
+            assertFalse(state.isBalanced)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `closing right after a payment is captured snapshots that payment`() = runTest {
+        // The screen showed a balanced period. A payment lands, and the owner taps
+        // Close before anything else happens. The closed row must not say balanced.
+        seedToday(capturedInMinor = 20_000, cashMinor = 10_000)
+        viewModel.state.test {
+            awaitItemWhere { !it.isLoading }
+            viewModel.onEvent(ReconcileEvent.OpenPeriod)
+            awaitItemWhere { it.hasOpenPeriod }
+
+            viewModel.onEvent(ReconcileEvent.ExpectedChanged("300.00"))
+            viewModel.onEvent(ReconcileEvent.SaveExpected)
+            awaitItemWhere { it.isBalanced }
+
+            captureLatePayment(5_000)
+            viewModel.onEvent(ReconcileEvent.ClosePeriod)
+            awaitItemWhere { it.closedSessions.isNotEmpty() }
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        val closed = firstClosedSession()
+        assertEquals(25_000L, closed.capturedInMinor)
+        assertEquals(30_000L, closed.expectedTotalMinor)
+        val accountedFor = closed.capturedInMinor + closed.cashRecordedMinor +
+            closed.creditGivenMinor - closed.creditRepaidMinor
+        assertEquals(35_000L, accountedFor)
+    }
+
+    @Test
+    fun `typing a note or an expected total does not recompute the figures`() = runTest {
+        seedToday(capturedInMinor = 20_000, cashMinor = 10_000)
+        viewModel.state.test {
+            awaitItemWhere { !it.isLoading }
+            viewModel.onEvent(ReconcileEvent.OpenPeriod)
+            awaitItemWhere { it.reconciliation != null }
+
+            val before = countingExpectedSales.calls
+            "short by 100".forEachIndexed { i, _ ->
+                viewModel.onEvent(ReconcileEvent.NoteChanged("short by 100".take(i + 1)))
+            }
+            "400.00".forEachIndexed { i, _ ->
+                viewModel.onEvent(ReconcileEvent.ExpectedChanged("400.00".take(i + 1)))
+            }
+            awaitItemWhere { it.expectedInput == "400.00" }
+
+            assertEquals(before, countingExpectedSales.calls)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
     // --- Fixtures -----------------------------------------------------------------------
+
+    /** A telebirr payment in today's period, inserted the way capture inserts one. */
+    private suspend fun captureLatePayment(amountMinor: Long) {
+        val bounds = MezgebDates.dayBounds(now, zone)
+        db.transactionDao().insert(
+            transaction(
+                "late",
+                channel = Channel.TELEBIRR,
+                direction = Direction.IN,
+                amountMinor = amountMinor,
+                categoryId = "cat_sales",
+                occurredAt = bounds.first + 3,
+            ),
+        )
+    }
+
+    /** Counts how often the figures are computed: the use case asks this once per run. */
+    private class CountingExpectedSales(
+        private val delegate: ExpectedSalesProvider,
+    ) : ExpectedSalesProvider {
+        var calls = 0
+            private set
+
+        override suspend fun expectedTotalMinor(periodStart: Long, periodEnd: Long): Long? {
+            calls++
+            return delegate.expectedTotalMinor(periodStart, periodEnd)
+        }
+    }
 
     private suspend fun seedToday(capturedInMinor: Long, cashMinor: Long) {
         val bounds = MezgebDates.dayBounds(now, zone)
