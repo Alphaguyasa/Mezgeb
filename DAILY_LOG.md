@@ -5,6 +5,65 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-10-28: Fourteenth daily run (scheduled, second run of the day)
+
+**Start.** CI on `main` was green (`5208d16`, the docs PR from the morning run). Model
+check: the models overview still lists Opus 5.5 (`claude-opus-5-5`) as the newest
+Opus. This run used it, so no switch was needed. Fable 5.1 was ignored, as Alpha
+decided. No answers had been written into NEEDS_APPROVAL.md.
+
+**Environment.** JDK 21, no Android SDK. No Gradle build ran locally; CI judged both
+PRs.
+
+**R29 (close a period on fresh figures), PR #52, merged (`655bcaf`).**
+- New `LedgerChanges`: Room's invalidation tracker over `transactions`,
+  `raw_messages`, `credit_entries` and `customers`. The Reconcile screen now
+  recomputes when any of them is written, so a payment captured while the screen is
+  open moves the gap.
+- The figures are their own flow; typing a note or an expected total no longer
+  re-runs the reconcile queries on every keystroke.
+- `closePeriod()` re-reads the open session and computes the figures again before it
+  snapshots them. A second Close while one is running is ignored.
+- Three new tests in `ReconcileViewModelTest`: a late payment moves the gap; closing
+  right after a late payment snapshots it (not balanced); typing does not recompute.
+- **CI:** green on the first run.
+
+**R30 (one message, one transaction), PR #53, merged (`b5571a4`).**
+- `resolveManually` refuses a message that is no longer UNMATCHED. `record()` refuses
+  a message that already has a Transaction (deleted ones too), and takes it out of
+  the review queue. New `DedupTier.SAME_MESSAGE`.
+- The Transaction insert and the "resolved" mark are now one Room transaction
+  (`TransactionDao.insertAndResolveMessage`).
+- Four new tests in `CaptureCoordinatorTest`: resolve by hand twice gives one
+  Transaction; a parsed message cannot be resolved by hand again; a message with a
+  Transaction that still reads UNMATCHED is not recorded again by a re-parse; the
+  insert links the message and marks it PARSED.
+- A unique index would make this impossible at the database level, but the migration
+  could have to delete data on a phone that already has a duplicate. Asked as A8.
+- **CI:** green on the first run. #53 was tested against the base before #52; the two
+  touch different files.
+
+**Tags.** I created `v2026-10-28-3` (#52) and `v2026-10-28-4` (#53) locally. Pushing
+them failed again ("remote end hung up") (A6).
+
+**Dependabot.** #12, #14, #15, #22 and #40 are unchanged and still wait on A7.
+
+**Roadmap.** 11 open, 8 unblocked, so no replan was needed. Next up: R31, R32.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R29: a period closes on fresh figures, and Reconcile recomputes when a payment lands (#52). R30: one message can no longer become two transactions (#53) |
+| Merged | #52 yes (`655bcaf`), #53 yes (`b5571a4`). Tags `v2026-10-28-3`/`-4` created but **could not be pushed** (A6) |
+| Failed or blocked | Nothing failed; both PRs green on the first CI run. Tag push (A6). No local Gradle |
+| Roadmap | 11 open, 8 unblocked. No replan needed |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #22, #40), **new A8** unique index on `transactions.rawMessageId` |
+| Next | R31 (no double "Open", error handling on Reconcile), then R32 (PIN lockout vs. clock changes) |
+
+---
+
 ## 2026-10-28: Thirteenth daily run (scheduled)
 
 **Start.** CI on `main` was green (`4d7c1ea`). Model check: the models overview still
