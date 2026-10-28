@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -226,7 +228,6 @@ private fun ViewMode(
                 DetailRow(
                     label = stringResource(R.string.detail_field_balance),
                     value = et.alpha.mezgeb.util.MoneyFormatter.format(it),
-                    valueIsAmount = true,
                 )
             }
             transaction.note?.let {
@@ -551,31 +552,34 @@ private fun EditMode(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun DetailRow(label: String, value: String, valueIsAmount: Boolean = false) {
+private fun DetailRow(label: String, value: String) {
     val spacing = MezgebTheme.spacing
     Column {
-        Row(
+        // A flow, not a row with shares. With fixed shares a value wider than its
+        // share broke inside: "+251900000001" over two lines, or the label did, as
+        // "Balance after" once the amount took the width it needed (ROADMAP R24). Now
+        // the two share a line when they fit, and otherwise the value moves under the
+        // label whole. A name or a note longer than the line still wraps, at spaces.
+        // ROADMAP R25.
+        FlowRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = spacing.sm),
-            horizontalArrangement = Arrangement.spacedBy(spacing.md),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalArrangement = Arrangement.spacedBy(spacing.xs),
         ) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.padding(end = spacing.md),
             )
-            // A name or a note may wrap in its share of the row. An amount must not:
-            // at the largest system font a six-figure balance with "ETB" is wider than
-            // that share, and a balance over two lines is misread. So an amount takes
-            // the width it needs, and the label wraps instead (ROADMAP R24).
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = if (valueIsAmount) Modifier else Modifier.weight(1.4f),
             )
         }
         HorizontalDivider()
