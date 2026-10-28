@@ -12,21 +12,94 @@ several PRs.
 Built from the audit on 2026-10-14: the full code read plus the open items in
 `NOTES.md` § "What is left". Replanned on 2026-10-22, when the open list fell below 5:
 R19 to R22 were added. Replanned again on 2026-10-26: R23 to R26 were added. R27 was found on the second
-2026-10-26 run. R28 was found on 2026-10-27.
+2026-10-26 run. R28 was found on 2026-10-27. Replanned on 2026-10-28, when the open
+list fell to 4: R29 to R37 come from a fresh code audit. R29 and R30 were checked by
+hand against the code; the others carry the audit's file and line evidence and are
+re-checked when picked up.
 
 ## Open
 
-### R25 · P2 · S: Large text in Amharic
-Ethiopic labels are often longer than the English ones, and the glyphs are taller.
-Run `LargeTextTest`'s screens with the `am` locale at font scale 2.0
-(`qualifiers = "am-w360dp-h1600dp"`). Fix what wraps badly.
+### R29 · P0 · S: Closing a period can save out-of-date figures
+`ReconcileViewModel` combines the open session, the closed sessions, local UI state
+and a manual recompute counter (`ReconcileViewModel.kt` around line 97), but not the
+transactions. A payment captured while Reconcile is open does not change the gap, and
+`closePeriod()` snapshots `state.value.reconciliation` as last computed. So a period
+can close as balanced when it is not, which breaks the rule that a mismatch is never
+marked as matched. The same `combine` also re-runs the whole computation (several
+queries) on every keystroke in the note and expected-total fields. Fix: compute the
+figures fresh inside `closePeriod`, recompute when transactions change, and keep text
+input out of the recompute trigger. Test: open a period, set expected = captured,
+insert a captured IN transaction, close; the snapshot includes it and the gap is not
+zero.
 
-### R28 · P2 · S: The original message row on the transaction detail does not say whether it is open
-The "Original message from …" row expands and collapses the message body, but
-TalkBack hears only its label. The arrow icon has no description and the row has no
-state. Give the row `stateDescription` ("expanded"/"collapsed", in English and
-Amharic) or `Role.Button` with an expand/collapse action, and assert it in
-`TransactionDetailAccessibilityTest`.
+### R30 · P0 · S: One RawMessage can become two Transactions
+`CaptureCoordinator.record()` inserts the Transaction and then marks the message
+resolved in two separate writes, with no database transaction around them.
+`resolveManually()` never checks that the message is still `UNMATCHED`, and
+`transactions.rawMessageId` has a plain index, not a unique one. A double tap on
+"Save" in the rule builder, or the backlog reprocessor resolving the message first,
+records it twice when there is no provider reference (the lookalike check only
+flags the copy). Fix: in `record()`, return `Duplicate` when the message already has
+a Transaction or is no longer `UNMATCHED`, and wrap the insert and the mark in
+`withTransaction`. A unique index would be a schema change and goes to
+NEEDS_APPROVAL first. Test: `resolveManually` twice, and `capture` then
+`resolveManually`, on one message; exactly one Transaction exists.
+
+### R31 · P1 · S: Reconcile's "Open" can create two OPEN sessions
+`openPeriod()` has no busy guard and the button ignores `isBusy`. The DAO reads the
+open session with `LIMIT 1`, so a second one stays hidden and resurfaces after the
+first closes. `openPeriod`, `saveExpected` and `closePeriod` also have no error
+handling, so a failed write crashes the app. Test: send `OpenPeriod` twice before the
+coroutine runs; one OPEN row.
+
+### R32 · P1 · S: The PIN lockout and the auto-lock use the wall clock
+`AppLockRepository.verify()` compares with `clock.millis()`, so moving the phone's
+clock forward ends a lockout early, and enough of that tries every 4-digit PIN.
+`AppLockState.onForegrounded()` gets a negative elapsed time if the clock moves back,
+and the app never relocks. Fix: also refuse when the clock has gone backwards past
+the lockout start, and measure time in the background with `elapsedRealtime`. Test:
+an injected clock moved past the lockout and then back still reports locked out.
+
+### R33 · P1 · S: CSV export allows formula injection
+`CsvExporter.escape()` only quotes. A cell that starts with `=`, `+`, `-` or `@` (a
+name or note from a message, or typed by the owner; a `+251…` phone) is run as a
+formula by Excel or Sheets. Fix: prefix such cells with `'`, before or with R22.
+Tests: `=HYPERLINK(…)` and `+2519…` come back prefixed; plain text is unchanged.
+
+### R22 · P3 · M: Export closed reconciliation periods
+The CSV export covers the ledger and the credit book, but not the closed periods,
+which are what an accountant or a partner asks for. Add "Periods (CSV)" to the
+Reports export menu, using the snapshotted columns as stored (never recomputed), plus
+the note from R21 (done: `reconciliation_sessions.note`, at most 200 characters, and
+it may hold commas, quotes and line breaks). Goes through the same system file
+picker, so no permission is needed. Tests for the CSV writer, including commas,
+quotes and a line break in a note. Do after R33.
+
+### R34 · P2 · S: "Lock immediately" locks on rotation and on a language change
+With the 0-second timeout, `MainActivity.onStop()`/`onStart()` do not check
+`isChangingConfigurations`, so turning the phone or switching the language (which
+recreates the activity) asks for the PIN again. Test: with a 0 timeout, a Robolectric
+`recreate()` leaves the app unlocked.
+
+### R35 · P2 · S: Today does not roll over at midnight
+`TodayViewModel` fixes the day's bounds when it refreshes, and it refreshes only on
+resume. A shop that keeps the app open past midnight sees yesterday's totals. Fix:
+also refresh at the next local midnight. Test: advance the injected clock past
+midnight; a transaction after midnight counts, yesterday's do not.
+
+### R36 · P2 · S: The backup header is not authenticated
+`BackupCrypto` never calls `updateAAD`, so the format and schema version in the
+header can be changed without breaking decryption. Fix: authenticate the header as
+AAD in a format version 2, and keep reading version 1. Test: a v2 file with one
+schema byte flipped fails as `WRONG_PASSPHRASE_OR_CORRUPT`; a v1 file still restores.
+
+### R37 · P3 · M: Check the balance chain for missed messages
+`balanceAfterMinor` is stored but only shown. Per channel, the previous balance plus
+or minus the amount should equal the next balance; a break means a payment was never
+captured (listener killed, notification lost). Show it as a reconcile explanation
+("CBE Birr balance moved by X between 10:02 and 14:30 with nothing recorded"), never
+corrected automatically, and allow for fees. Tests: a continuous chain gives nothing;
+a chain with a gap gives one explanation with the exact difference in santim.
 
 ### R10 · P1 · L: Encrypt the database at rest
 **Blocked: see NEEDS_APPROVAL.md A1.** This needs a new native dependency
@@ -46,17 +119,11 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 #17 once A7 is answered. (2026-10-26: #17 is superseded by #40, the same group with
 26 updates, Gradle 9.8.2 and Compose BOM 2026.09.00. CI is green on it.)
 
-### R22 · P3 · M: Export closed reconciliation periods
-The CSV export covers the ledger and the credit book, but not the closed periods,
-which are what an accountant or a partner asks for. Add "Periods (CSV)" to the
-Reports export menu, using the snapshotted columns as stored (never recomputed), plus
-the note from R21 (done: `reconciliation_sessions.note`, at most 200 characters, and
-it may hold commas, quotes and line breaks). Goes through the same system file
-picker, so no permission is needed. Tests for the CSV writer, including commas,
-quotes and a line break in a note.
-
 ## Done
 
+- 2026-10-28 · R28: The "Message from …" row on the transaction detail is a button
+  that says whether the message is shown or hidden, and what a double tap does, in
+  English and Amharic. PR #50. (Tag `v2026-10-28-1` not pushed: A6.)
 - 2026-10-27 · R27: Backup files carry schema 6 (`BackupRepository.SCHEMA_VERSION`
   was still 5). A test compares it with the version of the database Room builds,
   and a file written at schema 5 (no `possibleDuplicateOfId`) still restores
