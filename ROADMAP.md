@@ -121,6 +121,13 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 
 ## Done
 
+- 2026-10-28 · R25: `LargeTextTest` runs in Amharic at font scale 2.0, and every
+  screen test now checks that no visible text breaks inside a word. That check found
+  16 squeezed labels per flavor, in English too. Label-and-value rows are now flows
+  (reconcile figures, transaction detail rows, Reports totals and breakdowns, the
+  ledger day header, review queue rows, the transaction row's second line). The
+  credit statement's two buttons are stacked full width. PR #49. (Tag
+  `v2026-10-28-2` not pushed: A6.)
 - 2026-10-28 · R28: The "Message from …" row on the transaction detail is a button
   that says whether the message is shown or hidden, and what a double tap does, in
   English and Amharic. PR #50. (Tag `v2026-10-28-1` not pushed: A6.)

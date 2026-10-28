@@ -5,6 +5,86 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-10-28: Thirteenth daily run (scheduled)
+
+**Start.** CI on `main` was green (`4d7c1ea`). Model check: the models overview still
+lists Opus 5.5 (`claude-opus-5-5`) as the newest Opus. This run used it, so no switch
+was needed. Fable 5.1 was ignored, as Alpha decided.
+
+**Environment.** Same as before: JDK 21, no Android SDK (dl.google.com is refused by
+the proxy). No Gradle build ran locally. CI judged everything below. Job logs were
+read through the GitHub tools.
+
+**R28 (original message row state), PR #50, merged (`e74f044`).**
+- The "Message from …" row on the transaction detail is now a button with a state
+  ("Shown" / "Hidden") and an action label ("Show the message" / "Hide the
+  message"). TalkBack used to hear only the label; the arrow showed the state to the
+  eye alone.
+- English and Amharic strings (ይታያል / ተደብቋል, መልእክቱን አሳይ / መልእክቱን ደብቅ). A
+  native speaker should check the Amharic.
+- Two tests in `TransactionDetailAccessibilityTest`, open and closed: one control,
+  its state, `Role.Button` and its action label. Green on the first CI run.
+
+**R25 (large text in Amharic), PR #49, merged (`046c849`).**
+- `LargeTextAmharicAt200Test` runs every large-text screen and dialog in the `am`
+  locale at font scale 2.0. Its first test checks that the run really is in Amharic
+  and that Ethiopic is measured with a real font.
+- New check on every screen test, in all three runs: no visible text breaks inside a
+  word. Android does that only when a box is narrower than one word, so a broken word
+  means a squeezed label.
+- **Real bugs, found by CI:** 16 failures per flavor, at 1.5 and 2.0, in English as
+  well as Amharic. The ledger's day header left the date 31dp ("Thu, 2 Jul" ran down
+  six lines). The transaction detail broke a `+251…` phone over two lines, and broke
+  "Reference" and "Balance after". Reports left "TELEBIRR" 56dp. Reconcile broke
+  "Payments received" and የተመዘገበው ድምር. The credit statement broke "Record
+  payment". The review queue broke "newest".
+- Fix: label-and-value rows are flows. Both stay on one line when they fit; otherwise
+  the value moves under the label, whole. The credit statement's two buttons are
+  stacked full width. The transaction row's second line (chip, time, labels) became a
+  flow before CI ran.
+- **CI:** 2 runs. The first failed on the new check (the bugs above). Fix attempt 1
+  was green, with `main` (#50) merged in.
+
+**Replan.** With R25 and R28 done, 4 items were open, so I audited the code again
+(bugs, security, performance, UX, tests). Nine new items, R29 to R37. I checked the
+two P0s against the code myself:
+- R29: closing a reconciliation period saves the figures as last computed. A payment
+  captured while the screen is open is not in them, so a period can close as
+  balanced when it is not.
+- R30: `resolveManually` does not check that the message is still unmatched, and the
+  insert and the "resolved" mark are two separate writes. One message can become two
+  Transactions when it has no provider reference.
+- Also: a double "Open" makes two open periods (R31). The PIN lockout can be cut
+  short by moving the phone's clock (R32). CSV export allows formula injection
+  (R33). Rotating locks the app with "lock immediately" (R34). Today does not roll
+  over at midnight (R35). The backup header is not authenticated (R36). A
+  balance-chain check finds missed payments (R37, feature).
+- Things the audit checked and found fine: no logging of amounts or bodies, the
+  reminder notification has no amounts, `FLAG_SECURE` on the whole window, the
+  backup KDF settings, restore in one database transaction, every string has
+  Amharic, money is `Long` everywhere.
+
+**Tags.** I created `v2026-10-28-1` (#50) and `v2026-10-28-2` (#49) locally. Pushing
+them failed again ("remote end hung up") (A6).
+
+**Dependabot.** #12, #14, #15, #22 and #40 are unchanged and still wait on A7.
+
+**Roadmap.** 13 open, 10 unblocked. The top two are both P0 (R29, R30).
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R28: the original message row tells TalkBack if it is open (#50). R25: large text in Amharic plus a no-broken-words check; 16 squeezed labels fixed on 7 screens (#49) |
+| Merged | #50 yes (`e74f044`), #49 yes (`046c849`). Tags `v2026-10-28-1`/`-2` created but **could not be pushed** (A6) |
+| Failed or blocked | #49 needed 1 of its 2 fix attempts (real bugs found by the new check). Tag push (A6). No local Gradle |
+| Roadmap | Replanned: 9 new items (R29 to R37), 13 open, 10 unblocked. Two new P0s: a period can close on stale figures (R29); one message can become two transactions (R30) |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #22, #40) |
+| Next | R29 (close a period on fresh figures), then R30 (one message, one transaction) |
+
+---
+
 ## 2026-10-27: Twelfth daily run (scheduled)
 
 **Start.** CI on `main` was green (`3e2cd57`). Model check: the models overview still
