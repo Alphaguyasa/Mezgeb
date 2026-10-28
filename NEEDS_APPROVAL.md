@@ -81,6 +81,9 @@ can then be added on request.
 - 2026-10-28: the same failure ("remote end hung up") for `v2026-10-28-1`
   (`e74f044`, #50) and `v2026-10-28-2` (`046c849`, #49). Twenty-four tags are
   missing now.
+- 2026-10-28 (second run): the same failure ("remote end hung up") for
+  `v2026-10-28-3` (`655bcaf`, #52) and `v2026-10-28-4` (`b5571a4`, #53).
+  Twenty-six tags are missing now.
 - **Effect:** you can still roll back. Every merge is a squash commit on `main` with
   its PR number, and the log lists each one. Only the named tags are missing.
 - **Options:** (a) do nothing (the log stays the rollback list); (b) create the tags
@@ -115,6 +118,21 @@ can then be added on request.
 - **Options:** (a) yes, Dependabot may appear as the author of its own update commits;
   (b) no, the run re-creates each update as its own commit on a `claude/` branch and
   closes the Dependabot PR; (c) merge them yourself from the phone.
+- **Money:** none.
+
+### A8 · A unique index on `transactions.rawMessageId` (follow-up to R30)
+**Ask:** may I add a unique index so the database itself refuses a second
+Transaction for one message?
+- **Why:** R30 (#53) stops it in code: the capture funnel checks first, and the two
+  writes are now one database transaction. An index would make it impossible, not
+  just prevented.
+- **The catch:** a phone that already has two Transactions for one message (the bug
+  R30 fixed) would fail the migration. The migration would have to choose one of the
+  two and delete or unlink the other first. That is deleting user data, so it needs
+  your yes, and "never delete user data" may mean the answer is no.
+- **Options:** (a) yes, keep the older row, soft-delete the newer one and flag it in
+  the review queue; (b) a non-unique check instead: a startup scan that only flags
+  such pairs for you to resolve; (c) leave it as is (the code guard holds).
 - **Money:** none.
 
 ## Resolved

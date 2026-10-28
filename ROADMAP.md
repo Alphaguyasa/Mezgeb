@@ -15,41 +15,17 @@ R19 to R22 were added. Replanned again on 2026-10-26: R23 to R26 were added. R27
 2026-10-26 run. R28 was found on 2026-10-27. Replanned on 2026-10-28, when the open
 list fell to 4: R29 to R37 come from a fresh code audit. R29 and R30 were checked by
 hand against the code; the others carry the audit's file and line evidence and are
-re-checked when picked up.
+re-checked when picked up. R29 and R30 were done on the second 2026-10-28 run.
 
 ## Open
-
-### R29 · P0 · S: Closing a period can save out-of-date figures
-`ReconcileViewModel` combines the open session, the closed sessions, local UI state
-and a manual recompute counter (`ReconcileViewModel.kt` around line 97), but not the
-transactions. A payment captured while Reconcile is open does not change the gap, and
-`closePeriod()` snapshots `state.value.reconciliation` as last computed. So a period
-can close as balanced when it is not, which breaks the rule that a mismatch is never
-marked as matched. The same `combine` also re-runs the whole computation (several
-queries) on every keystroke in the note and expected-total fields. Fix: compute the
-figures fresh inside `closePeriod`, recompute when transactions change, and keep text
-input out of the recompute trigger. Test: open a period, set expected = captured,
-insert a captured IN transaction, close; the snapshot includes it and the gap is not
-zero.
-
-### R30 · P0 · S: One RawMessage can become two Transactions
-`CaptureCoordinator.record()` inserts the Transaction and then marks the message
-resolved in two separate writes, with no database transaction around them.
-`resolveManually()` never checks that the message is still `UNMATCHED`, and
-`transactions.rawMessageId` has a plain index, not a unique one. A double tap on
-"Save" in the rule builder, or the backlog reprocessor resolving the message first,
-records it twice when there is no provider reference (the lookalike check only
-flags the copy). Fix: in `record()`, return `Duplicate` when the message already has
-a Transaction or is no longer `UNMATCHED`, and wrap the insert and the mark in
-`withTransaction`. A unique index would be a schema change and goes to
-NEEDS_APPROVAL first. Test: `resolveManually` twice, and `capture` then
-`resolveManually`, on one message; exactly one Transaction exists.
 
 ### R31 · P1 · S: Reconcile's "Open" can create two OPEN sessions
 `openPeriod()` has no busy guard and the button ignores `isBusy`. The DAO reads the
 open session with `LIMIT 1`, so a second one stays hidden and resurfaces after the
 first closes. `openPeriod`, `saveExpected` and `closePeriod` also have no error
-handling, so a failed write crashes the app. Test: send `OpenPeriod` twice before the
+handling, so a failed write crashes the app. (2026-10-28: R29 gave `closePeriod` a busy guard
+already; `openPeriod` and the button still need theirs, and all three still need
+error handling.) Test: send `OpenPeriod` twice before the
 coroutine runs; one OPEN row.
 
 ### R32 · P1 · S: The PIN lockout and the auto-lock use the wall clock
@@ -121,6 +97,14 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 
 ## Done
 
+- 2026-10-28 · R30: one raw message becomes at most one Transaction.
+  `resolveManually` refuses a message that is no longer UNMATCHED, `record()` refuses
+  a message that already has a Transaction (and takes it out of the review queue),
+  and the insert plus the "resolved" mark are one Room transaction. New
+  `DedupTier.SAME_MESSAGE`. The unique index is proposed as A8. PR #53.
+- 2026-10-28 · R29: closing a period computes the figures again from the database,
+  and the Reconcile screen recomputes when the ledger changes (`LedgerChanges`, Room's
+  invalidation tracker), not on every keystroke. PR #52.
 - 2026-10-28 · R25: `LargeTextTest` runs in Amharic at font scale 2.0, and every
   screen test now checks that no visible text breaks inside a word. That check found
   16 squeezed labels per flavor, in English too. Label-and-value rows are now flows
