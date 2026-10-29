@@ -36,6 +36,7 @@ sealed interface UnlockResult {
 class AppLockRepository @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val clock: Clock,
+    private val uptime: DeviceUptime,
     @param:IoDispatcher private val io: CoroutineDispatcher,
 ) {
 
@@ -81,6 +82,7 @@ class AppLockRepository @Inject constructor(
             putString(KEY_HASH, hashed.hashBase64)
             putInt(KEY_FAILED, 0)
         }
+        clearLockout()
         true
     }
 
@@ -95,45 +97,99 @@ class AppLockRepository @Inject constructor(
             remove(KEY_BIOMETRIC)
             putInt(KEY_FAILED, 0)
         }
+        clearLockout()
     }
 
+    /**
+     * The lockout is timed on [DeviceUptime], not the wall clock, so setting the
+     * phone's time forward does not end it early. `retryAtMillis` is still a wall-clock
+     * time because the lock screen counts down from it straight away; nothing here
+     * decides anything with it.
+     */
     suspend fun verify(pin: String): UnlockResult = withContext(io) {
-        val lockedUntil = prefs.getLong(KEY_LOCKED_UNTIL, 0L)
-        val now = clock.millis()
-        if (now < lockedUntil) return@withContext UnlockResult.LockedOut(lockedUntil)
+        val remaining = lockoutRemainingMillis()
+        if (remaining > 0) return@withContext UnlockResult.LockedOut(clock.millis() + remaining)
 
         val salt = prefs.getString(KEY_SALT, null)
         val hash = prefs.getString(KEY_HASH, null)
         if (salt == null || hash == null) return@withContext UnlockResult.Unlocked
 
         if (PinCredential.matches(pin, PinHash(salt, hash))) {
-            prefs.edit {
-                putInt(KEY_FAILED, 0)
-                putLong(KEY_LOCKED_UNTIL, 0L)
-            }
+            prefs.edit { putInt(KEY_FAILED, 0) }
+            clearLockout()
             return@withContext UnlockResult.Unlocked
         }
 
         val failed = prefs.getInt(KEY_FAILED, 0) + 1
         val backoff = LockoutPolicy.backoffMillis(failed)
-        prefs.edit {
-            putInt(KEY_FAILED, failed)
-            putLong(KEY_LOCKED_UNTIL, if (backoff > 0) now + backoff else 0L)
+        prefs.edit { putInt(KEY_FAILED, failed) }
+        if (backoff > 0) {
+            storeLockout(Lockout(uptime.bootCount(), uptime.elapsedMillis(), backoff))
+            UnlockResult.LockedOut(clock.millis() + backoff)
+        } else {
+            UnlockResult.Wrong(failed)
         }
-
-        if (backoff > 0) UnlockResult.LockedOut(now + backoff) else UnlockResult.Wrong(failed)
     }
 
     /** How long the app is still refusing to look, or zero. */
-    fun lockoutRemainingMillis(): Long =
-        (prefs.getLong(KEY_LOCKED_UNTIL, 0L) - clock.millis()).coerceAtLeast(0L)
+    fun lockoutRemainingMillis(): Long {
+        val stored = storedLockout() ?: return 0L
+        val elapsedNow = uptime.elapsedMillis()
+        val lockout = LockoutTimer.anchored(stored, uptime.bootCount(), elapsedNow)
+        val remaining = LockoutTimer.remainingMillis(lockout, elapsedNow)
+        when {
+            // Served in full: forget it, so a restart later does not start it again.
+            remaining == 0L -> clearLockout()
+            // Re-anchored after a restart: keep the new start, or every read after
+            // this one would start the wait over again.
+            lockout != stored -> storeLockout(lockout)
+        }
+        return remaining
+    }
+
+    private fun storedLockout(): Lockout? {
+        val duration = prefs.getLong(KEY_LOCK_DURATION, 0L)
+        if (duration > 0L) {
+            return Lockout(
+                bootCount = prefs.getInt(KEY_LOCK_BOOT, -1),
+                startedAtElapsed = prefs.getLong(KEY_LOCK_STARTED, Long.MAX_VALUE),
+                durationMillis = duration,
+            )
+        }
+        // A lockout written before it was timed on uptime: only its wall-clock end is
+        // known. What is left of it is served from now, capped at the longest delay,
+        // and never less than nothing; it is rewritten in the new form on first read.
+        val legacyUntil = prefs.getLong(KEY_LOCKED_UNTIL, 0L)
+        val left = (legacyUntil - clock.millis())
+            .coerceIn(0L, LockoutPolicy.MAX_DELAY_SECONDS * 1000L)
+        if (left == 0L) return null
+        return Lockout(uptime.bootCount(), uptime.elapsedMillis(), left).also(::storeLockout)
+    }
+
+    private fun storeLockout(lockout: Lockout) = prefs.edit {
+        putInt(KEY_LOCK_BOOT, lockout.bootCount)
+        putLong(KEY_LOCK_STARTED, lockout.startedAtElapsed)
+        putLong(KEY_LOCK_DURATION, lockout.durationMillis)
+        remove(KEY_LOCKED_UNTIL)
+    }
+
+    private fun clearLockout() = prefs.edit {
+        remove(KEY_LOCK_BOOT)
+        remove(KEY_LOCK_STARTED)
+        remove(KEY_LOCK_DURATION)
+        remove(KEY_LOCKED_UNTIL)
+    }
 
     private companion object {
         const val FILE_NAME = "mezgeb_lock"
         const val KEY_SALT = "pin_salt"
         const val KEY_HASH = "pin_hash"
         const val KEY_FAILED = "failed_attempts"
+        /** The wall-clock lockout end written by earlier versions. Read once, then removed. */
         const val KEY_LOCKED_UNTIL = "locked_until"
+        const val KEY_LOCK_BOOT = "lockout_boot_count"
+        const val KEY_LOCK_STARTED = "lockout_started_elapsed"
+        const val KEY_LOCK_DURATION = "lockout_duration"
         const val KEY_TIMEOUT = "timeout_seconds"
         const val KEY_BIOMETRIC = "biometric_enabled"
 
