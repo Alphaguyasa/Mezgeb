@@ -16,24 +16,9 @@ R19 to R22 were added. Replanned again on 2026-10-26: R23 to R26 were added. R27
 list fell to 4: R29 to R37 come from a fresh code audit. R29 and R30 were checked by
 hand against the code; the others carry the audit's file and line evidence and are
 re-checked when picked up. R29 and R30 were done on the second 2026-10-28 run. R31 and R32 were done on
-2026-10-29.
+2026-10-29, and R33 and R22 on the second 2026-10-29 run.
 
 ## Open
-
-### R33 · P1 · S: CSV export allows formula injection
-`CsvExporter.escape()` only quotes. A cell that starts with `=`, `+`, `-` or `@` (a
-name or note from a message, or typed by the owner; a `+251…` phone) is run as a
-formula by Excel or Sheets. Fix: prefix such cells with `'`, before or with R22.
-Tests: `=HYPERLINK(…)` and `+2519…` come back prefixed; plain text is unchanged.
-
-### R22 · P3 · M: Export closed reconciliation periods
-The CSV export covers the ledger and the credit book, but not the closed periods,
-which are what an accountant or a partner asks for. Add "Periods (CSV)" to the
-Reports export menu, using the snapshotted columns as stored (never recomputed), plus
-the note from R21 (done: `reconciliation_sessions.note`, at most 200 characters, and
-it may hold commas, quotes and line breaks). Goes through the same system file
-picker, so no permission is needed. Tests for the CSV writer, including commas,
-quotes and a line break in a note. Do after R33.
 
 ### R34 · P2 · S: "Lock immediately" locks on rotation and on a language change
 With the 0-second timeout, `MainActivity.onStop()`/`onStart()` do not check
@@ -81,6 +66,16 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 
 ## Done
 
+- 2026-10-29 (second run) · R22: Reports → Export → "Closed periods (CSV)" writes
+  every closed period, oldest first, with the figures as snapshotted (never
+  recomputed). `accounted_for` and `gap` are derived from the stored figures through
+  `PeriodReconciliation`. No expected total leaves `expected` and `gap` empty. The
+  note is quoted (commas, quotes, line breaks) and neutralised. The open period is
+  never exported. English and Amharic. PR #59. (Tag `v2026-10-29-4` not pushed: A6.)
+- 2026-10-29 (second run) · R33: CSV export no longer runs formulas. Every
+  free-text cell (name, phone, reference, category, note) that starts with `=`, `+`,
+  `-`, `@`, tab or CR gets a leading `'`. Amounts and dates are unchanged, so a
+  negative gap stays a number. PR #58. (Tag `v2026-10-29-3` not pushed: A6.)
 - 2026-10-29 · R32: the PIN lockout and the auto-lock are timed on uptime
   (`SystemClock.elapsedRealtime`, new `DeviceUptime`), not the wall clock. A lockout
   stores the boot it started in. After a restart the full wait starts again. A lockout

@@ -5,6 +5,62 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-10-29: Sixteenth daily run (scheduled, second run of the day)
+
+**Start.** CI on `main` was green (`db75bb5`, the docs PR from the morning run). Model
+check: the models overview still lists Opus 5.5 (`claude-opus-5-5`) as the newest
+Opus. This run used it, so no switch was needed. Fable 5.1 was ignored, as Alpha
+decided. No answers had been written into NEEDS_APPROVAL.md.
+
+**Environment.** JDK 21, no Android SDK. No Gradle build ran locally; CI judged both
+PRs. The clone's `origin/main` was stale at start (`4d7c1ea`); I fetched before
+branching, so both PRs are based on the real `main`.
+
+**R33 (CSV formula injection), PR #58, merged (`bc3adae`).**
+- New `CsvExporter.text()`: a value starting with `=`, `+`, `-`, `@`, tab or CR gets
+  a leading `'`. Applied to every free-text column of the ledger and the credit book.
+  Amounts and dates are not touched (a negative amount must stay a number).
+- Tests: the trigger characters come back prefixed; plain text, Amharic, a `09…`
+  number and a `=` in the middle are unchanged; a real ledger row and a real credit
+  row have every free-text column neutralised and the amount untouched.
+- **CI:** green on the first run.
+
+**R22 (export closed periods), PR #59, merged (`be1ea74`).**
+- "Closed periods (CSV)" in the Reports export menu (English and Amharic). All closed
+  periods, oldest first, regardless of the range on screen. The open one is left out.
+- Stored snapshot figures only. `accounted_for` and `gap` come from
+  `PeriodReconciliation`, the screen's own formula. No expected total gives empty
+  `expected` and `gap` cells, not zeros.
+- Tests: the §7 arithmetic on a snapshot row, a negative gap, no expected total, a
+  note with commas, quotes and a line break, a formula-like note, an empty list; a
+  ViewModel test for closed-only, oldest-first output.
+- **CI:** green. It was stacked on #58. After #58 merged, merging `main` in gave a
+  textual conflict in `CsvExporterTest` (same lines from the squash). I kept the
+  branch's side, which already held R33; the diff to `main` was then R22 only. CI was
+  green on that merge commit too.
+
+**Tags.** `v2026-10-29-3` (#58) and `v2026-10-29-4` (#59) were created locally.
+Pushing failed again (HTTP 403, "remote end hung up") (A6).
+
+**Dependabot.** #12, #14, #15, #22 and #40 are unchanged and still wait on A7.
+
+**Roadmap.** 7 open, 4 unblocked (R34, R35, R36, R37) plus R12 (waits on A7) and
+R10/R11 (blocked). Not below 5, so no replan. Next up: R34, then R35.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R33: CSV exports can no longer run a spreadsheet formula (#58). R22: closed reconciliation periods can be exported as CSV (#59) |
+| Merged | #58 yes (`bc3adae`), #59 yes (`be1ea74`). Tags `v2026-10-29-3`/`-4` created but **could not be pushed** (A6) |
+| Failed or blocked | Nothing failed; both PRs green on CI. Tag push (A6). No local Gradle |
+| Roadmap | 7 open, 4 unblocked. No replan needed |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #22, #40), A8 unique index on `transactions.rawMessageId` |
+| Next | R34 ("Lock immediately" on rotation), then R35 (Today rolls over at midnight) |
+
+---
+
 ## 2026-10-29: Fifteenth daily run (scheduled)
 
 **Start.** CI on `main` was green (`d3fbad6`, the docs PR from the last run). Model
