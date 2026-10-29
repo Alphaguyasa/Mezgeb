@@ -3,7 +3,6 @@ package et.alpha.mezgeb.domain.lock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.time.Clock
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,13 +17,19 @@ import javax.inject.Singleton
 @Singleton
 class AppLockState @Inject constructor(
     private val repository: AppLockRepository,
-    private val clock: Clock,
+    private val uptime: DeviceUptime,
 ) {
 
     private val _isLocked = MutableStateFlow(repository.isLockEnabled())
     val isLocked: StateFlow<Boolean> = _isLocked.asStateFlow()
 
-    /** When the app was last in the foreground, for the timeout. */
+    /**
+     * When the app was last in the foreground, for the timeout, on [DeviceUptime].
+     *
+     * Not the wall clock: setting the phone's time back would make the time away
+     * negative, and the app would never lock again. A restart ends the process, and a
+     * new process starts locked, so time since boot is all this needs.
+     */
     private var backgroundedAt: Long? = null
 
     fun onUnlocked() {
@@ -33,7 +38,7 @@ class AppLockState @Inject constructor(
     }
 
     fun onBackgrounded() {
-        if (!_isLocked.value) backgroundedAt = clock.millis()
+        if (!_isLocked.value) backgroundedAt = uptime.elapsedMillis()
     }
 
     /**
@@ -48,7 +53,7 @@ class AppLockState @Inject constructor(
             return
         }
         val since = backgroundedAt ?: return
-        val elapsed = clock.millis() - since
+        val elapsed = uptime.elapsedMillis() - since
         if (elapsed >= repository.timeoutSeconds() * 1000L) {
             _isLocked.value = true
         }
