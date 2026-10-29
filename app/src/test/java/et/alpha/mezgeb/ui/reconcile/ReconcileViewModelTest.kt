@@ -1,6 +1,7 @@
 package et.alpha.mezgeb.ui.reconcile
 
 import app.cash.turbine.ReceiveTurbine
+import android.database.sqlite.SQLiteException
 import app.cash.turbine.test
 import et.alpha.mezgeb.data.local.DatabaseTest
 import et.alpha.mezgeb.data.local.transaction
@@ -17,9 +18,13 @@ import et.alpha.mezgeb.domain.reconcile.ManualEntryExpectedSalesProvider
 import et.alpha.mezgeb.domain.reconcile.ReconcilePeriodUseCase
 import et.alpha.mezgeb.util.IdGenerator
 import et.alpha.mezgeb.util.MezgebDates
+import io.mockk.coEvery
+import io.mockk.spyk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -56,24 +61,29 @@ class ReconcileViewModelTest : DatabaseTest() {
         sessions = ReconciliationRepository(db.reconciliationSessionDao())
         transactions = TransactionRepository(db.transactionDao(), db.rawMessageDao())
         countingExpectedSales = CountingExpectedSales(ManualEntryExpectedSalesProvider(sessions))
-        viewModel = ReconcileViewModel(
-            sessions = sessions,
-            reconcile = ReconcilePeriodUseCase(
-                transactions = transactions,
-                customers = CustomerRepository(db.customerDao(), db.creditEntryDao()),
-                expectedSales = countingExpectedSales,
-            ),
-            ledgerChanges = LedgerChanges(db),
-            // Sequential, not fixed: one test opens a second period after closing the
-            // first, and two sessions cannot share a primary key.
-            ids = object : IdGenerator {
-                private var next = 0
-                override fun newId() = "session_${++next}"
-            },
-            clock = clock,
-            zone = zone,
-        )
+        viewModel = newViewModel()
     }
+
+    private fun newViewModel(
+        repository: ReconciliationRepository = sessions,
+        // Sequential, not fixed: one test opens a second period after closing the
+        // first, and two sessions cannot share a primary key.
+        ids: IdGenerator = object : IdGenerator {
+            private var next = 0
+            override fun newId() = "session_${++next}"
+        },
+    ) = ReconcileViewModel(
+        sessions = repository,
+        reconcile = ReconcilePeriodUseCase(
+            transactions = transactions,
+            customers = CustomerRepository(db.customerDao(), db.creditEntryDao()),
+            expectedSales = countingExpectedSales,
+        ),
+        ledgerChanges = LedgerChanges(db),
+        ids = ids,
+        clock = clock,
+        zone = zone,
+    )
 
     @After
     fun tearDown() {
@@ -119,6 +129,108 @@ class ReconcileViewModelTest : DatabaseTest() {
 
         // Opening anyway would invent a boundary nobody agreed to.
         assertNull(sessions.getOpenSession())
+    }
+
+    @Test
+    fun `a second Open before the first is written opens one period`() = runTest {
+        // A queued Main, so both taps arrive before the first write has run: the
+        // double tap the button used to allow.
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        viewModel.onEvent(ReconcileEvent.OpenPeriod)
+        viewModel.onEvent(ReconcileEvent.OpenPeriod)
+        advanceUntilIdle()
+
+        assertEquals(1, openRows())
+    }
+
+    @Test
+    fun `Open with a period already open writes nothing and reports nothing`() = runTest {
+        viewModel.onEvent(ReconcileEvent.OpenPeriod)
+        // A second screen, or a tap that lands after the first period was written.
+        val other = newViewModel(ids = object : IdGenerator {
+            override fun newId() = "other"
+        })
+        other.state.test {
+            awaitItemWhere { !it.isLoading }
+            other.onEvent(ReconcileEvent.OpenPeriod)
+            val state = awaitItemWhere { it.hasOpenPeriod && !it.isBusy }
+            // The period already open is the one shown; being refused is not an error.
+            assertEquals("session_1", state.openSession?.id)
+            assertNull(state.errorMessage)
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertEquals(1, openRows())
+    }
+
+    @Test
+    fun `a failed Open is reported and the button works again`() = runTest {
+        closeTodayExpecting("100.00")
+        // The id of the period just closed, so the insert hits the primary key and
+        // takes the path a genuine write failure would.
+        val failing = newViewModel(ids = object : IdGenerator {
+            override fun newId() = "session_1"
+        })
+        failing.state.test {
+            awaitItemWhere { !it.isLoading }
+            failing.onEvent(ReconcileEvent.OpenPeriod)
+            val state = awaitItemWhere { it.errorMessage != null }
+            assertEquals(ReconcileUiState.ErrorKind.SAVE_FAILED, state.errorMessage)
+            assertFalse(state.isBusy)
+            assertTrue(state.canOpen)
+
+            failing.onEvent(ReconcileEvent.ErrorShown)
+            assertNull(awaitItemWhere { it.errorMessage == null }.errorMessage)
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertEquals(0, openRows())
+    }
+
+    @Test
+    fun `a failed expected total is reported and what was typed stays`() = runTest {
+        val repository = spyk(sessions)
+        coEvery { repository.update(any()) } throws SQLiteException("disk I/O error")
+        val failing = newViewModel(repository = repository)
+        failing.state.test {
+            awaitItemWhere { !it.isLoading }
+            failing.onEvent(ReconcileEvent.OpenPeriod)
+            awaitItemWhere { it.hasOpenPeriod }
+
+            failing.onEvent(ReconcileEvent.ExpectedChanged("400.00"))
+            failing.onEvent(ReconcileEvent.SaveExpected)
+            val state = awaitItemWhere { it.errorMessage != null }
+            assertEquals(ReconcileUiState.ErrorKind.SAVE_FAILED, state.errorMessage)
+            assertEquals("400.00", state.expectedInput)
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertNull(sessions.getOpenSession()?.expectedTotalMinor)
+    }
+
+    @Test
+    fun `a failed close keeps the period open and the note typed`() = runTest {
+        seedToday(capturedInMinor = 20_000, cashMinor = 10_000)
+        val repository = spyk(sessions)
+        coEvery { repository.closeSession(any()) } throws SQLiteException("disk I/O error")
+        val failing = newViewModel(repository = repository)
+        failing.state.test {
+            awaitItemWhere { !it.isLoading }
+            failing.onEvent(ReconcileEvent.OpenPeriod)
+            awaitItemWhere { it.hasOpenPeriod }
+            failing.onEvent(ReconcileEvent.ExpectedChanged("400.00"))
+            failing.onEvent(ReconcileEvent.SaveExpected)
+            awaitItemWhere { it.reconciliation?.gapMinor != null }
+            failing.onEvent(ReconcileEvent.NoteChanged("gave change from my pocket"))
+
+            failing.onEvent(ReconcileEvent.ClosePeriod)
+            val state = awaitItemWhere { it.errorMessage != null }
+            assertEquals(ReconcileUiState.ErrorKind.SAVE_FAILED, state.errorMessage)
+            assertTrue(state.hasOpenPeriod)
+            assertEquals("gave change from my pocket", state.noteInput)
+            assertNull(state.justClosedId)
+            // Close can be tried again.
+            assertTrue(state.canClose)
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertEquals(SessionStatus.OPEN, sessions.getOpenSession()?.status)
     }
 
     @Test
@@ -470,6 +582,9 @@ class ReconcileViewModelTest : DatabaseTest() {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    private suspend fun openRows(): Int =
+        db.reconciliationSessionDao().getAll().count { it.status == SessionStatus.OPEN }
 
     private suspend fun firstClosedSession(): et.alpha.mezgeb.domain.model.ReconciliationSession {
         var result: et.alpha.mezgeb.domain.model.ReconciliationSession? = null

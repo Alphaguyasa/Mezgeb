@@ -265,6 +265,7 @@
     <string name="reconcile_period_week">Last 7 days</string>
     <string name="reconcile_period_custom">Choose dates</string>
     <string name="reconcile_open_period">Start checking</string>
+    <string name="reconcile_save_failed">Could not save. Try again.</string>
     <string name="reconcile_expected_label">What you think you took</string>
     <string name="reconcile_expected_hint">Your own figure — from the till, the notebook, or memory.</string>
     <string name="reconcile_expected_invalid">Enter an amount.</string>

@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import androidx.room.Upsert
 import et.alpha.mezgeb.data.local.entity.CategoryEntity
@@ -140,6 +141,20 @@ interface ReconciliationSessionDao {
 
     @Query("SELECT * FROM reconciliation_sessions WHERE status = 'OPEN' ORDER BY periodStart DESC LIMIT 1")
     suspend fun getOpenSession(): ReconciliationSessionEntity?
+
+    /**
+     * Inserts [session] only if no period is open, and says whether it did.
+     *
+     * The open period is read with `LIMIT 1`, so a second OPEN row would stay hidden
+     * behind the first and come back as a surprise once that one closed. The check and
+     * the insert are one transaction, so two callers cannot both see "none open".
+     */
+    @Transaction
+    suspend fun insertIfNoneOpen(session: ReconciliationSessionEntity): Boolean {
+        if (getOpenSession() != null) return false
+        insert(session)
+        return true
+    }
 
     @Query("SELECT * FROM reconciliation_sessions WHERE status = :status ORDER BY periodStart DESC")
     fun observeByStatus(status: SessionStatus): Flow<List<ReconciliationSessionEntity>>

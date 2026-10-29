@@ -28,9 +28,13 @@ class ReconciliationRepository @Inject constructor(
     suspend fun getMostRecentlyClosed(): ReconciliationSession? =
         sessionDao.getMostRecentlyClosed()?.toDomain()
 
-    suspend fun openSession(session: ReconciliationSession) {
+    /**
+     * Opens [session], unless a period is already open. Returns false in that case,
+     * and nothing is written: only one period is ever being checked at a time.
+     */
+    suspend fun openSession(session: ReconciliationSession): Boolean {
         require(session.status == SessionStatus.OPEN) { "openSession requires an OPEN session" }
-        sessionDao.insert(session.toEntity())
+        return sessionDao.insertIfNoneOpen(session.toEntity())
     }
 
     /**

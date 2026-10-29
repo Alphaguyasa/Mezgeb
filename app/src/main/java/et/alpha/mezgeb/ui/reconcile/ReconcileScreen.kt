@@ -30,10 +30,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -98,10 +100,20 @@ fun ReconcileScreen(
     onExplanationTapped: (GapExplanation) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val errorText = stringResource(R.string.reconcile_save_failed)
+    LaunchedEffect(state.errorMessage) {
+        if (state.errorMessage != null) {
+            snackbarHostState.showSnackbar(errorText)
+            onEvent(ReconcileEvent.ErrorShown)
+        }
+    }
+
     MezgebScaffold(
         title = stringResource(R.string.destination_reconcile),
         modifier = modifier,
         navigationIcon = { BackButton(onBack) },
+        snackbarHostState = snackbarHostState,
     ) { inner ->
         LazyColumn(
             Modifier
@@ -188,7 +200,7 @@ private fun PeriodPicker(state: ReconcileUiState, onEvent: (ReconcileEvent) -> U
         }
         Button(
             onClick = { onEvent(ReconcileEvent.OpenPeriod) },
-            enabled = state.periodChoice != PeriodChoice.CUSTOM || state.customRange != null,
+            enabled = state.canOpen,
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = spacing.touchTarget),
