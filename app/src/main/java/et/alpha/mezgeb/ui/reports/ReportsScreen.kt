@@ -423,6 +423,7 @@ private fun ExportMenu(onExport: (ExportKind) -> Unit) {
             ExportKind.LEDGER_CSV to R.string.report_export_ledger,
             ExportKind.CREDIT_CSV to R.string.report_export_credit,
             ExportKind.BOTH_CSV to R.string.report_export_both,
+            ExportKind.PERIODS_CSV to R.string.report_export_periods,
             ExportKind.SUMMARY_PDF to R.string.report_export_pdf,
         ).forEach { (kind, labelRes) ->
             DropdownMenuItem(

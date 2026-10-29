@@ -322,6 +322,7 @@
     <string name="report_export_ledger">Ledger (CSV)</string>
     <string name="report_export_credit">Credit book (CSV)</string>
     <string name="report_export_both">Both (CSV)</string>
+    <string name="report_export_periods">Closed periods (CSV)</string>
     <string name="report_export_pdf">Summary (PDF)</string>
     <string name="report_export_failed">Could not write the file.</string>
     <!-- 1: period start, 2: period end -->

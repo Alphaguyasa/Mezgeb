@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import et.alpha.mezgeb.data.repo.CustomerRepository
+import et.alpha.mezgeb.data.repo.ReconciliationRepository
 import et.alpha.mezgeb.data.repo.RuleRepository
 import et.alpha.mezgeb.data.repo.TransactionFilter
 import et.alpha.mezgeb.data.repo.TransactionRepository
@@ -29,6 +30,7 @@ enum class ExportKind {
     LEDGER_CSV,
     CREDIT_CSV,
     BOTH_CSV,
+    PERIODS_CSV,
     SUMMARY_PDF,
 }
 
@@ -72,6 +74,7 @@ class ReportsViewModel @Inject constructor(
     private val transactions: TransactionRepository,
     private val customers: CustomerRepository,
     private val rules: RuleRepository,
+    private val reconciliation: ReconciliationRepository,
     private val settings: SettingsRepository,
     private val pdfExporter: PdfExporter,
     private val clock: Clock,
@@ -114,6 +117,7 @@ class ReportsViewModel @Inject constructor(
             ExportKind.LEDGER_CSV -> CsvExporter.fileName("mezgeb-ledger", now, zone)
             ExportKind.CREDIT_CSV -> CsvExporter.fileName("mezgeb-credit", now, zone)
             ExportKind.BOTH_CSV -> CsvExporter.fileName("mezgeb-export", now, zone)
+            ExportKind.PERIODS_CSV -> CsvExporter.fileName("mezgeb-periods", now, zone)
             ExportKind.SUMMARY_PDF -> PdfExporter.fileName(now, zone)
         }
     }
@@ -160,6 +164,10 @@ class ReportsViewModel @Inject constructor(
                 )
             }
 
+            ExportKind.PERIODS_CSV -> stream.writer(Charsets.UTF_8).use { writer ->
+                writer.write(periodsCsv())
+            }
+
             else -> stream.writer(Charsets.UTF_8).use { writer ->
                 if (kind != ExportKind.CREDIT_CSV) writer.write(ledgerCsv(bounds))
                 if (kind == ExportKind.BOTH_CSV) writer.write("\n")
@@ -185,6 +193,16 @@ class ReportsViewModel @Inject constructor(
             zone = zone,
         )
     }
+
+    /**
+     * Every closed period, oldest first, whatever period the screen is showing. An
+     * accountant asks for the history, and a closed period is already a summary, so
+     * there is no reason to make the owner pick a range for it.
+     */
+    private suspend fun periodsCsv(): String = CsvExporter.periods(
+        sessions = reconciliation.observeClosedSessions().first().sortedBy { it.periodStart },
+        zone = zone,
+    )
 
     private suspend fun refresh() {
         val bounds = boundsFor(_state.value)

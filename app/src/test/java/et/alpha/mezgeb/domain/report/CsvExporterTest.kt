@@ -6,6 +6,8 @@ import et.alpha.mezgeb.domain.model.CreditEntry
 import et.alpha.mezgeb.domain.model.CreditKind
 import et.alpha.mezgeb.domain.model.Customer
 import et.alpha.mezgeb.domain.model.Direction
+import et.alpha.mezgeb.domain.model.ReconciliationSession
+import et.alpha.mezgeb.domain.model.SessionStatus
 import et.alpha.mezgeb.domain.model.Transaction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -232,6 +234,96 @@ class CsvExporterTest {
         assertTrue("expected an ISO offset timestamp: $row", row.startsWith("2026-07-02T03:00:00+03:00"))
     }
 
+    // --- Closed periods -----------------------------------------------------------------
+
+    @Test
+    fun `a closed period is one row of its snapshotted figures`() {
+        val csv = CsvExporter.periods(
+            sessions = listOf(
+                session(
+                    expectedTotalMinor = 100_000,
+                    capturedInMinor = 60_000,
+                    capturedOutMinor = 5_000,
+                    cashRecordedMinor = 30_000,
+                    creditGivenMinor = 8_000,
+                    creditRepaidMinor = 3_000,
+                ),
+            ),
+            zone = zone,
+        )
+
+        val lines = csv.removePrefix(CsvExporter.BYTE_ORDER_MARK).trim().lines()
+        assertEquals(CsvExporter.PERIOD_COLUMNS.joinToString(","), lines.first())
+        assertEquals(2, lines.size)
+        val byColumn = CsvExporter.PERIOD_COLUMNS.zip(splitFields(lines.last())).toMap()
+        assertEquals("2026-07-02T03:00:00+03:00", byColumn["period_start"])
+        assertEquals("ETB", byColumn["currency"])
+        assertEquals("1000.00", byColumn["expected"])
+        assertEquals("600.00", byColumn["captured_in"])
+        assertEquals("50.00", byColumn["captured_out"])
+        assertEquals("300.00", byColumn["cash_recorded"])
+        assertEquals("80.00", byColumn["credit_given"])
+        assertEquals("30.00", byColumn["credit_repaid"])
+        // 600 + 300 + 80 - 30, the formula in ARCHITECTURE.md section 7.
+        assertEquals("950.00", byColumn["accounted_for"])
+        assertEquals("50.00", byColumn["gap"])
+        assertEquals("", byColumn["note"])
+    }
+
+    @Test
+    fun `a period over its expected total keeps a negative gap as a number`() {
+        val csv = CsvExporter.periods(
+            sessions = listOf(session(expectedTotalMinor = 50_000, capturedInMinor = 50_150)),
+            zone = zone,
+        )
+
+        val byColumn = CsvExporter.PERIOD_COLUMNS
+            .zip(splitFields(csv.trim().lines().last())).toMap()
+        // Not prefixed with a quote: a spreadsheet must be able to add the gaps up.
+        assertEquals("-1.50", byColumn["gap"])
+    }
+
+    @Test
+    fun `a period closed without an expected total has no gap, not a zero one`() {
+        val csv = CsvExporter.periods(
+            sessions = listOf(session(expectedTotalMinor = null, capturedInMinor = 20_000)),
+            zone = zone,
+        )
+
+        val byColumn = CsvExporter.PERIOD_COLUMNS
+            .zip(splitFields(csv.trim().lines().last())).toMap()
+        assertEquals("", byColumn["expected"])
+        assertEquals("200.00", byColumn["accounted_for"])
+        assertEquals("", byColumn["gap"])
+    }
+
+    @Test
+    fun `a note with commas, quotes and a line break survives intact`() {
+        val note = "short 50, \"Abebe\" will\nbring it Monday"
+
+        val csv = CsvExporter.periods(sessions = listOf(session(note = note)), zone = zone)
+
+        val body = csv.removePrefix(CsvExporter.BYTE_ORDER_MARK)
+        val row = body.substringAfter('\n').trimEnd('\n')
+        val fields = splitFields(row)
+        assertEquals(CsvExporter.PERIOD_COLUMNS.size, fields.size)
+        assertEquals(note, fields.last())
+    }
+
+    @Test
+    fun `a note that looks like a formula is neutralised`() {
+        val csv = CsvExporter.periods(sessions = listOf(session(note = "=1+1")), zone = zone)
+
+        assertEquals("'=1+1", splitFields(csv.trim().lines().last()).last())
+    }
+
+    @Test
+    fun `no closed periods gives a header and nothing else`() {
+        val csv = CsvExporter.periods(sessions = emptyList(), zone = zone)
+
+        assertEquals(1, csv.removePrefix(CsvExporter.BYTE_ORDER_MARK).trim().lines().size)
+    }
+
     /** Splits a row the way a reader would: quotes respected, doubled quotes undone. */
     private fun splitFields(row: String): List<String> {
         val fields = mutableListOf<String>()
@@ -297,5 +389,29 @@ class CsvExporterTest {
         reconciliationSessionId = null,
         isDeleted = false,
         editedAt = null,
+    )
+
+    private fun session(
+        expectedTotalMinor: Long? = 0,
+        capturedInMinor: Long = 0,
+        capturedOutMinor: Long = 0,
+        cashRecordedMinor: Long = 0,
+        creditGivenMinor: Long = 0,
+        creditRepaidMinor: Long = 0,
+        note: String? = null,
+    ) = ReconciliationSession(
+        id = "s1",
+        periodStart = T0,
+        periodEnd = T0 + 7 * 24 * 60 * 60 * 1000L,
+        openedAt = T0,
+        expectedTotalMinor = expectedTotalMinor,
+        capturedInMinor = capturedInMinor,
+        capturedOutMinor = capturedOutMinor,
+        cashRecordedMinor = cashRecordedMinor,
+        creditGivenMinor = creditGivenMinor,
+        creditRepaidMinor = creditRepaidMinor,
+        status = SessionStatus.CLOSED,
+        closedAt = T0 + 7 * 24 * 60 * 60 * 1000L,
+        note = note,
     )
 }
