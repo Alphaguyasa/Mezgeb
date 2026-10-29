@@ -15,26 +15,9 @@ R19 to R22 were added. Replanned again on 2026-10-26: R23 to R26 were added. R27
 2026-10-26 run. R28 was found on 2026-10-27. Replanned on 2026-10-28, when the open
 list fell to 4: R29 to R37 come from a fresh code audit. R29 and R30 were checked by
 hand against the code; the others carry the audit's file and line evidence and are
-re-checked when picked up. R29 and R30 were done on the second 2026-10-28 run.
+re-checked when picked up. R29 and R30 were done on the second 2026-10-28 run. R31 was done on 2026-10-29.
 
 ## Open
-
-### R31 · P1 · S: Reconcile's "Open" can create two OPEN sessions
-`openPeriod()` has no busy guard and the button ignores `isBusy`. The DAO reads the
-open session with `LIMIT 1`, so a second one stays hidden and resurfaces after the
-first closes. `openPeriod`, `saveExpected` and `closePeriod` also have no error
-handling, so a failed write crashes the app. (2026-10-28: R29 gave `closePeriod` a busy guard
-already; `openPeriod` and the button still need theirs, and all three still need
-error handling.) Test: send `OpenPeriod` twice before the
-coroutine runs; one OPEN row.
-
-### R32 · P1 · S: The PIN lockout and the auto-lock use the wall clock
-`AppLockRepository.verify()` compares with `clock.millis()`, so moving the phone's
-clock forward ends a lockout early, and enough of that tries every 4-digit PIN.
-`AppLockState.onForegrounded()` gets a negative elapsed time if the clock moves back,
-and the app never relocks. Fix: also refuse when the clock has gone backwards past
-the lockout start, and measure time in the background with `elapsedRealtime`. Test:
-an injected clock moved past the lockout and then back still reports locked out.
 
 ### R33 · P1 · S: CSV export allows formula injection
 `CsvExporter.escape()` only quotes. A cell that starts with `=`, `+`, `-` or `@` (a
@@ -97,6 +80,12 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 
 ## Done
 
+- 2026-10-29 · R31: Reconcile opens one period at a time. A double tap on "Start
+  checking" is ignored, and the button is disabled while busy.
+  `ReconciliationSessionDao.insertIfNoneOpen` checks and inserts in one Room
+  transaction. Open, save expected and close catch a failed write, show "Could not
+  save. Try again.", and keep what was typed. PR #55. (Tag `v2026-10-29-1` not
+  pushed: A6.)
 - 2026-10-28 · R30: one raw message becomes at most one Transaction.
   `resolveManually` refuses a message that is no longer UNMATCHED, `record()` refuses
   a message that already has a Transaction (and takes it out of the review queue),
