@@ -15,7 +15,8 @@ R19 to R22 were added. Replanned again on 2026-10-26: R23 to R26 were added. R27
 2026-10-26 run. R28 was found on 2026-10-27. Replanned on 2026-10-28, when the open
 list fell to 4: R29 to R37 come from a fresh code audit. R29 and R30 were checked by
 hand against the code; the others carry the audit's file and line evidence and are
-re-checked when picked up. R29 and R30 were done on the second 2026-10-28 run. R31 was done on 2026-10-29.
+re-checked when picked up. R29 and R30 were done on the second 2026-10-28 run. R31 and R32 were done on
+2026-10-29.
 
 ## Open
 
@@ -80,6 +81,12 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 
 ## Done
 
+- 2026-10-29 · R32: the PIN lockout and the auto-lock are timed on uptime
+  (`SystemClock.elapsedRealtime`, new `DeviceUptime`), not the wall clock. A lockout
+  stores the boot it started in. After a restart the full wait starts again. A lockout
+  read as over is forgotten. A lockout stored by an older version as a wall-clock end
+  is converted on first read (capped at 15 minutes). Arithmetic in the pure
+  `LockoutTimer`. PR #56. (Tag `v2026-10-29-2` not pushed: A6.)
 - 2026-10-29 · R31: Reconcile opens one period at a time. A double tap on "Start
   checking" is ignored, and the button is disabled while busy.
   `ReconciliationSessionDao.insertIfNoneOpen` checks and inserts in one Room

@@ -5,6 +5,68 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-10-29: Fifteenth daily run (scheduled)
+
+**Start.** CI on `main` was green (`d3fbad6`, the docs PR from the last run). Model
+check: the models overview still lists Opus 5.5 (`claude-opus-5-5`) as the newest
+Opus. This run used it, so no switch was needed. Fable 5.1 was ignored, as Alpha
+decided. No answers had been written into NEEDS_APPROVAL.md.
+
+**Environment.** JDK 21, no Android SDK. No Gradle build ran locally; CI judged both
+PRs.
+
+**R31 (one open period, failed writes reported), PR #55, merged (`497571f`).**
+- `openPeriod()` ignores a second tap while busy, and "Start checking" is disabled
+  while busy (`ReconcileUiState.canOpen`).
+- New `ReconciliationSessionDao.insertIfNoneOpen`: the "is one open?" check and the
+  insert are one Room transaction, so a second screen cannot add a hidden second
+  OPEN row either. A refusal is not an error.
+- Open, save expected and close catch a failed write. The screen shows "Could not
+  save. Try again." (English and Amharic), the busy flag clears, and the expected
+  total and the note stay typed. The whole close (re-read, recompute, write) is
+  inside the guard.
+- Tests: two queued Opens give one OPEN row; Open with a period open writes nothing
+  and reports nothing; a failed Open, a failed expected total and a failed close are
+  each reported and recoverable; two DAO tests for `insertIfNoneOpen`.
+- **CI:** green on the first run.
+
+**R32 (lock timing vs. the phone's clock), PR #56, merged (`fd8b093`).**
+- New `DeviceUptime` (`SystemClock.elapsedRealtime`, `Settings.Global.BOOT_COUNT`;
+  no permission). The PIN lockout is stored as boot count, start on that boot's
+  uptime, and duration. Setting the clock forward no longer ends it.
+- After a restart the full wait starts again (the old uptime means nothing and the
+  wall clock is what must not be trusted). A lockout read as over is cleared, so a
+  restart later does not revive it. A lockout written by an older version is
+  converted on first read, capped at 15 minutes.
+- `AppLockState` measures time in the background on uptime, so setting the clock
+  back no longer stops the app relocking.
+- Tests: `LockoutTimerTest` (4) and `AppLockStateTest` (4). `AppLockRepository`
+  itself still needs the Keystore and is not unit-tested (unchanged, see `AppLockTest`).
+- **CI:** green on the first run. #56 was tested against the base before #55; the two
+  touch different files.
+
+**Tags.** I created `v2026-10-29-1` (#55) and `v2026-10-29-2` (#56) locally. Pushing
+them failed again ("remote end hung up") (A6).
+
+**Dependabot.** #12, #14, #15, #22 and #40 are unchanged and still wait on A7.
+
+**Roadmap.** 8 open, 6 unblocked (R33, R22, R34, R35, R36, R37), so no replan was
+needed. Next up: R33, then R22.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R31: Reconcile can no longer open two periods, and a failed save no longer crashes it (#55). R32: changing the phone's clock no longer shortens a PIN lockout or stops the auto-lock (#56) |
+| Merged | #55 yes (`497571f`), #56 yes (`fd8b093`). Tags `v2026-10-29-1`/`-2` created but **could not be pushed** (A6) |
+| Failed or blocked | Nothing failed; both PRs green on the first CI run. Tag push (A6). No local Gradle |
+| Roadmap | 8 open, 6 unblocked. No replan needed |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #22, #40), A8 unique index on `transactions.rawMessageId` |
+| Next | R33 (CSV formula injection), then R22 (export closed periods) |
+
+---
+
 ## 2026-10-28: Fourteenth daily run (scheduled, second run of the day)
 
 **Start.** CI on `main` was green (`5208d16`, the docs PR from the morning run). Model
