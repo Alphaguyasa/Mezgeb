@@ -2,7 +2,9 @@ package et.alpha.mezgeb.domain.report
 
 import et.alpha.mezgeb.domain.model.CreditEntry
 import et.alpha.mezgeb.domain.model.Customer
+import et.alpha.mezgeb.domain.model.ReconciliationSession
 import et.alpha.mezgeb.domain.model.Transaction
+import et.alpha.mezgeb.domain.reconcile.PeriodReconciliation
 import et.alpha.mezgeb.util.MezgebDates
 import et.alpha.mezgeb.util.MoneyFormatter
 import java.time.Instant
@@ -10,7 +12,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /**
- * The ledger and the credit book as CSV.
+ * The ledger, the credit book and the closed reconciliation periods as CSV.
  *
  * Two decisions here are load-bearing and neither is obvious:
  *
@@ -50,6 +52,12 @@ object CsvExporter {
 
     val CREDIT_COLUMNS = listOf(
         "date", "customer", "phone", "kind", "amount", "currency", "note", "linked_payment",
+    )
+
+    val PERIOD_COLUMNS = listOf(
+        "period_start", "period_end", "closed_at", "currency", "expected", "captured_in",
+        "captured_out", "cash_recorded", "credit_given", "credit_repaid", "accounted_for",
+        "gap", "note",
     )
 
     fun ledger(
@@ -93,6 +101,54 @@ object CsvExporter {
                     MoneyFormatter.DEFAULT_CURRENCY,
                     text(entry.note.orEmpty()),
                     entry.linkedTransactionId.orEmpty(),
+                ),
+            )
+        }
+    }
+
+    /**
+     * Closed periods exactly as they were snapshotted when they closed.
+     *
+     * Nothing here reads the ledger: a closed period's figures are frozen on purpose,
+     * and an export that recomputed them would disagree with what the owner saw and
+     * signed off. `accounted_for` and `gap` are not stored, so they are derived from
+     * the stored figures through [PeriodReconciliation], the same formula the screen
+     * uses, rather than a second copy of it. A period closed without an expected total
+     * has no gap, and both cells are left empty rather than written as zero, which
+     * would read as "balanced". A gap stays a signed plain number (negative means the
+     * shop recorded more than it expected), which is why amounts never go through
+     * [text].
+     */
+    fun periods(
+        sessions: List<ReconciliationSession>,
+        zone: ZoneId,
+    ): String = buildCsv(PERIOD_COLUMNS) { append ->
+        sessions.forEach { session ->
+            val figures = PeriodReconciliation(
+                periodStart = session.periodStart,
+                periodEnd = session.periodEnd,
+                expectedTotalMinor = session.expectedTotalMinor,
+                capturedInMinor = session.capturedInMinor,
+                capturedOutMinor = session.capturedOutMinor,
+                cashRecordedMinor = session.cashRecordedMinor,
+                creditGivenMinor = session.creditGivenMinor,
+                creditRepaidMinor = session.creditRepaidMinor,
+            )
+            append(
+                listOf(
+                    timestamp(session.periodStart, zone),
+                    timestamp(session.periodEnd, zone),
+                    session.closedAt?.let { timestamp(it, zone) }.orEmpty(),
+                    MoneyFormatter.DEFAULT_CURRENCY,
+                    session.expectedTotalMinor?.let(MoneyFormatter::formatPlain).orEmpty(),
+                    MoneyFormatter.formatPlain(session.capturedInMinor),
+                    MoneyFormatter.formatPlain(session.capturedOutMinor),
+                    MoneyFormatter.formatPlain(session.cashRecordedMinor),
+                    MoneyFormatter.formatPlain(session.creditGivenMinor),
+                    MoneyFormatter.formatPlain(session.creditRepaidMinor),
+                    MoneyFormatter.formatPlain(figures.accountedForMinor),
+                    figures.gapMinor?.let(MoneyFormatter::formatPlain).orEmpty(),
+                    text(session.note.orEmpty()),
                 ),
             )
         }

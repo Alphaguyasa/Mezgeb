@@ -11,11 +11,14 @@ import et.alpha.mezgeb.data.local.customer
 import et.alpha.mezgeb.data.local.creditEntry
 import et.alpha.mezgeb.data.local.transaction
 import et.alpha.mezgeb.data.repo.CustomerRepository
+import et.alpha.mezgeb.data.repo.ReconciliationRepository
 import et.alpha.mezgeb.data.repo.RuleRepository
 import et.alpha.mezgeb.data.repo.TransactionRepository
 import et.alpha.mezgeb.data.settings.SettingsHarness
 import et.alpha.mezgeb.domain.model.CreditKind
 import et.alpha.mezgeb.domain.model.Direction
+import et.alpha.mezgeb.domain.model.ReconciliationSession
+import et.alpha.mezgeb.domain.model.SessionStatus
 import et.alpha.mezgeb.domain.report.BuildReportUseCase
 import et.alpha.mezgeb.domain.report.PdfExporter
 import et.alpha.mezgeb.domain.report.ReportPeriod
@@ -171,6 +174,33 @@ class ReportsViewModelTest : DatabaseTest() {
     }
 
     @Test
+    fun `exporting periods writes the closed ones, oldest first, and not the open one`() = runTest {
+        val repository = ReconciliationRepository(db.reconciliationSessionDao())
+        val older = now - 30 * DAY
+        val newer = now - 14 * DAY
+        // Inserted newest first, so the order in the file is the exporter's doing.
+        repository.openSession(period("newer", newer, SessionStatus.OPEN))
+        repository.closeSession(period("newer", newer, SessionStatus.CLOSED, note = "second"))
+        repository.openSession(period("older", older, SessionStatus.OPEN))
+        repository.closeSession(period("older", older, SessionStatus.CLOSED, note = "first"))
+        repository.openSession(period("open", now - DAY, SessionStatus.OPEN, note = "still open"))
+        val viewModel = viewModel()
+        val output = ByteArrayOutputStream()
+
+        viewModel.state.test {
+            awaitItemWhere { !it.isLoading }
+            viewModel.export(ExportKind.PERIODS_CSV, "content://test/periods.csv") { output }
+            awaitItemWhere { it.exported != null }
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        val rows = output.toString(Charsets.UTF_8).trim().lines().drop(1)
+        assertEquals(listOf("first", "second"), rows.map { it.substringAfterLast(',') })
+        assertTrue(viewModel.suggestedFileName(ExportKind.PERIODS_CSV).endsWith(".csv"))
+        assertEquals("text/csv", viewModel.mimeType(ExportKind.PERIODS_CSV))
+    }
+
+    @Test
     fun `a failed write is reported rather than swallowed`() = runTest {
         val viewModel = viewModel()
 
@@ -194,10 +224,32 @@ class ReportsViewModelTest : DatabaseTest() {
         transactions = transactions,
         customers = customers,
         rules = rules,
+        reconciliation = ReconciliationRepository(db.reconciliationSessionDao()),
         settings = settingsHarness.repository,
         pdfExporter = PdfExporter(ApplicationProvider.getApplicationContext<Context>(), zone),
         clock = clock,
         zone = zone,
+    )
+
+    private fun period(
+        id: String,
+        start: Long,
+        status: SessionStatus,
+        note: String? = null,
+    ) = ReconciliationSession(
+        id = id,
+        periodStart = start,
+        periodEnd = start + 7 * DAY,
+        openedAt = start,
+        expectedTotalMinor = 10_000,
+        capturedInMinor = 10_000,
+        capturedOutMinor = 0,
+        cashRecordedMinor = 0,
+        creditGivenMinor = 0,
+        creditRepaidMinor = 0,
+        status = status,
+        closedAt = if (status == SessionStatus.CLOSED) start + 7 * DAY else null,
+        note = note,
     )
 
     private suspend fun seedWeek() {

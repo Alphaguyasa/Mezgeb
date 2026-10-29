@@ -285,6 +285,7 @@
     <string name="report_export_ledger">መዝገብ (CSV)</string>
     <string name="report_export_credit">የዱቤ መዝገብ (CSV)</string>
     <string name="report_export_both">ሁለቱም (CSV)</string>
+    <string name="report_export_periods">የተዘጉ ጊዜያት (CSV)</string>
     <string name="report_export_pdf">ማጠቃለያ (PDF)</string>
     <string name="report_export_failed">ፋይሉን መጻፍ አልተቻለም።</string>
     <string name="report_pdf_period">ከ%1$s እስከ %2$s</string>
