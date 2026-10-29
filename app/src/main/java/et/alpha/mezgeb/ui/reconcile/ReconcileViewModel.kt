@@ -56,13 +56,20 @@ data class ReconcileUiState(
     /** The closed period being read, if one is open on screen. */
     val viewingSnapshot: ReconciliationSession? = null,
     val justClosedId: String? = null,
+    val errorMessage: ErrorKind? = null,
 ) {
     val hasOpenPeriod: Boolean get() = openSession != null
     val isBalanced: Boolean get() = reconciliation?.isBalanced == true
 
+    /** A custom period needs its dates first, and a second tap must not open a second period. */
+    val canOpen: Boolean
+        get() = !isBusy && (periodChoice != PeriodChoice.CUSTOM || customRange != null)
+
     /** A note explains a gap, so it is asked for only when there is one. */
     val canAddNote: Boolean get() = reconciliation?.gapMinor != null && !isBalanced
     val canClose: Boolean get() = openSession != null && reconciliation?.gapMinor != null && !isBusy
+
+    enum class ErrorKind { SAVE_FAILED }
 }
 
 sealed interface ReconcileEvent {
@@ -79,6 +86,7 @@ sealed interface ReconcileEvent {
     data class ViewSnapshot(val session: ReconciliationSession) : ReconcileEvent
     data object DismissSnapshot : ReconcileEvent
     data object CloseAcknowledged : ReconcileEvent
+    data object ErrorShown : ReconcileEvent
 }
 
 /**
@@ -140,6 +148,7 @@ class ReconcileViewModel @Inject constructor(
             isBusy = localState.isBusy,
             viewingSnapshot = localState.viewingSnapshot,
             justClosedId = localState.justClosedId,
+            errorMessage = localState.errorMessage,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -178,32 +187,49 @@ class ReconcileViewModel @Inject constructor(
 
             ReconcileEvent.DismissSnapshot -> local.update { it.copy(viewingSnapshot = null) }
             ReconcileEvent.CloseAcknowledged -> local.update { it.copy(justClosedId = null) }
+            ReconcileEvent.ErrorShown -> local.update { it.copy(errorMessage = null) }
         }
     }
 
+    /**
+     * Opens the chosen period. A second tap while the first is being written is
+     * ignored here, and the repository refuses to open a period while one is open, so
+     * neither a double tap nor a second screen can leave two OPEN rows behind.
+     */
     private fun openPeriod() {
+        if (local.value.isBusy) return
         val range = rangeFor(local.value.periodChoice, local.value.customRange) ?: return
         local.update { it.copy(isBusy = true) }
         viewModelScope.launch {
-            sessions.openSession(
-                ReconciliationSession(
-                    id = ids.newId(),
-                    periodStart = range.first,
-                    periodEnd = range.last,
-                    openedAt = clock.millis(),
-                    expectedTotalMinor = null,
-                    // Everything else is computed on demand until the period closes.
-                    capturedInMinor = 0,
-                    capturedOutMinor = 0,
-                    cashRecordedMinor = 0,
-                    creditGivenMinor = 0,
-                    creditRepaidMinor = 0,
-                    status = SessionStatus.OPEN,
-                    closedAt = null,
-                    note = null,
-                ),
-            )
-            local.update { it.copy(isBusy = false, expectedInput = null) }
+            val result = runCatching {
+                sessions.openSession(
+                    ReconciliationSession(
+                        id = ids.newId(),
+                        periodStart = range.first,
+                        periodEnd = range.last,
+                        openedAt = clock.millis(),
+                        expectedTotalMinor = null,
+                        // Everything else is computed on demand until the period closes.
+                        capturedInMinor = 0,
+                        capturedOutMinor = 0,
+                        cashRecordedMinor = 0,
+                        creditGivenMinor = 0,
+                        creditRepaidMinor = 0,
+                        status = SessionStatus.OPEN,
+                        closedAt = null,
+                        note = null,
+                    ),
+                )
+            }
+            // Refused because a period is already open is not a failure: the open one
+            // is what the screen now shows.
+            local.update {
+                if (result.isSuccess) {
+                    it.copy(isBusy = false, expectedInput = null)
+                } else {
+                    it.copy(isBusy = false, errorMessage = ReconcileUiState.ErrorKind.SAVE_FAILED)
+                }
+            }
         }
     }
 
@@ -217,8 +243,12 @@ class ReconcileViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            sessions.update(open.copy(expectedTotalMinor = minor))
-            recomputes.update { it + 1 }
+            runCatching { sessions.update(open.copy(expectedTotalMinor = minor)) }
+                .onSuccess { recomputes.update { it + 1 } }
+                // What was typed stays in the field, so trying again needs no retyping.
+                .onFailure {
+                    local.update { it.copy(errorMessage = ReconcileUiState.ErrorKind.SAVE_FAILED) }
+                }
         }
     }
 
@@ -240,37 +270,52 @@ class ReconcileViewModel @Inject constructor(
         local.update { it.copy(isBusy = true) }
 
         viewModelScope.launch {
-            // The figures are computed again here rather than taken from the screen.
-            // What the screen shows can lag a payment captured a moment ago, and a
-            // snapshot saved from it could close a short period as balanced.
-            val open = sessions.getOpenSession()?.takeIf { it.id == shown.id }
-            val figures = open?.let { figuresFor(it) }
-            if (open == null || figures == null || figures.gapMinor == null) {
-                local.update { it.copy(isBusy = false) }
-                return@launch
-            }
-            val note = typedNote.takeIf { it.isNotEmpty() && !figures.isBalanced }
+            // The id of the period closed, null when there was nothing to close (it
+            // was closed elsewhere, or has no gap yet). A failure anywhere, reading or
+            // writing, is the failure branch below.
+            val result = runCatching {
+                // The figures are computed again here rather than taken from the screen.
+                // What the screen shows can lag a payment captured a moment ago, and a
+                // snapshot saved from it could close a short period as balanced.
+                val open = sessions.getOpenSession()?.takeIf { it.id == shown.id }
+                val figures = open?.let { figuresFor(it) }
+                if (open == null || figures == null || figures.gapMinor == null) {
+                    return@runCatching null
+                }
+                val note = typedNote.takeIf { it.isNotEmpty() && !figures.isBalanced }
 
-            sessions.closeSession(
-                open.copy(
-                    expectedTotalMinor = figures.expectedTotalMinor,
-                    capturedInMinor = figures.capturedInMinor,
-                    capturedOutMinor = figures.capturedOutMinor,
-                    cashRecordedMinor = figures.cashRecordedMinor,
-                    creditGivenMinor = figures.creditGivenMinor,
-                    creditRepaidMinor = figures.creditRepaidMinor,
-                    status = SessionStatus.CLOSED,
-                    closedAt = clock.millis(),
-                    note = note,
-                ),
-            )
-            local.update {
-                it.copy(
-                    isBusy = false,
-                    justClosedId = open.id,
-                    expectedInput = null,
-                    noteInput = "",
+                sessions.closeSession(
+                    open.copy(
+                        expectedTotalMinor = figures.expectedTotalMinor,
+                        capturedInMinor = figures.capturedInMinor,
+                        capturedOutMinor = figures.capturedOutMinor,
+                        cashRecordedMinor = figures.cashRecordedMinor,
+                        creditGivenMinor = figures.creditGivenMinor,
+                        creditRepaidMinor = figures.creditRepaidMinor,
+                        status = SessionStatus.CLOSED,
+                        closedAt = clock.millis(),
+                        note = note,
+                    ),
                 )
+                open.id
+            }
+            // On a failure the period stays open with the note still typed, so nothing
+            // the owner wrote is lost and Close can simply be tried again.
+            local.update {
+                val closedId = result.getOrNull()
+                when {
+                    result.isFailure -> it.copy(
+                        isBusy = false,
+                        errorMessage = ReconcileUiState.ErrorKind.SAVE_FAILED,
+                    )
+                    closedId == null -> it.copy(isBusy = false)
+                    else -> it.copy(
+                        isBusy = false,
+                        justClosedId = closedId,
+                        expectedInput = null,
+                        noteInput = "",
+                    )
+                }
             }
         }
     }
@@ -307,6 +352,7 @@ class ReconcileViewModel @Inject constructor(
         val isBusy: Boolean = false,
         val viewingSnapshot: ReconciliationSession? = null,
         val justClosedId: String? = null,
+        val errorMessage: ReconcileUiState.ErrorKind? = null,
     )
 
     private companion object {

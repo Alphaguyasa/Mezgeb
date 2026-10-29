@@ -9,8 +9,10 @@ import et.alpha.mezgeb.domain.model.SessionStatus
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CategoryDaoTest : DatabaseTest() {
@@ -193,6 +195,22 @@ class ReconciliationSessionDaoTest : DatabaseTest() {
         dao.insert(session("newer", status = SessionStatus.CLOSED, start = T0 + 2 * DAY, end = T0 + 3 * DAY))
 
         assertEquals("newer", dao.getMostRecentlyClosed()?.id)
+    }
+
+    @Test
+    fun `a period is opened only while none is open`() = runTest {
+        assertTrue(dao.insertIfNoneOpen(session("first", status = SessionStatus.OPEN, start = T0)))
+        assertFalse(dao.insertIfNoneOpen(session("second", status = SessionStatus.OPEN, start = T0 + DAY)))
+
+        assertEquals(listOf("first"), dao.getAll().map { it.id })
+    }
+
+    @Test
+    fun `a closed period does not stop the next one opening`() = runTest {
+        dao.insert(session("closed", status = SessionStatus.CLOSED, start = T0))
+
+        assertTrue(dao.insertIfNoneOpen(session("next", status = SessionStatus.OPEN, start = T0 + DAY)))
+        assertEquals("next", dao.getOpenSession()?.id)
     }
 
     private fun session(

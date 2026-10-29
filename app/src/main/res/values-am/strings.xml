@@ -236,6 +236,7 @@
     <string name="reconcile_period_week">ያለፉት 7 ቀናት</string>
     <string name="reconcile_period_custom">ቀኖችን ይምረጡ</string>
     <string name="reconcile_open_period">መመርመር ጀምር</string>
+    <string name="reconcile_save_failed">ማስቀመጥ አልተቻለም። እንደገና ይሞክሩ።</string>
     <string name="reconcile_expected_label">የተቀበሉት ይመስልዎታል</string>
     <string name="reconcile_expected_hint">የራስዎ ቁጥር — ከሳጥኑ፣ ከደብተሩ ወይም ከትውስታዎ።</string>
     <string name="reconcile_expected_invalid">መጠን ያስገቡ።</string>
