@@ -24,6 +24,13 @@ import java.time.format.DateTimeFormatter
  * for a spreadsheet. Money stays `Long` santim everywhere else in this app; this is
  * the boundary where it becomes text, and it becomes the least ambiguous text
  * available.
+ *
+ * **Free text cannot start a formula.** A name, a note or a reference comes from a
+ * message or from the owner's typing, and Excel or Sheets runs a cell that starts with
+ * `=`, `+`, `-` or `@` as a formula (`=HYPERLINK(...)` is the classic). Every free-text
+ * cell goes through [text], which puts a `'` in front of such a value. Amounts and
+ * dates do not: they are written by this file, and a negative amount must stay a
+ * number.
  */
 object CsvExporter {
 
@@ -58,11 +65,11 @@ object CsvExporter {
                     MoneyFormatter.formatPlain(transaction.amountMinor),
                     transaction.currency,
                     transaction.channel.name,
-                    transaction.counterpartyName.orEmpty(),
-                    transaction.counterpartyPhone.orEmpty(),
-                    transaction.providerTxnId.orEmpty(),
-                    transaction.categoryId?.let { categoryNames[it] }.orEmpty(),
-                    transaction.note.orEmpty(),
+                    text(transaction.counterpartyName.orEmpty()),
+                    text(transaction.counterpartyPhone.orEmpty()),
+                    text(transaction.providerTxnId.orEmpty()),
+                    text(transaction.categoryId?.let { categoryNames[it] }.orEmpty()),
+                    text(transaction.note.orEmpty()),
                     transaction.isReconciled.toString(),
                 ),
             )
@@ -79,12 +86,12 @@ object CsvExporter {
             append(
                 listOf(
                     timestamp(entry.occurredAt, zone),
-                    customer?.name.orEmpty(),
-                    customer?.phone.orEmpty(),
+                    text(customer?.name.orEmpty()),
+                    text(customer?.phone.orEmpty()),
                     entry.kind.name,
                     MoneyFormatter.formatPlain(entry.amountMinor),
                     MoneyFormatter.DEFAULT_CURRENCY,
-                    entry.note.orEmpty(),
+                    text(entry.note.orEmpty()),
                     entry.linkedTransactionId.orEmpty(),
                 ),
             )
@@ -102,6 +109,17 @@ object CsvExporter {
         return "\"" + value.replace("\"", "\"\"") + "\""
     }
 
+    /**
+     * Neutralises a free-text value that a spreadsheet would run as a formula, by
+     * prefixing `'` (the OWASP advice for CSV injection). A tab or a carriage return at
+     * the start is included because some spreadsheets skip it and then read the
+     * formula behind it. The cost is visible: a phone exported as `+251...` reads
+     * `'+251...` in a plain text editor. That is the price of not running a stranger's
+     * formula on the accountant's computer.
+     */
+    fun text(value: String): String =
+        if (value.isNotEmpty() && value[0] in FORMULA_TRIGGERS) "'$value" else value
+
     private fun buildCsv(
         columns: List<String>,
         rows: ((List<String>) -> Unit) -> Unit,
@@ -118,6 +136,8 @@ object CsvExporter {
         )
 
     private const val DELIMITER = ','
+
+    private val FORMULA_TRIGGERS = setOf('=', '+', '-', '@', '\t', '\r')
 
     /** Kept so callers naming a file agree on the extension and type. */
     const val MIME_TYPE = "text/csv"

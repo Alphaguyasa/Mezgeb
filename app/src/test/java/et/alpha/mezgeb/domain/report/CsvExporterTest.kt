@@ -59,6 +59,83 @@ class CsvExporterTest {
         assertEquals("አበበ በቀለ", CsvExporter.escape("አበበ በቀለ"))
     }
 
+    // --- Formula injection: free text must never run in a spreadsheet ---------------
+
+    @Test
+    fun `a value a spreadsheet would run as a formula gets a leading quote`() {
+        assertEquals("'=HYPERLINK(\"x\",\"y\")", CsvExporter.text("=HYPERLINK(\"x\",\"y\")"))
+        assertEquals("'+251900000000", CsvExporter.text("+251900000000"))
+        assertEquals("'-2+3", CsvExporter.text("-2+3"))
+        assertEquals("'@SUM(A1)", CsvExporter.text("@SUM(A1)"))
+        // Some spreadsheets skip a leading tab or carriage return and read what follows.
+        assertEquals("'\t=1+1", CsvExporter.text("\t=1+1"))
+        assertEquals("'\r=1+1", CsvExporter.text("\r=1+1"))
+    }
+
+    @Test
+    fun `plain text and amharic are unchanged`() {
+        assertEquals("ABEBE", CsvExporter.text("ABEBE"))
+        assertEquals("አበበ በቀለ", CsvExporter.text("አበበ በቀለ"))
+        assertEquals("0911000000", CsvExporter.text("0911000000"))
+        // Only the first character counts; a formula sign later in a note is harmless.
+        assertEquals("paid 200 = half", CsvExporter.text("paid 200 = half"))
+        assertEquals("", CsvExporter.text(""))
+    }
+
+    @Test
+    fun `every free-text ledger column is neutralised, and the amount is not`() {
+        val csv = CsvExporter.ledger(
+            transactions = listOf(
+                transaction(
+                    amountMinor = 45_000,
+                    counterpartyName = "=cmd|' /C calc'!A0",
+                    counterpartyPhone = "+251900000000",
+                    providerTxnId = "@REF",
+                    categoryId = "cat_bad",
+                    note = "-1+1",
+                ),
+            ),
+            categoryNames = mapOf("cat_bad" to "=1+1"),
+            zone = zone,
+        )
+
+        val fields = splitFields(csv.trim().lineSequence().last())
+        assertEquals(CsvExporter.LEDGER_COLUMNS.size, fields.size)
+        val byColumn = CsvExporter.LEDGER_COLUMNS.zip(fields).toMap()
+        assertEquals("'=cmd|' /C calc'!A0", byColumn["counterparty"])
+        assertEquals("'+251900000000", byColumn["phone"])
+        assertEquals("'@REF", byColumn["reference"])
+        assertEquals("'=1+1", byColumn["category"])
+        assertEquals("'-1+1", byColumn["note"])
+        assertEquals("450.00", byColumn["amount"])
+    }
+
+    @Test
+    fun `the credit book neutralises the customer's name, phone and note`() {
+        val csv = CsvExporter.creditBook(
+            entries = listOf(
+                CreditEntry(
+                    id = "e1",
+                    customerId = "c1",
+                    kind = CreditKind.REPAYMENT,
+                    amountMinor = 10_000,
+                    occurredAt = T0,
+                    note = "=IMPORTXML(\"x\", \"y\")",
+                    linkedTransactionId = null,
+                ),
+            ),
+            customers = mapOf("c1" to Customer("c1", "@Abebe", "+251900000001", null, T0)),
+            zone = zone,
+        )
+
+        val fields = splitFields(csv.trim().lineSequence().last())
+        val byColumn = CsvExporter.CREDIT_COLUMNS.zip(fields).toMap()
+        assertEquals("'@Abebe", byColumn["customer"])
+        assertEquals("'+251900000001", byColumn["phone"])
+        assertEquals("'=IMPORTXML(\"x\", \"y\")", byColumn["note"])
+        assertEquals("100.00", byColumn["amount"])
+    }
+
     // --- The files ---------------------------------------------------------------------
 
     @Test
@@ -155,6 +232,32 @@ class CsvExporterTest {
         assertTrue("expected an ISO offset timestamp: $row", row.startsWith("2026-07-02T03:00:00+03:00"))
     }
 
+    /** Splits a row the way a reader would: quotes respected, doubled quotes undone. */
+    private fun splitFields(row: String): List<String> {
+        val fields = mutableListOf<String>()
+        val current = StringBuilder()
+        var inQuotes = false
+        var i = 0
+        while (i < row.length) {
+            val char = row[i]
+            when {
+                char == '"' && inQuotes && i + 1 < row.length && row[i + 1] == '"' -> {
+                    current.append('"')
+                    i++
+                }
+                char == '"' -> inQuotes = !inQuotes
+                char == ',' && !inQuotes -> {
+                    fields += current.toString()
+                    current.clear()
+                }
+                else -> current.append(char)
+            }
+            i++
+        }
+        fields += current.toString()
+        return fields
+    }
+
     /** Counts fields the way a reader would, respecting quotes. */
     private fun countFields(row: String): Int {
         var fields = 1
@@ -171,6 +274,8 @@ class CsvExporterTest {
     private fun transaction(
         amountMinor: Long = 45_000,
         counterpartyName: String? = null,
+        counterpartyPhone: String? = null,
+        providerTxnId: String? = null,
         categoryId: String? = null,
         note: String? = null,
         occurredAt: Long = T0,
@@ -182,8 +287,8 @@ class CsvExporterTest {
         currency = "ETB",
         channel = Channel.TELEBIRR,
         counterpartyName = counterpartyName,
-        counterpartyPhone = null,
-        providerTxnId = null,
+        counterpartyPhone = counterpartyPhone,
+        providerTxnId = providerTxnId,
         balanceAfterMinor = null,
         occurredAt = occurredAt,
         categoryId = categoryId,
