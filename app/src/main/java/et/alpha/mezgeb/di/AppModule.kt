@@ -9,6 +9,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import et.alpha.mezgeb.domain.lock.DeviceUptime
+import et.alpha.mezgeb.util.ClockLocalDays
+import et.alpha.mezgeb.util.LocalDays
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +56,10 @@ object AppModule {
      */
     @Provides
     fun provideZoneId(): ZoneId = ZoneId.systemDefault()
+
+    /** The local day, from the same clock and zone, so a screen can roll over at midnight. */
+    @Provides
+    fun provideLocalDays(clock: Clock, zone: ZoneId): LocalDays = ClockLocalDays(clock, zone)
 
     /**
      * Time since boot, for the PIN lockout and the auto-lock: unlike [Clock], the

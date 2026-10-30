@@ -16,7 +16,7 @@ import et.alpha.mezgeb.domain.backup.BackupReminderPolicy
 import et.alpha.mezgeb.domain.model.Direction
 import et.alpha.mezgeb.ui.common.TransactionUiModel
 import et.alpha.mezgeb.ui.common.toUiModel
-import et.alpha.mezgeb.util.MezgebDates
+import et.alpha.mezgeb.util.LocalDays
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -28,7 +28,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Clock
-import java.time.ZoneId
 import javax.inject.Inject
 
 /**
@@ -73,16 +72,19 @@ class TodayViewModel @Inject constructor(
     private val battery: BatteryOptimizationHelper,
     private val settings: SettingsRepository,
     private val clock: Clock,
-    private val zone: ZoneId,
+    private val days: LocalDays,
 ) : ViewModel() {
 
     private val refreshes = MutableStateFlow(0)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val state: StateFlow<TodayUiState> = refreshes
-        // The day's bounds are captured per refresh rather than once: an app left open
-        // overnight would otherwise still be totalling yesterday.
-        .flatMapLatest { todayFlow(rules) }
+        // The day's bounds come from LocalDays, which moves on at local midnight, and
+        // the ticker restarts on every refresh. A shop that keeps the app open past
+        // midnight would otherwise still be totalling yesterday until it left and came
+        // back; the restart catches a clock the owner changed by hand.
+        .flatMapLatest { days.observe() }
+        .flatMapLatest { bounds -> todayFlow(rules, bounds) }
         .catch { emit(TodayUiState(isLoading = false, errorMessage = TodayUiState.ErrorKind.LOAD_FAILED)) }
         .stateIn(
             scope = viewModelScope,
@@ -90,9 +92,7 @@ class TodayViewModel @Inject constructor(
             initialValue = TodayUiState(),
         )
 
-    private fun todayFlow(rules: RuleRepository) = run {
-        val bounds = MezgebDates.dayBounds(clock.millis(), zone)
-
+    private fun todayFlow(rules: RuleRepository, bounds: LongRange) = run {
         val totals = combine(
             transactions.observeSum(Direction.IN, bounds.first, bounds.last),
             transactions.observeSum(Direction.OUT, bounds.first, bounds.last),

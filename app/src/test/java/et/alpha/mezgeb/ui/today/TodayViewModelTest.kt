@@ -21,9 +21,11 @@ import et.alpha.mezgeb.domain.backup.BackupReminderPolicy
 import et.alpha.mezgeb.domain.model.Channel
 import et.alpha.mezgeb.domain.model.Direction
 import et.alpha.mezgeb.domain.model.ParseState
+import et.alpha.mezgeb.util.LocalDays
 import et.alpha.mezgeb.util.MezgebDates
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -54,6 +56,12 @@ class TodayViewModelTest : DatabaseTest() {
     /** Mid-morning, so "today" has room on both sides of it in local time. */
     private val now = Instant.parse("2026-08-01T09:30:00Z").toEpochMilli()
     private val clock = Clock.fixed(Instant.ofEpochMilli(now), ZoneOffset.UTC)
+
+    /**
+     * The local day, set by hand. The real [et.alpha.mezgeb.util.ClockLocalDays] waits
+     * for midnight on a timer and is tested on its own in `ClockLocalDaysTest`.
+     */
+    private val day = MutableStateFlow(MezgebDates.dayBounds(now, zone))
 
     private val access = FakeCaptureAccess()
     private lateinit var settingsHarness: SettingsHarness
@@ -111,6 +119,29 @@ class TodayViewModelTest : DatabaseTest() {
             assertEquals(50_000L, state.totalInMinor)
             assertEquals(12_000L, state.totalOutMinor)
             assertEquals(38_000L, state.netMinor)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `an app left open past midnight moves on to the new day`() = runTest {
+        val yesterday = MezgebDates.dayBounds(now, zone)
+        val today = (yesterday.last + 1)..(yesterday.last + MezgebDates.DAY_MILLIS)
+        db.transactionDao().insertAll(
+            listOf(
+                transaction("t1", direction = Direction.IN, amountMinor = 45_000, occurredAt = yesterday.last - 1),
+                transaction("t2", direction = Direction.IN, amountMinor = 7_000, occurredAt = today.first + 1),
+            ),
+        )
+
+        viewModel().state.test {
+            assertEquals(45_000L, awaitItemWhere { it.totalInMinor > 0 }.totalInMinor)
+
+            // Midnight passes with the screen still open: no refresh, no resume.
+            day.value = today
+
+            // Yesterday's sale drops out, and the one just after midnight counts.
+            assertEquals(7_000L, awaitItemWhere { it.totalInMinor != 45_000L }.totalInMinor)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -272,7 +303,7 @@ class TodayViewModelTest : DatabaseTest() {
         battery = BatteryOptimizationHelper(ApplicationProvider.getApplicationContext<Context>()),
         settings = settingsHarness.repository,
         clock = clock,
-        zone = zone,
+        days = LocalDays { day },
     )
 
     private suspend fun ReceiveTurbine<TodayUiState>.awaitLoaded(): TodayUiState =
