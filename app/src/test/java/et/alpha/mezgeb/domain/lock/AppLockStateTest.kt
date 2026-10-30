@@ -63,6 +63,44 @@ class AppLockStateTest {
         assertTrue(lockState.isLocked.value)
     }
 
+    @Test
+    fun `a zero timeout does not lock on rotation or a language change`() {
+        // MainActivity passes isChangingConfigurations: the Activity is recreated, but
+        // the app never left the screen.
+        every { repository.timeoutSeconds() } returns 0
+        lockState.onUnlocked()
+        lockState.onBackgrounded(changingConfigurations = true)
+        lockState.onForegrounded()
+
+        assertFalse(lockState.isLocked.value)
+    }
+
+    @Test
+    fun `a rotation does not hide a real absence that follows it`() {
+        // Rotate, then leave for two minutes: the real stop is the one that counts.
+        lockState.onUnlocked()
+        lockState.onBackgrounded(changingConfigurations = true)
+        lockState.onForegrounded()
+        lockState.onBackgrounded()
+        uptime.elapsed += 120_000L
+        lockState.onForegrounded()
+
+        assertTrue(lockState.isLocked.value)
+    }
+
+    @Test
+    fun `a rotation while away does not reset the time away`() {
+        // Leaving, then a configuration change while stopped (the language changed in
+        // system settings), must not shorten the measured absence.
+        lockState.onUnlocked()
+        lockState.onBackgrounded()
+        uptime.elapsed += 120_000L
+        lockState.onBackgrounded(changingConfigurations = true)
+        lockState.onForegrounded()
+
+        assertTrue(lockState.isLocked.value)
+    }
+
     private class FakeUptime : DeviceUptime {
         var elapsed = 1_000_000L
         override fun elapsedMillis() = elapsed
