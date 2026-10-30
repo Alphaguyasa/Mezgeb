@@ -16,21 +16,9 @@ R19 to R22 were added. Replanned again on 2026-10-26: R23 to R26 were added. R27
 list fell to 4: R29 to R37 come from a fresh code audit. R29 and R30 were checked by
 hand against the code; the others carry the audit's file and line evidence and are
 re-checked when picked up. R29 and R30 were done on the second 2026-10-28 run. R31 and R32 were done on
-2026-10-29, and R33 and R22 on the second 2026-10-29 run.
+2026-10-29, and R33 and R22 on the second 2026-10-29 run. R34 and R35 were done on 2026-10-30.
 
 ## Open
-
-### R34 · P2 · S: "Lock immediately" locks on rotation and on a language change
-With the 0-second timeout, `MainActivity.onStop()`/`onStart()` do not check
-`isChangingConfigurations`, so turning the phone or switching the language (which
-recreates the activity) asks for the PIN again. Test: with a 0 timeout, a Robolectric
-`recreate()` leaves the app unlocked.
-
-### R35 · P2 · S: Today does not roll over at midnight
-`TodayViewModel` fixes the day's bounds when it refreshes, and it refreshes only on
-resume. A shop that keeps the app open past midnight sees yesterday's totals. Fix:
-also refresh at the next local midnight. Test: advance the injected clock past
-midnight; a transaction after midnight counts, yesterday's do not.
 
 ### R36 · P2 · S: The backup header is not authenticated
 `BackupCrypto` never calls `updateAAD`, so the format and schema version in the
@@ -66,6 +54,15 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 
 ## Done
 
+- 2026-10-30 · R35: Today rolls over at local midnight with the screen still open.
+  The day's bounds come from the new `LocalDays` (`ClockLocalDays`), which re-emits
+  at the next local midnight on the injected clock; a refresh still restarts it.
+  PR #62. (Tag `v2026-10-30-2` not pushed: A6.)
+- 2026-10-30 · R34: "Lock immediately" no longer asks for the PIN on rotation or a
+  language change. `MainActivity.onStop()` passes `isChangingConfigurations`, and a
+  configuration-change stop is not counted as time away. Tested in `AppLockStateTest`
+  (no Hilt activity-test setup exists for a `recreate()` test). PR #61. (Tag
+  `v2026-10-30-1` not pushed: A6.)
 - 2026-10-29 (second run) · R22: Reports → Export → "Closed periods (CSV)" writes
   every closed period, oldest first, with the figures as snapshotted (never
   recomputed). `accounted_for` and `gap` are derived from the stored figures through

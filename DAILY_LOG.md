@@ -5,6 +5,59 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-10-30: Seventeenth daily run (scheduled)
+
+**Start.** CI on `main` was green (`2ffc833`, the docs PR from the last run). Model
+check: the models overview still lists Opus 5.5 (`claude-opus-5-5`) as the newest
+Opus. This run used it, so no switch was needed. Fable 5.1 was ignored, as Alpha
+decided. No answers had been written into NEEDS_APPROVAL.md.
+
+**Environment.** JDK 21, no Android SDK. No Gradle build ran locally; CI judged both
+PRs.
+
+**R34 ("Lock immediately" on rotation), PR #61, merged (`0075655`).**
+- `AppLockState.onBackgrounded(changingConfigurations)`: a stop caused by recreating
+  the Activity (rotation, language change) is not recorded as time away.
+  `MainActivity.onStop()` passes `isChangingConfigurations`.
+- Tests: with a 0 timeout, a configuration-change stop and start leaves the app
+  unlocked; a rotation followed by a real 2-minute absence still locks; a
+  configuration change while away does not shorten the absence.
+- The roadmap asked for a Robolectric `recreate()` test. The app has no Hilt
+  activity-test setup, so the decision is tested in `AppLockState`, where the bug was.
+- **CI:** green on the first run.
+
+**R35 (Today at midnight), PR #62, merged (`fa8ad29`).**
+- New `util/LocalDays` and `ClockLocalDays`: emit today's bounds, wait until the next
+  local midnight on the injected clock, emit again. Provided in `AppModule`.
+  `TodayViewModel` takes it in place of `ZoneId`; a refresh still restarts it.
+- Tests: `ClockLocalDaysTest` in virtual time (still today 1 ms before midnight, the
+  next day at midnight, then a full day's wait); `TodayViewModelTest`: with the screen
+  open, moving past midnight drops yesterday's sale and counts the new one.
+- **CI:** green on the first run.
+
+**Tags.** `v2026-10-30-1` (#61) and `v2026-10-30-2` (#62) were created locally.
+Pushing failed again ("remote end hung up") (A6).
+
+**Dependabot.** #12, #14, #15, #22 and #40 are unchanged and still wait on A7.
+
+**Roadmap.** 5 open: R36 and R37 unblocked, R12 (waits on A7), R10 and R11 (blocked).
+Not below 5, so no replan this run. The next run will very likely replan after R36.
+Next up: R36, then R37.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R34: "Lock immediately" no longer locks on rotation or a language change (#61). R35: Today rolls over at midnight with the app open (#62) |
+| Merged | #61 yes (`0075655`), #62 yes (`fa8ad29`). Tags `v2026-10-30-1`/`-2` created but **could not be pushed** (A6) |
+| Failed or blocked | Nothing failed; both PRs green on CI. Tag push (A6). No local Gradle |
+| Roadmap | 5 open, 2 unblocked (R36, R37). No replan needed yet |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #22, #40), A8 unique index on `transactions.rawMessageId` |
+| Next | R36 (authenticate the backup header), then R37 (balance chain), replanning when the open list drops below 5 |
+
+---
+
 ## 2026-10-29: Sixteenth daily run (scheduled, second run of the day)
 
 **Start.** CI on `main` was green (`db75bb5`, the docs PR from the morning run). Model
