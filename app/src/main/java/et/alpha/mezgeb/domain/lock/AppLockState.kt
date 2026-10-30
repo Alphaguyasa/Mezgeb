@@ -37,7 +37,16 @@ class AppLockState @Inject constructor(
         backgroundedAt = null
     }
 
-    fun onBackgrounded() {
+    /**
+     * [changingConfigurations] is the Activity's `isChangingConfigurations`. Turning the
+     * phone or switching the language destroys and recreates the Activity, so it stops
+     * and starts again within milliseconds without the app ever leaving the screen.
+     * Recording that as time away would lock "Lock immediately" on every rotation,
+     * because zero milliseconds away meets a zero timeout. The app is still in front of
+     * the same person, so nothing is recorded.
+     */
+    fun onBackgrounded(changingConfigurations: Boolean = false) {
+        if (changingConfigurations) return
         if (!_isLocked.value) backgroundedAt = uptime.elapsedMillis()
     }
 

@@ -96,11 +96,12 @@ class MainActivity : FragmentActivity() {
     /**
      * The timeout is measured from here, not from a Compose lifecycle observer: the
      * question is whether the *app* left the foreground, and a composable that has been
-     * disposed cannot answer it.
+     * disposed cannot answer it. A stop caused by rotation or a language change is not
+     * the app leaving the foreground, so it is passed on as such.
      */
     override fun onStop() {
         super.onStop()
-        lockState.onBackgrounded()
+        lockState.onBackgrounded(changingConfigurations = isChangingConfigurations)
     }
 
     override fun onStart() {
