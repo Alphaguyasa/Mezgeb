@@ -93,6 +93,8 @@ can then be added on request.
 - 2026-10-30: the same failure ("remote end hung up") for `v2026-10-30-1`
   (`0075655`, #61) and `v2026-10-30-2` (`fa8ad29`, #62). Thirty-two tags are
   missing now.
+- 2026-10-31: the same failure ("remote end hung up") for `v2026-10-31-1`
+  (`c995d75`, #64) and `v2026-10-31-2` (#65). Thirty-four tags are missing now.
 - **Effect:** you can still roll back. Every merge is a squash commit on `main` with
   its PR number, and the log lists each one. Only the named tags are missing.
 - **Options:** (a) do nothing (the log stays the rollback list); (b) create the tags
@@ -142,6 +144,24 @@ Transaction for one message?
 - **Options:** (a) yes, keep the older row, soft-delete the newer one and flag it in
   the review queue; (b) a non-unique check instead: a startup scan that only flags
   such pairs for you to resolve; (c) leave it as is (the code guard holds).
+- **Money:** none.
+
+### A9 · What should capture do while demo mode is on? (ROADMAP R39)
+**Ask:** pick one of the options below.
+- **The bug:** demo mode points the whole app at a separate demo database, but the
+  notification listener (and the `direct` SMS import) keep capturing into it. When demo
+  mode is turned off, the demo file is deleted, and every real payment that arrived
+  during the demo goes with it. Nothing tells the owner.
+- **Options:** (a) capture keeps writing to the **real** database during a demo (best
+  for the shop; it means the real file is opened while the demo is shown, which the
+  current design avoids on purpose); (b) capture is paused during a demo and the
+  Settings switch says so before it is turned on (simple, but payments in that window
+  are never recorded, though the balance-chain check from R37 would flag the gap);
+  (c) keep messages that arrive during a demo in a small holding table in the demo file
+  and copy them to the real database when demo mode is turned off.
+- **Recommendation:** (a), or (c) if you want the real file never opened during a demo.
+- **Until you answer:** R39 part 1 (refuse a restore during a demo) can go ahead; capture
+  stays as it is.
 - **Money:** none.
 
 ## Resolved
