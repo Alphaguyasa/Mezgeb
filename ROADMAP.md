@@ -16,23 +16,72 @@ R19 to R22 were added. Replanned again on 2026-10-26: R23 to R26 were added. R27
 list fell to 4: R29 to R37 come from a fresh code audit. R29 and R30 were checked by
 hand against the code; the others carry the audit's file and line evidence and are
 re-checked when picked up. R29 and R30 were done on the second 2026-10-28 run. R31 and R32 were done on
-2026-10-29, and R33 and R22 on the second 2026-10-29 run. R34 and R35 were done on 2026-10-30.
+2026-10-29, and R33 and R22 on the second 2026-10-29 run. R34 and R35 were done on 2026-10-30. R36 and R37 were done on 2026-10-31, and the
+list then fell to 3, so the same run replanned: R38 to R44 come from a fresh code audit,
+and R38 and R39 were checked by hand against the code.
 
 ## Open
 
-### R36 · P2 · S: The backup header is not authenticated
-`BackupCrypto` never calls `updateAAD`, so the format and schema version in the
-header can be changed without breaking decryption. Fix: authenticate the header as
-AAD in a format version 2, and keep reading version 1. Test: a v2 file with one
-schema byte flipped fails as `WRONG_PASSPHRASE_OR_CORRUPT`; a v1 file still restores.
+### R38 · P0 · S: A backup can be written with an empty passphrase
+`SettingsRoute` keeps the passphrase in `remember { mutableStateOf("") }`
+(`ui/settings/SettingsScreen.kt:72`) while the file picker is open. A rotation or a
+low-memory kill resets it to `""`, and the picker's result (line 76) then writes the
+backup encrypted with `""`. Anyone can open that file, and the restore dialog asks for
+at least 8 characters, so the owner can never restore it. `BackupCrypto.write` does not
+refuse an empty passphrase. Fix: keep the passphrase in the ViewModel (in memory only,
+never saved); if it is missing when the file comes back, refuse, delete the empty file
+and say so. `BackupCrypto.write` refuses a passphrase under 8 characters. Tests: a
+ViewModel test where the file arrives with no passphrase gives a failure and writes
+nothing; `write` with an empty passphrase fails.
 
-### R37 · P3 · M: Check the balance chain for missed messages
-`balanceAfterMinor` is stored but only shown. Per channel, the previous balance plus
-or minus the amount should equal the next balance; a break means a payment was never
-captured (listener killed, notification lost). Show it as a reconcile explanation
-("CBE Birr balance moved by X between 10:02 and 14:30 with nothing recorded"), never
-corrected automatically, and allow for fees. Tests: a continuous chain gives nothing;
-a chain with a gap gives one explanation with the exact difference in santim.
+### R39 · P0 · M: Demo mode loses real payments captured during a demo
+Demo mode swaps the whole database (`di/DatabaseModule.kt:42`), but the notification
+listener (`capture/notification/MezgebNotificationListener.kt:89`) and the `direct` SMS
+import keep capturing, with no demo check anywhere in `capture/`. Real payments that
+arrive during a demo go into the demo file, and `DemoModeController.disable()` (line
+83) deletes it. A restore is also allowed in demo mode (`SettingsViewModel.kt:281`)
+and is deleted the same way. Part 1 (no approval needed): refuse a restore while demo
+mode is on, with a message. Part 2 waits on **NEEDS_APPROVAL.md A9** (what capture
+does during a demo). Tests: restore in demo mode is refused and nothing is written;
+part 2 per the decision.
+
+### R40 · P1 · S: Backup, restore and export run on the main thread
+`SettingsViewModel.kt:253` and `:283`, and `ReportsViewModel.kt:136-139`, use plain
+`viewModelScope.launch`. `BackupRepository` and `BackupCrypto` never switch dispatcher,
+so 210,000 PBKDF2 rounds, JSON encoding, `readBytes()` and the CSV or PDF writes all
+run on the main thread: an "app not responding" risk on cheap phones. A failed write
+also leaves an empty or partial file behind. Fix: inject the existing `@IoDispatcher`
+(`di/AppModule.kt:82`) and use `withContext`; delete the document when a write fails.
+Tests: with a test dispatcher, the work runs on it; a failed write deletes the file.
+
+### R41 · P1 · S: The amount normalizer guesses on bad input
+`parser/.../AmountNormalizer.kt:67-69` multiplies by 100 with no overflow check (a
+17-digit amount becomes negative), line 55 drops commas without checking the grouping
+("1,5" becomes 15 birr, "12,34" becomes 1,234), and zero is accepted. Project rule:
+a value that will not normalize goes to review, never a guess. Fix: null on overflow
+(`Math.multiplyExact`), on bad grouping (`^\d{1,3}(,\d{3})*$`) and on 0 or less.
+Tests: anonymized fixtures for overflow, "1,5", "12,34", "1,2345" and "0.00" all come
+out `Unmatched`; corpus accuracy unchanged.
+
+### R42 · P2 · M: A credit entry can never be corrected or removed
+`CustomerRepository.updateEntry` and `deleteEntry` (lines 64 and 66) are never called.
+A mistyped credit (5,000 instead of 500) stays in the balance for good; the only way
+out is a fake repayment. Fix: edit and delete on a statement line, with a confirm step.
+Closed-period snapshots stay as they are. Tests: Turbine tests for edit and delete;
+the balance follows; a closed period's figures do not change.
+
+### R43 · P2 · S: `CreditEntryViewModel` has no tests
+Every other screen ViewModel has a test. Untested: the keypad cap, re-ranking of
+repayment suggestions on each amount change, link and unlink, the double-save guard,
+and `SAVE_FAILED`. Tests: Turbine with in-memory Room, including that a payment is
+never linked automatically.
+
+### R44 · P3 · S: Share a customer's statement as text
+`CustomerDetailScreen.kt:78-82` only offers a reminder SMS. When a customer disputes a
+balance, the shop should be able to send the dated lines and the running balance.
+Fix: "Share statement" builds plain text from the statement and opens the share sheet
+(`ACTION_SEND`; no permission, no network). English and Amharic. Tests: the text
+builder (order, signs, balance, empty statement) and an accessibility check.
 
 ### R10 · P1 · L: Encrypt the database at rest
 **Blocked: see NEEDS_APPROVAL.md A1.** This needs a new native dependency
@@ -53,6 +102,16 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 26 updates, Gradle 9.8.2 and Compose BOM 2026.09.00. CI is green on it.)
 
 ## Done
+
+- 2026-10-31 · R37: Reconcile names breaks in the telebirr and CBE Birr balance chain
+  ("balance went up by X between 10:02 and 14:30 with nothing recorded"), with the exact
+  difference in santim. Shown, never booked. A drop of up to max(10 birr, 2%) per
+  outgoing transfer counts as a fee; a rise never does. Bank rows are not chained, and a
+  possible duplicate restarts the chain. PR #65. (Tag `v2026-10-31-2` not pushed: A6.)
+- 2026-10-31 · R36: Backups are format 2: the whole header is GCM associated data, so
+  an edited schema or format byte fails as `WRONG_PASSPHRASE_OR_CORRUPT`. Format 1
+  files still restore; a format 2 file relabelled as format 1 fails. PR #64. (Tag
+  `v2026-10-31-1` not pushed: A6.)
 
 - 2026-10-30 · R35: Today rolls over at local midnight with the screen still open.
   The day's bounds come from the new `LocalDays` (`ClockLocalDays`), which re-emits
