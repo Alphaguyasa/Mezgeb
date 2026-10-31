@@ -288,6 +288,43 @@ class ReconcilePeriodUseCaseTest : DatabaseTest() {
     }
 
     @Test
+    fun `a break in the telebirr balance is named with its exact difference`() = runTest {
+        db.transactionDao().insertAll(
+            listOf(
+                transaction("a", amountMinor = 10_000, balanceAfterMinor = 100_000, categoryId = "cat_sales", occurredAt = T0 + HOUR),
+                // 120.50 birr arrived between these two and was never captured.
+                transaction("b", amountMinor = 10_000, balanceAfterMinor = 122_050, categoryId = "cat_sales", occurredAt = T0 + 3 * HOUR),
+            ),
+        )
+
+        val explanations = useCase()(periodStart, periodEnd, openedAt).explanations
+
+        assertEquals(
+            GapExplanation.UnrecordedBalanceChange(
+                channel = Channel.TELEBIRR,
+                afterAt = T0 + HOUR,
+                beforeAt = T0 + 3 * HOUR,
+                differenceMinor = 12_050,
+            ),
+            explanations.single(),
+        )
+        // Shown, never booked: the ledger still holds only what was captured.
+        assertEquals(20_000L, useCase()(periodStart, periodEnd, openedAt).capturedInMinor)
+    }
+
+    @Test
+    fun `an unbroken balance chain adds no explanation`() = runTest {
+        db.transactionDao().insertAll(
+            listOf(
+                transaction("a", amountMinor = 10_000, balanceAfterMinor = 100_000, categoryId = "cat_sales", occurredAt = T0 + HOUR),
+                transaction("b", amountMinor = 10_000, balanceAfterMinor = 110_000, categoryId = "cat_sales", occurredAt = T0 + 3 * HOUR),
+            ),
+        )
+
+        assertTrue(useCase()(periodStart, periodEnd, openedAt).explanations.isEmpty())
+    }
+
+    @Test
     fun `nothing wrong means nothing to explain`() = runTest {
         db.transactionDao().insert(
             transaction("t1", amountMinor = 50_000, categoryId = "cat_sales", occurredAt = T0 + HOUR),
