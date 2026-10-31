@@ -260,6 +260,8 @@
     <string name="reconcile_history">የዘጓቸው ጊዜያት</string>
     <string name="reconcile_snapshot_note">እነዚህ ቁጥሮች ጊዜው ሲዘጋ ተቀምጠዋል። ከዚያ በኋላ የተደረጉ ለውጦች አይነኩዋቸውም።</string>
     <string name="reconcile_explain_roughly">በአጠቃላይ በግምት %1$s</string>
+    <string name="reconcile_explain_balance_up">የ%1$s ቀሪ ሂሳብ ከ%3$s እስከ %4$s በ%2$s ጨምሯል፤ ግን ምንም አልተመዘገበም</string>
+    <string name="reconcile_explain_balance_down">የ%1$s ቀሪ ሂሳብ ከ%3$s እስከ %4$s በ%2$s ቀንሷል፤ ግን ምንም አልተመዘገበም</string>
     <string name="reconcile_reminder_channel">የማስታረቅ ማስታወሻዎች</string>
     <string name="reconcile_reminder_channel_description">ገቢዎን ከመዝገብዎ ጋር እንዲያመሳክሩ ሳምንታዊ ማስታወሻ።</string>
     <string name="reconcile_reminder_title">ገቢዎን የሚያመሳክሩበት ጊዜ ደርሷል</string>

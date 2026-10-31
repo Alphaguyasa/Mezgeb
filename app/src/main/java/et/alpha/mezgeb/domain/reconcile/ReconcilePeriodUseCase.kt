@@ -1,11 +1,14 @@
 package et.alpha.mezgeb.domain.reconcile
 
 import et.alpha.mezgeb.data.repo.CustomerRepository
+import et.alpha.mezgeb.data.repo.TransactionFilter
 import et.alpha.mezgeb.data.repo.TransactionRepository
+import et.alpha.mezgeb.domain.model.Channel
 import et.alpha.mezgeb.domain.model.CreditKind
 import et.alpha.mezgeb.parser.normalize.AmountSniffer
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
+import kotlin.math.abs
 
 /**
  * Every figure in a period, and what the difference might be.
@@ -82,6 +85,24 @@ sealed interface GapExplanation {
         val totalMinor: Long,
     ) : GapExplanation {
         override val potentialMinor: Long get() = totalMinor
+    }
+
+    /**
+     * A wallet's stated balance moved by more than the recorded transactions explain:
+     * a message was probably never captured. See [BalanceChain].
+     *
+     * Ranked by the size of the move. Only money in changes `accountedFor`, but a
+     * reversed incoming payment leaves the same trace as a missed outgoing one, so the
+     * size is what is at stake either way.
+     */
+    data class UnrecordedBalanceChange(
+        val channel: Channel,
+        val afterAt: Long,
+        val beforeAt: Long,
+        /** Positive: the balance went up with nothing recorded. Negative: down. */
+        val differenceMinor: Long,
+    ) : GapExplanation {
+        override val potentialMinor: Long get() = abs(differenceMinor)
     }
 
     /** Someone changed a parsed value after this period was opened. */
@@ -184,6 +205,11 @@ class ReconcilePeriodUseCase @Inject constructor(
                 count = duplicates.transactionCount,
                 totalMinor = duplicates.totalMinor,
             )
+        }
+
+        val inPeriod = transactions.listTransactions(TransactionFilter(from = periodStart, to = periodEnd))
+        explanations += BalanceChain.findBreaks(inPeriod).map {
+            GapExplanation.UnrecordedBalanceChange(it.channel, it.afterAt, it.beforeAt, it.differenceMinor)
         }
 
         val outstanding = customers.observeTotalOutstandingMinor().first()

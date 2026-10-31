@@ -293,6 +293,8 @@
     <!-- 1: number of messages -->
     <!-- 1: a money amount -->
     <string name="reconcile_explain_roughly">roughly %1$s between them</string>
+    <string name="reconcile_explain_balance_up">%1$s balance went up by %2$s between %3$s and %4$s with nothing recorded</string>
+    <string name="reconcile_explain_balance_down">%1$s balance went down by %2$s between %3$s and %4$s with nothing recorded</string>
     <!-- 1: number of transactions -->
     <!-- 1: number of customers -->
     <!-- 1: number of transactions changed -->
