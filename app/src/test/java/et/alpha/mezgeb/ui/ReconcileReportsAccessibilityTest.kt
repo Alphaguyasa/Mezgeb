@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import et.alpha.mezgeb.R
+import et.alpha.mezgeb.domain.model.Channel
 import et.alpha.mezgeb.domain.model.ReconciliationSession
 import et.alpha.mezgeb.domain.model.SessionStatus
 import et.alpha.mezgeb.domain.reconcile.GapExplanation
@@ -198,6 +199,7 @@ class ReconcileReportsAccessibilityTest {
                     explanations = listOf(
                         GapExplanation.UnmatchedMessages(4, 32_000, amountsFound = 3),
                         GapExplanation.PossibleDuplicates(1, 9_000),
+                        GapExplanation.UnrecordedBalanceChange(Channel.CBE_BIRR, START + 3_600_000, START + 7_200_000, 12_050),
                         GapExplanation.EditedSincePeriodOpened(1),
                     ),
                 ),

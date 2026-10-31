@@ -55,11 +55,13 @@ import et.alpha.mezgeb.R
 import et.alpha.mezgeb.designsystem.MezgebTheme
 import et.alpha.mezgeb.designsystem.component.BackButton
 import et.alpha.mezgeb.designsystem.component.MezgebScaffold
+import et.alpha.mezgeb.designsystem.component.label
 import et.alpha.mezgeb.domain.model.ReconciliationSession
 import et.alpha.mezgeb.domain.model.SessionStatus
 import et.alpha.mezgeb.domain.reconcile.GapExplanation
 import et.alpha.mezgeb.domain.reconcile.PeriodReconciliation
 import et.alpha.mezgeb.ui.common.rememberDayLabel
+import et.alpha.mezgeb.ui.common.rememberTimeLabel
 import et.alpha.mezgeb.util.MoneyFormatter
 import kotlin.math.abs
 
@@ -84,6 +86,7 @@ fun ReconcileRoute(
                 is GapExplanation.OutstandingCredit -> onOpenCustomers()
                 is GapExplanation.UncategorizedTransactions,
                 is GapExplanation.PossibleDuplicates,
+                is GapExplanation.UnrecordedBalanceChange,
                 is GapExplanation.EditedSincePeriodOpened,
                 -> onOpenLedger()
             }
@@ -453,6 +456,18 @@ private fun ExplanationRow(explanation: GapExplanation, onClick: () -> Unit) {
                         R.plurals.reconcile_explain_edited,
                         explanation.count,
                         explanation.count,
+                    )
+
+                    is GapExplanation.UnrecordedBalanceChange -> stringResource(
+                        if (explanation.differenceMinor > 0) {
+                            R.string.reconcile_explain_balance_up
+                        } else {
+                            R.string.reconcile_explain_balance_down
+                        },
+                        explanation.channel.label(),
+                        MoneyFormatter.format(abs(explanation.differenceMinor)),
+                        rememberDayLabel(explanation.afterAt) + " " + rememberTimeLabel(explanation.afterAt),
+                        rememberDayLabel(explanation.beforeAt) + " " + rememberTimeLabel(explanation.beforeAt),
                     )
                 },
                 style = MaterialTheme.typography.bodyLarge,
