@@ -5,6 +5,68 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-10-31: Eighteenth daily run (scheduled)
+
+**Start.** CI on `main` was green (`cb96bbc`, the docs PR from the last run). Model
+check: the models overview still lists Opus 5.5 (`claude-opus-5-5`) as the newest
+Opus. This run used it, so no switch was needed. Fable 5.1 was ignored, as Alpha
+decided. No answers had been written into NEEDS_APPROVAL.md.
+
+**Environment.** JDK 21, no Android SDK. No Gradle build ran locally; CI judged both
+PRs.
+
+**R36 (authenticate the backup header), PR #64, merged (`c995d75`).**
+- `BackupCrypto` writes format 2: the whole header (magic, format, schema, salt, IV)
+  is passed to GCM as associated data. Format 1 files are still read without it. A
+  format 2 file relabelled as format 1 fails, because its tag covers the header.
+- Tests: new `BackupCryptoTest` (format 2 written and read; schema byte 6→5 fails as
+  corrupt; format 2→1 fails as corrupt; format 1 reads; newer format refused; wrong
+  passphrase). `BackupRoundTripTest`: a format 1 backup of the seeded database
+  restores entity for entity.
+- **CI:** green on the first run.
+
+**R37 (balance chain), PR #65, merged (`0d27bf2`).**
+- New pure `BalanceChain`: per wallet (telebirr, CBE Birr), oldest first, the previous
+  stated balance plus or minus the next amount must equal the next balance. Each break
+  is a new `GapExplanation.UnrecordedBalanceChange` with the exact difference, shown in
+  Reconcile in English and Amharic. Never booked.
+- Choices: a drop of up to max(10 birr, 2%) per outgoing transfer is a fee; a rise is
+  never excused. `BANK` is not chained (several accounts share the channel). A possible
+  duplicate restarts the chain. Same-minute ties are ordered by the balances. Only
+  breaks inside the period are checked.
+- Tests: `BalanceChainTest` (14 cases), two in `ReconcilePeriodUseCaseTest` (exact
+  difference; `capturedIn` unchanged; unbroken chain adds nothing), and the new row in
+  `ReconcileReportsAccessibilityTest`.
+- **CI:** green on the first run. It was based on the `main` before #64; the two share
+  no code, and GitHub reported it clean.
+
+**Replan.** After R36 and R37 the open list was 3 (R10, R11, R12), so I ran a fresh
+code audit. R38 to R44 were added. The two P0 items were checked by hand:
+- R38: the backup passphrase sits in Compose `remember` while the file picker is open,
+  so a rotation writes the backup with an empty passphrase that the restore dialog
+  can never accept.
+- R39: real payments captured during demo mode go into the demo file, which is deleted
+  when demo mode is turned off. Part 2 needs Alpha's choice (new **A9**).
+
+**Tags.** `v2026-10-31-1` (#64) and `v2026-10-31-2` (#65) were created locally.
+Pushing failed again ("remote end hung up") (A6).
+
+**Dependabot.** #12, #14, #15, #22 and #40 are unchanged and still wait on A7.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R36: backup header authenticated (format 2), old backups still restore (#64). R37: Reconcile flags breaks in the telebirr/CBE Birr balance chain (#65) |
+| Merged | #64 yes (`c995d75`), #65 yes (`0d27bf2`). Tags `v2026-10-31-1`/`-2` created but **could not be pushed** (A6) |
+| Failed or blocked | Nothing failed; both PRs green on CI. Tag push (A6). No local Gradle |
+| Roadmap | Replanned: R38–R44 added. 10 open, 7 unblocked (R39 part 2 waits on A9) |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #22, #40), A8 unique index, **A9 (new): what capture does during demo mode** |
+| Next | R38 (empty backup passphrase after rotation), then R39 part 1 (no restore during demo mode) |
+
+---
+
 ## 2026-10-30: Seventeenth daily run (scheduled)
 
 **Start.** CI on `main` was green (`2ffc833`, the docs PR from the last run). Model
