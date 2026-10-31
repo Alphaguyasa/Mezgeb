@@ -183,7 +183,10 @@ tested.
   deliberately plaintext: restore has to be able to say *why* it refused, and it cannot
   distinguish a wrong passphrase from a wrong file if it must decrypt before it can look.
   GCM means a flipped byte fails the tag instead of restoring a ledger with one wrong
-  number in it. Everything is validated before anything is cleared.
+  number in it. From format 2 the header is passed to GCM as associated data, so it is
+  plaintext but not editable: a changed schema byte fails like a changed ciphertext.
+  Format 1 files (no associated data) are still read. Everything is validated before
+  anything is cleared.
 - `android:allowBackup="false"` — Google's auto-backup does not get a shop's ledger.
 - Zero `Log` / `Timber` / `println` calls in shipped code. Raw message bodies are never
   logged, and there is no crash reporter to send them anywhere.
