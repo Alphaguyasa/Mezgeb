@@ -23,6 +23,7 @@ import org.junit.Before
 import org.junit.Test
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.security.SecureRandom
 
 /**
  * Seed → back up → wipe → restore → assert deep equality.
@@ -221,6 +222,30 @@ class BackupRoundTripTest : DatabaseTest() {
         assertEquals(5, result.getOrThrow().schemaVersion)
         assertEquals(before, snapshot())
         assertNull(db.transactionDao().getById("t1")?.possibleDuplicateOfId)
+    }
+
+    @Test
+    fun `a format 1 backup with an unauthenticated header still restores`() = runTest {
+        seed()
+        val before = snapshot()
+
+        // Every backup taken before format 2 is a format 1 file. It may be the only
+        // copy a shop has.
+        val file = ByteArrayOutputStream()
+        BackupCrypto.write(
+            json = Json.encodeToString(before),
+            passphrase = passphrase,
+            schemaVersion = BackupRepository.SCHEMA_VERSION,
+            output = file,
+            random = SecureRandom(),
+            formatVersion = 1,
+        )
+        wipe()
+
+        val result = repository.restore(ByteArrayInputStream(file.toByteArray()), passphrase)
+
+        assertTrue(result.isSuccess)
+        assertEquals(before, snapshot())
     }
 
     @Test
