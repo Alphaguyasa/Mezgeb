@@ -406,6 +406,7 @@
     <string name="settings_restore_too_new">That backup was made by a newer version of Mezgeb.</string>
     <string name="settings_restore_wrong_passphrase">Wrong passphrase, or the file has been damaged.</string>
     <string name="settings_restore_malformed">That file could not be read.</string>
+    <string name="settings_restore_demo_blocked">Restore is off while demo data is shown: the backup would go into the example shop and be deleted with it. Turn demo data off first.</string>
 
     <!-- Content descriptions -->
     <string name="cd_open_review">Open review queue</string>

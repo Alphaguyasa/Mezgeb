@@ -1,9 +1,12 @@
 package et.alpha.mezgeb.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import et.alpha.mezgeb.R
 import et.alpha.mezgeb.capture.sms.SmsImportStatus
 import et.alpha.mezgeb.ui.onboarding.OnboardingScreen
@@ -53,6 +56,28 @@ class SettingsOnboardingAccessibilityTest {
         assertSwitchNamed(R.string.settings_demo)
     }
 
+    /** ROADMAP R39: a restore in demo mode would be deleted with the demo file. */
+    @Test
+    fun `in demo mode restore is disabled and the reason is shown`() {
+        showSettings(SettingsUiState(isDemoMode = true))
+
+        compose.onNodeWithText(context.getString(R.string.settings_restore_action))
+            .assertIsNotEnabled()
+        compose.onNodeWithText(context.getString(R.string.settings_restore_demo_blocked))
+            .assertExists()
+        checks.assertControlsAreNamedAndLargeEnough()
+    }
+
+    @Test
+    fun `outside demo mode restore is enabled and no reason is shown`() {
+        showSettings(SettingsUiState())
+
+        compose.onNodeWithText(context.getString(R.string.settings_restore_action))
+            .assertIsEnabled()
+        compose.onNodeWithText(context.getString(R.string.settings_restore_demo_blocked))
+            .assertDoesNotExist()
+    }
+
     @Test
     fun `onboarding without access names and sizes every control`() {
         showOnboarding(
@@ -95,11 +120,13 @@ class SettingsOnboardingAccessibilityTest {
         assertTrue("no switch is read as \"$label\"", found.isNotEmpty())
     }
 
-    private fun showSettings() {
+    // Lock on, so the biometric switch and the timeout chips show too.
+    private fun showSettings(
+        state: SettingsUiState = SettingsUiState(isLockEnabled = true, isBiometricEnabled = true),
+    ) {
         checks.show {
             SettingsScreen(
-                // Lock on, so the biometric switch and the timeout chips show too.
-                state = SettingsUiState(isLockEnabled = true, isBiometricEnabled = true),
+                state = state,
                 onEvent = {},
                 onBack = {},
                 onBackupConfirmed = {},
