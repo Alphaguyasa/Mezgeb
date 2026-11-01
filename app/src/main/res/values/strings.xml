@@ -401,6 +401,7 @@
     <string name="demo_banner_content_description">You are looking at demo data. This is not your own ledger.</string>
     <string name="settings_message_backup_written">Backup saved.</string>
     <string name="settings_message_backup_failed">Could not write the backup.</string>
+    <string name="settings_message_backup_passphrase_lost">The backup was not saved: the passphrase was lost while the file was being chosen. The empty file was removed. Please try again.</string>
     <!-- 1: how many records were restored -->
     <string name="settings_restore_not_a_backup">That file is not a Mezgeb backup.</string>
     <string name="settings_restore_too_new">That backup was made by a newer version of Mezgeb.</string>

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
@@ -56,6 +57,7 @@ import et.alpha.mezgeb.data.settings.AppLanguage
 import et.alpha.mezgeb.designsystem.MezgebTheme
 import et.alpha.mezgeb.designsystem.component.BackButton
 import et.alpha.mezgeb.designsystem.component.MezgebScaffold
+import et.alpha.mezgeb.domain.backup.BackupCrypto
 import et.alpha.mezgeb.domain.backup.RestoreFailure
 import et.alpha.mezgeb.domain.lock.PinCredential
 import et.alpha.mezgeb.util.MezgebDates
@@ -69,15 +71,19 @@ fun SettingsRoute(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    var pendingPassphrase by remember { mutableStateOf("") }
-
+    // The passphrase waits in the ViewModel, not in `remember`, while the file picker is
+    // open. A rotation used to reset a remembered one to "" and the backup was then
+    // written with an empty passphrase (ROADMAP R38).
     val createBackup = rememberLauncherForActivityResult(CreateBackupDocument()) { uri ->
-        if (uri != null) {
-            viewModel.writeBackup(pendingPassphrase, uri.toString()) {
-                context.contentResolver.openOutputStream(uri)
-            }
+        if (uri == null) {
+            viewModel.backupFileCancelled()
+        } else {
+            viewModel.writeBackup(
+                uri = uri.toString(),
+                openStream = { context.contentResolver.openOutputStream(uri) },
+                deleteFile = { DocumentsContract.deleteDocument(context.contentResolver, uri) },
+            )
         }
-        pendingPassphrase = ""
     }
 
     val openBackup = rememberLauncherForActivityResult(
@@ -98,7 +104,7 @@ fun SettingsRoute(
         onEvent = viewModel::onEvent,
         onBack = onBack,
         onBackupConfirmed = { passphrase ->
-            pendingPassphrase = passphrase
+            viewModel.holdBackupPassphrase(passphrase)
             createBackup.launch(BACKUP_FILE_NAME)
         },
         onRestoreRequested = { openBackup.launch(arrayOf("*/*")) },
@@ -520,6 +526,8 @@ private fun messageText(message: SettingsMessage): String = when (message) {
     is SettingsMessage.Restored ->
         pluralStringResource(R.plurals.settings_message_restored, message.rows, message.rows)
     SettingsMessage.BackupFailed -> stringResource(R.string.settings_message_backup_failed)
+    SettingsMessage.BackupPassphraseLost ->
+        stringResource(R.string.settings_message_backup_passphrase_lost)
     SettingsMessage.DemoFailed -> stringResource(R.string.settings_demo_failed)
     is SettingsMessage.RestoreFailed -> stringResource(
         when (message.reason) {
@@ -598,8 +606,7 @@ private class CreateBackupDocument : ActivityResultContract<String, Uri?>() {
 private const val BACKUP_FILE_NAME = "mezgeb-backup.mzgb"
 private const val BACKUP_MIME_TYPE = "application/octet-stream"
 
-/** Short enough to type on a phone, long enough that PBKDF2 has something to work with. */
-private const val MIN_PASSPHRASE_LENGTH = 8
+private const val MIN_PASSPHRASE_LENGTH = BackupCrypto.MIN_PASSPHRASE_LENGTH
 
 @Preview(name = "Settings", showBackground = true, heightDp = 800)
 @Composable

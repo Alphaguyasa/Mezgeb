@@ -67,6 +67,13 @@ object BackupCrypto {
 
     const val FORMAT_VERSION = 2
 
+    /**
+     * Short enough to type on a phone, long enough that PBKDF2 has something to work
+     * with. The restore dialog asks for at least this many characters, so a backup
+     * written with fewer could never be opened again by its owner (ROADMAP R38).
+     */
+    const val MIN_PASSPHRASE_LENGTH = 8
+
     /** The first format whose header is authenticated as GCM associated data. */
     const val FIRST_AUTHENTICATED_FORMAT = 2
 
@@ -108,6 +115,9 @@ object BackupCrypto {
         formatVersion: Int,
     ) {
         require(formatVersion in 1..FORMAT_VERSION) { "Unknown backup format $formatVersion" }
+        // Checked here and not only in the dialog: an empty passphrase once reached this
+        // point after a rotation, and a file encrypted with "" is readable by anyone.
+        require(passphrase.size >= MIN_PASSPHRASE_LENGTH) { "Passphrase too short" }
         val salt = ByteArray(SALT_BYTES).also(random::nextBytes)
         val iv = ByteArray(IV_BYTES).also(random::nextBytes)
         val key = deriveKey(passphrase, salt)
