@@ -7,6 +7,7 @@ import et.alpha.mezgeb.data.demo.DemoModeController
 import et.alpha.mezgeb.data.settings.AppLanguage
 import et.alpha.mezgeb.data.settings.LanguagePreference
 import et.alpha.mezgeb.data.settings.SettingsRepository
+import et.alpha.mezgeb.domain.backup.BackupCrypto
 import et.alpha.mezgeb.domain.backup.BackupRepository
 import et.alpha.mezgeb.domain.backup.RestoreException
 import et.alpha.mezgeb.domain.backup.RestoreFailure
@@ -63,6 +64,12 @@ sealed interface SettingsMessage {
     data class Restored(val rows: Int) : SettingsMessage
     data class RestoreFailed(val reason: RestoreFailure) : SettingsMessage
     data object BackupFailed : SettingsMessage
+
+    /**
+     * The file came back from the picker but the passphrase was gone, because the
+     * process was killed while the picker was open. Nothing was written.
+     */
+    data object BackupPassphraseLost : SettingsMessage
     data object DemoFailed : SettingsMessage
 }
 
@@ -90,8 +97,11 @@ sealed interface SettingsEvent {
  * Language, the shop name, security, backup and demo mode.
  *
  * The backup passphrase is never stored — not in DataStore, not in
- * `EncryptedSharedPreferences`, not in this state beyond the moment it is used. A
- * passphrase kept next to the file it protects is decoration.
+ * `EncryptedSharedPreferences`, not in UI state, not in `SavedStateHandle`. A
+ * passphrase kept next to the file it protects is decoration. It is held in memory
+ * here, and only for as long as the file picker is open: the ViewModel outlives a
+ * rotation, which a Compose `remember` did not (ROADMAP R38). A process death loses
+ * it, on purpose, and [writeBackup] then refuses rather than guessing.
  */
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -114,6 +124,9 @@ class SettingsViewModel @Inject constructor(
         ),
     )
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
+
+    /** The backup passphrase while the file picker is open. See the class comment. */
+    private var heldPassphrase: CharArray? = null
 
     init {
         // Read once rather than collected: the only writer is this screen, and a flow
@@ -248,12 +261,46 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun writeBackup(passphrase: String, uri: String, openStream: () -> OutputStream?) {
+    /** Called when the passphrase dialog is confirmed, just before the picker opens. */
+    fun holdBackupPassphrase(passphrase: String) {
+        clearHeldPassphrase()
+        heldPassphrase = passphrase.toCharArray()
+        _state.update { it.copy(dialog = null) }
+    }
+
+    /** The picker was closed without choosing a file. */
+    fun backupFileCancelled() = clearHeldPassphrase()
+
+    /**
+     * Writes the backup to the file the picker returned, with the passphrase held by
+     * [holdBackupPassphrase].
+     *
+     * @param deleteFile removes the file the picker just created. Used only when there
+     *   is no passphrase to write it with: the picker has already made an empty file,
+     *   and leaving it behind would look like a backup that is not one.
+     */
+    fun writeBackup(uri: String, openStream: () -> OutputStream?, deleteFile: () -> Unit) {
+        val passphrase = heldPassphrase
+        heldPassphrase = null
+
+        if (passphrase == null || passphrase.size < BackupCrypto.MIN_PASSPHRASE_LENGTH) {
+            passphrase?.fill(Char.MIN_VALUE)
+            runCatching(deleteFile)
+            _state.update {
+                it.copy(isBusy = false, dialog = null, message = SettingsMessage.BackupPassphraseLost)
+            }
+            return
+        }
+
         _state.update { it.copy(isBusy = true, dialog = null) }
         viewModelScope.launch {
-            val result = runCatching {
-                val stream = openStream() ?: error("no output stream")
-                stream.use { backups.writeBackup(passphrase.toCharArray(), it) }
+            val result = try {
+                runCatching {
+                    val stream = openStream() ?: error("no output stream")
+                    stream.use { backups.writeBackup(passphrase, it) }
+                }
+            } finally {
+                passphrase.fill(Char.MIN_VALUE)
             }
             // Only a whole file counts, and only a file of the real ledger: a backup
             // taken in demo mode holds the demo shop, and stamping it would quiet the
@@ -272,6 +319,16 @@ class SettingsViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    private fun clearHeldPassphrase() {
+        heldPassphrase?.fill(Char.MIN_VALUE)
+        heldPassphrase = null
+    }
+
+    override fun onCleared() {
+        clearHeldPassphrase()
+        super.onCleared()
     }
 
     /**
