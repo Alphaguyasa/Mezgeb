@@ -5,6 +5,62 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-11-01: Nineteenth daily run (scheduled)
+
+**Start.** CI on `main` was green (`0c75629`, the docs PR from the last run). Model
+check: the models overview still lists Opus 5.5 (`claude-opus-5-5`) as the newest
+Opus. This run used it, so no switch was needed. Fable 5.1 was ignored, as Alpha
+decided. No answers had been written into NEEDS_APPROVAL.md.
+
+**Environment.** JDK 21, no Android SDK. No Gradle build ran locally; CI judged both
+PRs. (The local `origin/main` ref was stale at the start; I noticed when the first
+branch lacked the R36 code, and re-based the uncommitted work on the fetched `main`
+before the first commit. Nothing was pushed from the stale base.)
+
+**R38 (empty backup passphrase), PR #67, merged (`ba92de0`).**
+- `SettingsViewModel` holds the passphrase while the file picker is open (a
+  `CharArray` in memory only, used once, then zeroed; also cleared on cancel and in
+  `onCleared`). The route no longer keeps it in `remember`.
+- A file that comes back with no passphrase (process death) or a short one is refused:
+  nothing is written, the empty file is deleted (`DocumentsContract.deleteDocument`),
+  and a new message says so in English and Amharic.
+- `BackupCrypto.write` refuses a passphrase under `MIN_PASSPHRASE_LENGTH` (8), now
+  shared with the dialogs.
+- Tests: 6 new or changed in `SettingsViewModelTest`, 3 new in `BackupCryptoTest`.
+- **CI:** green on the first run.
+
+**R39 part 1 (no restore in demo mode), PR #68, merged (`300ce02`).**
+- The restore button is disabled in demo mode with a line saying why; a file chosen
+  anyway does not open the passphrase dialog; `restore()` checks
+  `DemoModeController.isEnabled()` live and refuses before opening the file.
+- Tests: 4 in `SettingsViewModelTest`, 2 in `SettingsOnboardingAccessibilityTest`.
+- **CI:** red on the first run, after merging `main` (with #67) into the branch: my
+  control test relied on a relaxed MockK answer for `restore()`, which returns
+  `Result`, a value class; MockK answered with a bare `Object` and the cast threw. Fixed
+  on the branch (attempt 1 of 2): the stub now throws and the test checks the
+  `MALFORMED` message. The same push dropped an empty `super.onCleared()` that lint
+  warned about in #67. Green on the second run.
+- Part 2 (what capture does during a demo) still waits on **A9**.
+
+**Tags.** `v2026-11-01-1` (#67) and `v2026-11-01-2` (#68) were created locally.
+Pushing failed again ("remote end hung up") (A6).
+
+**Dependabot.** #12, #14, #15, #22 and #40 are unchanged and still wait on A7.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R38: a backup can no longer be written with an empty passphrase after a rotation (#67). R39 part 1: restore refused during demo mode (#68) |
+| Merged | #67 yes (`ba92de0`), #68 yes (`300ce02`). Tags `v2026-11-01-1`/`-2` created but **could not be pushed** (A6) |
+| Failed or blocked | #68 failed CI once (a test of mine relied on a MockK quirk), fixed on the branch. Tag push (A6). R39 part 2 waits on A9. No local Gradle |
+| Roadmap | 9 open, 5 unblocked (R40–R44). R39 part 2, R10, R11 and R12 wait on A9, A1, A2 and A7. No replan needed (the open list is 5 or more) |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #22, #40), A8 unique index, **A9 capture during demo mode (R39 part 2)** |
+| Next | R40 (backup, restore and export off the main thread; delete a failed file), then R41 (amount normalizer refuses overflow, bad grouping and zero) |
+
+---
+
 ## 2026-10-31: Eighteenth daily run (scheduled)
 
 **Start.** CI on `main` was green (`cb96bbc`, the docs PR from the last run). Model

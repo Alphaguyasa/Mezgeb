@@ -95,6 +95,8 @@ can then be added on request.
   missing now.
 - 2026-10-31: the same failure ("remote end hung up") for `v2026-10-31-1`
   (`c995d75`, #64) and `v2026-10-31-2` (#65). Thirty-four tags are missing now.
+- 2026-11-01: the same failure ("remote end hung up") for `v2026-11-01-1`
+  (`ba92de0`, #67) and `v2026-11-01-2` (`300ce02`, #68). Thirty-six tags are missing now.
 - **Effect:** you can still roll back. Every merge is a squash commit on `main` with
   its PR number, and the log lists each one. Only the named tags are missing.
 - **Options:** (a) do nothing (the log stays the rollback list); (b) create the tags
@@ -160,8 +162,8 @@ Transaction for one message?
   (c) keep messages that arrive during a demo in a small holding table in the demo file
   and copy them to the real database when demo mode is turned off.
 - **Recommendation:** (a), or (c) if you want the real file never opened during a demo.
-- **Until you answer:** R39 part 1 (refuse a restore during a demo) can go ahead; capture
-  stays as it is.
+- **Until you answer:** capture stays as it is. R39 part 1 (refuse a restore during a
+  demo) was done on 2026-11-01 (#68).
 - **Money:** none.
 
 ## Resolved
