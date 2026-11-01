@@ -271,12 +271,21 @@ fun SettingsScreen(
             }
             OutlinedButton(
                 onClick = onRestoreRequested,
-                enabled = !state.isBusy,
+                // A restore in demo mode would go into the demo file and be deleted
+                // with it (ROADMAP R39). The ViewModel refuses it too.
+                enabled = !state.isBusy && !state.isDemoMode,
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = spacing.touchTarget),
             ) {
                 Text(stringResource(R.string.settings_restore_action))
+            }
+            if (state.isDemoMode) {
+                Text(
+                    text = stringResource(R.string.settings_restore_demo_blocked),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
 
             HorizontalDivider(Modifier.padding(vertical = spacing.sm))
@@ -529,6 +538,7 @@ private fun messageText(message: SettingsMessage): String = when (message) {
     SettingsMessage.BackupPassphraseLost ->
         stringResource(R.string.settings_message_backup_passphrase_lost)
     SettingsMessage.DemoFailed -> stringResource(R.string.settings_demo_failed)
+    SettingsMessage.RestoreBlockedInDemo -> stringResource(R.string.settings_restore_demo_blocked)
     is SettingsMessage.RestoreFailed -> stringResource(
         when (message.reason) {
             RestoreFailure.NOT_A_BACKUP -> R.string.settings_restore_not_a_backup

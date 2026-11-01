@@ -359,6 +359,7 @@
     <string name="settings_restore_too_new">ይህ ምትኬ በአዲስ የመዝገብ ስሪት የተሠራ ነው።</string>
     <string name="settings_restore_wrong_passphrase">የይለፍ ሐረጉ ትክክል አይደለም፣ ወይም ፋይሉ ተበላሽቷል።</string>
     <string name="settings_restore_malformed">ይህ ፋይል ሊነበብ አልቻለም።</string>
+    <string name="settings_restore_demo_blocked">የናሙና መረጃ እየታየ ከምትኬ መመለስ አይቻልም፤ ምትኬው ወደ ናሙናው ሱቅ ገብቶ ከእሱ ጋር ይሰረዛል። መጀመሪያ የናሙና መረጃን ያጥፉ።</string>
 
     <!-- Content descriptions -->
     <string name="cd_open_review">የግምገማ ወረፋን ክፈት</string>
