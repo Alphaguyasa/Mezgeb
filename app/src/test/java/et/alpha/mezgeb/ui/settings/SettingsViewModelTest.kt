@@ -31,6 +31,7 @@ import org.junit.Test
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.io.OutputStream
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -292,11 +293,37 @@ class SettingsViewModelTest {
         }
     }
 
+    /** Holds a passphrase as the dialog does, then writes as the picker callback does. */
+    private fun SettingsViewModel.backUp(
+        passphrase: String? = "correct horse",
+        onDelete: () -> Unit = {},
+        openStream: () -> OutputStream? = { ByteArrayOutputStream() },
+    ) {
+        if (passphrase != null) holdBackupPassphrase(passphrase)
+        writeBackup("content://backup", openStream, onDelete)
+    }
+
     @Test
     fun `a backup written in full is stamped with the time`() = runTest {
-        viewModel().writeBackup("correct horse", "content://backup") { ByteArrayOutputStream() }
+        val viewModel = viewModel()
+        viewModel.backUp()
 
+        coVerify(exactly = 1) { backups.writeBackup(any(), any()) }
         coVerify(exactly = 1) { settings.recordBackup(now) }
+        assertEquals(SettingsMessage.BackupWritten("content://backup"), viewModel.state.value.message)
+    }
+
+    @Test
+    fun `the held passphrase is the one the backup is written with`() = runTest {
+        val seen = mutableListOf<String>()
+        coEvery { backups.writeBackup(any(), any()) } answers {
+            seen.add(String(firstArg<CharArray>()))
+            Unit
+        }
+
+        viewModel().backUp(passphrase = "correct horse")
+
+        assertEquals(listOf("correct horse"), seen)
     }
 
     @Test
@@ -304,7 +331,7 @@ class SettingsViewModelTest {
         coEvery { backups.writeBackup(any(), any()) } throws IOException("disk full")
 
         val viewModel = viewModel()
-        viewModel.writeBackup("correct horse", "content://backup") { ByteArrayOutputStream() }
+        viewModel.backUp()
 
         assertEquals(SettingsMessage.BackupFailed, viewModel.state.value.message)
         coVerify(exactly = 0) { settings.recordBackup(any()) }
@@ -312,7 +339,7 @@ class SettingsViewModelTest {
 
     @Test
     fun `a backup with no file to write to is not stamped`() = runTest {
-        viewModel().writeBackup("correct horse", "content://backup") { null }
+        viewModel().backUp(openStream = { null })
 
         coVerify(exactly = 0) { settings.recordBackup(any()) }
     }
@@ -322,9 +349,79 @@ class SettingsViewModelTest {
     fun `a backup taken in demo mode is not stamped`() = runTest {
         every { demoMode.isEnabled() } returns true
 
-        viewModel().writeBackup("correct horse", "content://backup") { ByteArrayOutputStream() }
+        viewModel().backUp()
 
         coVerify(exactly = 0) { settings.recordBackup(any()) }
+    }
+
+    /**
+     * ROADMAP R38. After a process death the picker's result arrives in a new
+     * ViewModel that never held a passphrase. It must refuse, not write with "".
+     */
+    @Test
+    fun `a file that arrives with no passphrase writes nothing and removes the file`() = runTest {
+        var deleted = 0
+        var opened = 0
+        val viewModel = viewModel()
+
+        viewModel.backUp(
+            passphrase = null,
+            onDelete = { deleted++ },
+            openStream = { opened++; ByteArrayOutputStream() },
+        )
+
+        assertEquals(SettingsMessage.BackupPassphraseLost, viewModel.state.value.message)
+        assertFalse(viewModel.state.value.isBusy)
+        assertEquals(1, deleted)
+        assertEquals(0, opened)
+        coVerify(exactly = 0) { backups.writeBackup(any(), any()) }
+        coVerify(exactly = 0) { settings.recordBackup(any()) }
+    }
+
+    @Test
+    fun `a passphrase is used once, so a second file gets the refusal`() = runTest {
+        var deleted = 0
+        val viewModel = viewModel()
+        viewModel.backUp()
+
+        viewModel.writeBackup("content://second", { ByteArrayOutputStream() }, { deleted++ })
+
+        assertEquals(SettingsMessage.BackupPassphraseLost, viewModel.state.value.message)
+        assertEquals(1, deleted)
+        coVerify(exactly = 1) { backups.writeBackup(any(), any()) }
+    }
+
+    @Test
+    fun `cancelling the picker drops the held passphrase`() = runTest {
+        val viewModel = viewModel()
+        viewModel.holdBackupPassphrase("correct horse")
+        viewModel.backupFileCancelled()
+
+        viewModel.writeBackup("content://backup", { ByteArrayOutputStream() }, {})
+
+        assertEquals(SettingsMessage.BackupPassphraseLost, viewModel.state.value.message)
+        coVerify(exactly = 0) { backups.writeBackup(any(), any()) }
+    }
+
+    @Test
+    fun `a passphrase too short to restore is refused before anything is written`() = runTest {
+        var deleted = 0
+        val viewModel = viewModel()
+
+        viewModel.backUp(passphrase = "short", onDelete = { deleted++ })
+
+        assertEquals(SettingsMessage.BackupPassphraseLost, viewModel.state.value.message)
+        assertEquals(1, deleted)
+        coVerify(exactly = 0) { backups.writeBackup(any(), any()) }
+    }
+
+    @Test
+    fun `a delete that throws still ends in the refusal message`() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.backUp(passphrase = null, onDelete = { throw SecurityException("no") })
+
+        assertEquals(SettingsMessage.BackupPassphraseLost, viewModel.state.value.message)
     }
 
     // --- PIN, which shares the same dialog machinery -----------------------------------

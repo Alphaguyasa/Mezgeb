@@ -1,6 +1,7 @@
 package et.alpha.mezgeb.domain.backup
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.ByteArrayInputStream
@@ -75,5 +76,38 @@ class BackupCryptoTest {
 
         assertTrue(result is RestoreResult.Failed)
         assertEquals(RestoreFailure.WRONG_PASSPHRASE_OR_CORRUPT, (result as RestoreResult.Failed).reason)
+    }
+
+    /** ROADMAP R38: a file encrypted with "" opens for anyone, and never for its owner. */
+    @Test
+    fun `an empty passphrase is refused and nothing is written`() {
+        val out = ByteArrayOutputStream()
+
+        assertThrows(IllegalArgumentException::class.java) {
+            BackupCrypto.write(json, CharArray(0), 6, out)
+        }
+        assertEquals(0, out.size())
+    }
+
+    @Test
+    fun `a passphrase one short of the minimum is refused`() {
+        val short = CharArray(BackupCrypto.MIN_PASSPHRASE_LENGTH - 1) { 'a' }
+
+        assertThrows(IllegalArgumentException::class.java) {
+            BackupCrypto.write(json, short, 6, ByteArrayOutputStream())
+        }
+    }
+
+    @Test
+    fun `a passphrase of exactly the minimum is accepted`() {
+        val minimum = CharArray(BackupCrypto.MIN_PASSPHRASE_LENGTH) { 'a' }
+        val out = ByteArrayOutputStream()
+
+        BackupCrypto.write(json, minimum, 6, out)
+
+        assertEquals(
+            RestoreResult.Success(json, schemaVersion = 6),
+            BackupCrypto.read(ByteArrayInputStream(out.toByteArray()), minimum, 6),
+        )
     }
 }
