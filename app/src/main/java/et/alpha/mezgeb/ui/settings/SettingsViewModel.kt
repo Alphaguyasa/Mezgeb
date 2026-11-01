@@ -336,10 +336,7 @@ class SettingsViewModel @Inject constructor(
         heldPassphrase = null
     }
 
-    override fun onCleared() {
-        clearHeldPassphrase()
-        super.onCleared()
-    }
+    override fun onCleared() = clearHeldPassphrase()
 
     /**
      * Restore replaces everything. The confirmation lives in the dialog; by the time

@@ -6,6 +6,7 @@ import et.alpha.mezgeb.data.settings.AppLanguage
 import et.alpha.mezgeb.data.settings.LanguagePreference
 import et.alpha.mezgeb.data.settings.SettingsRepository
 import et.alpha.mezgeb.domain.backup.BackupRepository
+import et.alpha.mezgeb.domain.backup.RestoreFailure
 import et.alpha.mezgeb.domain.lock.AppLockRepository
 import et.alpha.mezgeb.domain.lock.AppLockState
 import io.mockk.coEvery
@@ -23,7 +24,6 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -240,9 +240,14 @@ class SettingsViewModelTest {
         coVerify(exactly = 0) { backups.restore(any(), any()) }
     }
 
-    /** The control case: outside demo mode the same steps reach the repository. */
+    /**
+     * The control case: outside demo mode the same steps reach the repository. The
+     * repository throws so the test does not depend on MockK returning a `Result`,
+     * a value class that a relaxed mock answers with a bare `Object`.
+     */
     @Test
-    fun `outside demo mode a chosen file asks for the passphrase and is restored`() = runTest {
+    fun `outside demo mode a chosen file asks for the passphrase and reaches the repository`() = runTest {
+        coEvery { backups.restore(any(), any()) } throws IOException("unreadable")
         val viewModel = viewModel()
 
         viewModel.onEvent(SettingsEvent.RestoreFileChosen("content://backup"))
@@ -251,7 +256,10 @@ class SettingsViewModelTest {
         viewModel.restore("correct horse") { ByteArrayInputStream(ByteArray(0)) }
 
         coVerify(exactly = 1) { backups.restore(any(), any()) }
-        assertNotEquals(SettingsMessage.RestoreBlockedInDemo, viewModel.state.value.message)
+        assertEquals(
+            SettingsMessage.RestoreFailed(RestoreFailure.MALFORMED),
+            viewModel.state.value.message,
+        )
     }
 
     // --- Language ----------------------------------------------------------------------
