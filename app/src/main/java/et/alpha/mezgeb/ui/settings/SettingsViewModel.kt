@@ -71,6 +71,12 @@ sealed interface SettingsMessage {
      */
     data object BackupPassphraseLost : SettingsMessage
     data object DemoFailed : SettingsMessage
+
+    /**
+     * A restore was asked for while demo mode is on. It would land in the demo file,
+     * which is deleted when demo mode is turned off (ROADMAP R39).
+     */
+    data object RestoreBlockedInDemo : SettingsMessage
 }
 
 sealed interface SettingsEvent {
@@ -167,7 +173,11 @@ class SettingsViewModel @Inject constructor(
                 _state.update { it.copy(dialog = SettingsDialog.BackupPassphrase) }
 
             is SettingsEvent.RestoreFileChosen -> _state.update {
-                it.copy(dialog = SettingsDialog.RestorePassphrase(event.uri))
+                if (demoMode.isEnabled()) {
+                    it.copy(dialog = null, message = SettingsMessage.RestoreBlockedInDemo)
+                } else {
+                    it.copy(dialog = SettingsDialog.RestorePassphrase(event.uri))
+                }
             }
 
             SettingsEvent.DialogDismissed -> _state.update { it.copy(dialog = null) }
@@ -326,16 +336,21 @@ class SettingsViewModel @Inject constructor(
         heldPassphrase = null
     }
 
-    override fun onCleared() {
-        clearHeldPassphrase()
-        super.onCleared()
-    }
+    override fun onCleared() = clearHeldPassphrase()
 
     /**
      * Restore replaces everything. The confirmation lives in the dialog; by the time
      * this runs the user has said yes twice — once to the file, once to the wipe.
      */
     fun restore(passphrase: String, openStream: () -> InputStream?) {
+        // The button is disabled in demo mode and the file is refused when it comes
+        // back, but this is the line that matters: the demo database is the one open
+        // now, and a restore into it would be deleted with the demo. Checked live, not
+        // from state, so a stale screen cannot get past it.
+        if (demoMode.isEnabled()) {
+            _state.update { it.copy(dialog = null, message = SettingsMessage.RestoreBlockedInDemo) }
+            return
+        }
         _state.update { it.copy(isBusy = true, dialog = null) }
         viewModelScope.launch {
             val result = runCatching {

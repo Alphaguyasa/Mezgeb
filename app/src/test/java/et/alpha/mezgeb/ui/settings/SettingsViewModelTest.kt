@@ -6,6 +6,7 @@ import et.alpha.mezgeb.data.settings.AppLanguage
 import et.alpha.mezgeb.data.settings.LanguagePreference
 import et.alpha.mezgeb.data.settings.SettingsRepository
 import et.alpha.mezgeb.domain.backup.BackupRepository
+import et.alpha.mezgeb.domain.backup.RestoreFailure
 import et.alpha.mezgeb.domain.lock.AppLockRepository
 import et.alpha.mezgeb.domain.lock.AppLockState
 import io.mockk.coEvery
@@ -27,6 +28,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.OutputStream
@@ -194,6 +196,70 @@ class SettingsViewModelTest {
             assertEquals(SettingsMessage.DemoFailed, state.message)
             assertFalse(state.isBusy)
         }
+    }
+
+    // --- Restore in demo mode (ROADMAP R39) ----------------------------------------------
+
+    /** The demo database is the one open, and it is deleted when the demo ends. */
+    @Test
+    fun `a restore in demo mode is refused and nothing is read or written`() = runTest {
+        every { demoMode.isEnabled() } returns true
+        var opened = 0
+        val viewModel = viewModel()
+
+        viewModel.restore("correct horse") { opened++; ByteArrayInputStream(ByteArray(0)) }
+
+        val state = viewModel.state.value
+        assertEquals(SettingsMessage.RestoreBlockedInDemo, state.message)
+        assertFalse(state.isBusy)
+        assertNull(state.dialog)
+        assertEquals(0, opened)
+        coVerify(exactly = 0) { backups.restore(any(), any()) }
+    }
+
+    @Test
+    fun `a backup file chosen in demo mode does not open the passphrase dialog`() = runTest {
+        every { demoMode.isEnabled() } returns true
+        val viewModel = viewModel()
+
+        viewModel.onEvent(SettingsEvent.RestoreFileChosen("content://backup"))
+
+        assertNull(viewModel.state.value.dialog)
+        assertEquals(SettingsMessage.RestoreBlockedInDemo, viewModel.state.value.message)
+    }
+
+    /** Checked live: demo mode switched on after the screen was built still blocks. */
+    @Test
+    fun `the demo check reads the controller, not the state captured at start`() = runTest {
+        val viewModel = viewModel()
+        every { demoMode.isEnabled() } returns true
+
+        viewModel.restore("correct horse") { ByteArrayInputStream(ByteArray(0)) }
+
+        assertEquals(SettingsMessage.RestoreBlockedInDemo, viewModel.state.value.message)
+        coVerify(exactly = 0) { backups.restore(any(), any()) }
+    }
+
+    /**
+     * The control case: outside demo mode the same steps reach the repository. The
+     * repository throws so the test does not depend on MockK returning a `Result`,
+     * a value class that a relaxed mock answers with a bare `Object`.
+     */
+    @Test
+    fun `outside demo mode a chosen file asks for the passphrase and reaches the repository`() = runTest {
+        coEvery { backups.restore(any(), any()) } throws IOException("unreadable")
+        val viewModel = viewModel()
+
+        viewModel.onEvent(SettingsEvent.RestoreFileChosen("content://backup"))
+        assertEquals(SettingsDialog.RestorePassphrase("content://backup"), viewModel.state.value.dialog)
+
+        viewModel.restore("correct horse") { ByteArrayInputStream(ByteArray(0)) }
+
+        coVerify(exactly = 1) { backups.restore(any(), any()) }
+        assertEquals(
+            SettingsMessage.RestoreFailed(RestoreFailure.MALFORMED),
+            viewModel.state.value.message,
+        )
     }
 
     // --- Language ----------------------------------------------------------------------
