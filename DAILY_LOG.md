@@ -54,7 +54,7 @@ Pushing failed again ("remote end hung up") (A6).
 | Done | R38: a backup can no longer be written with an empty passphrase after a rotation (#67). R39 part 1: restore refused during demo mode (#68) |
 | Merged | #67 yes (`ba92de0`), #68 yes (`300ce02`). Tags `v2026-11-01-1`/`-2` created but **could not be pushed** (A6) |
 | Failed or blocked | #68 failed CI once (a test of mine relied on a MockK quirk), fixed on the branch. Tag push (A6). R39 part 2 waits on A9. No local Gradle |
-| Roadmap | 9 open, 6 unblocked (R40–R44, R12 waits on A7). No replan needed |
+| Roadmap | 9 open, 5 unblocked (R40–R44). R39 part 2, R10, R11 and R12 wait on A9, A1, A2 and A7. No replan needed (the open list is 5 or more) |
 | Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
 | Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #22, #40), A8 unique index, **A9 capture during demo mode (R39 part 2)** |
 | Next | R40 (backup, restore and export off the main thread; delete a failed file), then R41 (amount normalizer refuses overflow, bad grouping and zero) |
