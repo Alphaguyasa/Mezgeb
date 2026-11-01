@@ -18,23 +18,14 @@ hand against the code; the others carry the audit's file and line evidence and a
 re-checked when picked up. R29 and R30 were done on the second 2026-10-28 run. R31 and R32 were done on
 2026-10-29, and R33 and R22 on the second 2026-10-29 run. R34 and R35 were done on 2026-10-30. R36 and R37 were done on 2026-10-31, and the
 list then fell to 3, so the same run replanned: R38 to R44 come from a fresh code audit,
-and R38 and R39 were checked by hand against the code.
+and R38 and R39 were checked by hand against the code. R38 and R39 part 1 were done on
+2026-11-01.
 
 ## Open
 
-### R38 · P0 · S: A backup can be written with an empty passphrase
-`SettingsRoute` keeps the passphrase in `remember { mutableStateOf("") }`
-(`ui/settings/SettingsScreen.kt:72`) while the file picker is open. A rotation or a
-low-memory kill resets it to `""`, and the picker's result (line 76) then writes the
-backup encrypted with `""`. Anyone can open that file, and the restore dialog asks for
-at least 8 characters, so the owner can never restore it. `BackupCrypto.write` does not
-refuse an empty passphrase. Fix: keep the passphrase in the ViewModel (in memory only,
-never saved); if it is missing when the file comes back, refuse, delete the empty file
-and say so. `BackupCrypto.write` refuses a passphrase under 8 characters. Tests: a
-ViewModel test where the file arrives with no passphrase gives a failure and writes
-nothing; `write` with an empty passphrase fails.
-
-### R39 · P0 · M: Demo mode loses real payments captured during a demo
+### R39 · P0 · M: Demo mode loses real payments captured during a demo (part 2 open)
+**Part 1 done 2026-11-01 (PR #68): a restore is refused in demo mode. Part 2 is
+blocked: see NEEDS_APPROVAL.md A9.**
 Demo mode swaps the whole database (`di/DatabaseModule.kt:42`), but the notification
 listener (`capture/notification/MezgebNotificationListener.kt:89`) and the `direct` SMS
 import keep capturing, with no demo check anywhere in `capture/`. Real payments that
@@ -102,6 +93,17 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 26 updates, Gradle 9.8.2 and Compose BOM 2026.09.00. CI is green on it.)
 
 ## Done
+
+- 2026-11-01 · R39 part 1: A restore is refused while demo mode is on. The button is
+  disabled with a line saying why, a chosen file does not open the passphrase dialog,
+  and `restore()` checks `DemoModeController.isEnabled()` live before opening the file.
+  Part 2 (capture during a demo) stays open on A9. PR #68. (Tag `v2026-11-01-2` not
+  pushed: A6.)
+- 2026-11-01 · R38: The backup passphrase waits in `SettingsViewModel` (memory only,
+  used once, then zeroed) instead of a Compose `remember`, so a rotation no longer
+  writes a backup with `""`. A file that comes back with no passphrase is refused and
+  deleted. `BackupCrypto.write` refuses a passphrase under 8 characters. PR #67. (Tag
+  `v2026-11-01-1` not pushed: A6.)
 
 - 2026-10-31 · R37: Reconcile names breaks in the telebirr and CBE Birr balance chain
   ("balance went up by X between 10:02 and 14:30 with nothing recorded"), with the exact
