@@ -5,6 +5,67 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-11-02: Twentieth daily run (scheduled)
+
+**Start.** CI on `main` was green (`23bb632`, the docs PR from the last run). Model
+check: the models overview still lists Opus 5.5 (`claude-opus-5-5`) as the newest
+Opus. This run used it, so no switch was needed. Fable 5.1 was ignored, as Alpha
+decided. No answers had been written into NEEDS_APPROVAL.md.
+
+**Environment.** JDK 21, no Android SDK. Gradle could not resolve its plugins here,
+even for a parser-only copy of the build, so no Gradle build ran locally; CI judged
+both PRs.
+
+**R40 (backup, restore and export off the main thread), PR #70, merged (`949e40b`).**
+- `SettingsViewModel` and `ReportsViewModel` take the existing `@IoDispatcher` and run
+  the stream work in `withContext(io)`: the 210,000 PBKDF2 rounds, the JSON encode and
+  the CSV and PDF writes no longer run on Main.
+- A backup or export that fails after its file was opened deletes that file
+  (`DocumentsContract.deleteDocument`). A file that could not be opened is left
+  alone, because some pickers let the user pick an existing file to replace, and it
+  is still whole until opened. `ReportsViewModel.export` gained a `deleteFile`
+  parameter.
+- Tests: 6 new in `SettingsViewModelTest` (backup and restore run on the injected
+  dispatcher; failed write deletes; unopenable file kept; success kept; a throwing
+  delete still ends in `BackupFailed`). 3 new and 1 changed in `ReportsViewModelTest`
+  (with a queued dispatcher nothing is opened on Main; a write failing halfway
+  deletes; success keeps; an unopenable uri deletes nothing).
+- **CI:** green on the first run.
+
+**R41 (amount normalizer stops guessing), PR #71, merged (`3eac8a6`).**
+- Separators count only when the whole part is grouped in threes; exact arithmetic
+  refuses overflow; `MessageParser` refuses a zero amount (`NO_AMOUNT`) while a zero
+  balance is still read. The truncation of a third decimal ("500.999") was left as
+  it is: it is an earlier, tested decision.
+- Tests: 5 new in `AmountNormalizerTest`, 5 new in `FailSafeFixturesTest` (anonymized
+  telebirr template: bad grouping, overflow and zero go to review; a badly grouped
+  balance drops only the balance; a zero balance is read).
+- **CI:** red on the first run: 1 of 105 parser tests failed. My test for the narrow
+  no-break space (U+202F) found that the amount pattern never captured it, so
+  "1 234 567.89" grouped with it was read as **1 birr**. That bug was already in the
+  code. Fixed on the branch (attempt 1 of 2): the pattern now captures U+202F, which
+  then goes through the grouping check. Green on the second run. Corpus accuracy
+  passed both times.
+
+**Tags.** `v2026-11-02-1` (#70) and `v2026-11-02-2` (#71) were created locally.
+Pushing failed again ("remote end hung up") (A6).
+
+**Dependabot.** #12, #14, #15, #22 and #40 still wait on A7. Not touched.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R40: backup, restore and export off the main thread, and a failed file is deleted (#70). R41: the amount normalizer refuses bad grouping, overflow and zero amounts (#71) |
+| Merged | #70 yes (`949e40b`), #71 yes (`3eac8a6`). Tags `v2026-11-02-1`/`-2` created but **could not be pushed** (A6) |
+| Failed or blocked | #71 failed CI once (my new test exposed an existing bug: U+202F cut an amount to its first group), fixed on the branch. Tag push (A6). R39 part 2 waits on A9. No local Gradle |
+| Roadmap | 7 open, 3 unblocked (R42, R43, R44). R39 part 2, R10, R11 and R12 wait on A9, A1, A2 and A7. No replan needed (the open list is 5 or more) |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #22, #40), A8 unique index, A9 capture during demo mode (R39 part 2) |
+| Next | R42 (edit and delete a credit entry, closed periods unchanged), then R43 (`CreditEntryViewModel` tests) |
+
+---
+
 ## 2026-11-01: Nineteenth daily run (scheduled)
 
 **Start.** CI on `main` was green (`0c75629`, the docs PR from the last run). Model

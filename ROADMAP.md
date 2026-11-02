@@ -19,7 +19,7 @@ re-checked when picked up. R29 and R30 were done on the second 2026-10-28 run. R
 2026-10-29, and R33 and R22 on the second 2026-10-29 run. R34 and R35 were done on 2026-10-30. R36 and R37 were done on 2026-10-31, and the
 list then fell to 3, so the same run replanned: R38 to R44 come from a fresh code audit,
 and R38 and R39 were checked by hand against the code. R38 and R39 part 1 were done on
-2026-11-01.
+2026-11-01. R40 and R41 were done on 2026-11-02.
 
 ## Open
 
@@ -35,24 +35,6 @@ and is deleted the same way. Part 1 (no approval needed): refuse a restore while
 mode is on, with a message. Part 2 waits on **NEEDS_APPROVAL.md A9** (what capture
 does during a demo). Tests: restore in demo mode is refused and nothing is written;
 part 2 per the decision.
-
-### R40 · P1 · S: Backup, restore and export run on the main thread
-`SettingsViewModel.kt:253` and `:283`, and `ReportsViewModel.kt:136-139`, use plain
-`viewModelScope.launch`. `BackupRepository` and `BackupCrypto` never switch dispatcher,
-so 210,000 PBKDF2 rounds, JSON encoding, `readBytes()` and the CSV or PDF writes all
-run on the main thread: an "app not responding" risk on cheap phones. A failed write
-also leaves an empty or partial file behind. Fix: inject the existing `@IoDispatcher`
-(`di/AppModule.kt:82`) and use `withContext`; delete the document when a write fails.
-Tests: with a test dispatcher, the work runs on it; a failed write deletes the file.
-
-### R41 · P1 · S: The amount normalizer guesses on bad input
-`parser/.../AmountNormalizer.kt:67-69` multiplies by 100 with no overflow check (a
-17-digit amount becomes negative), line 55 drops commas without checking the grouping
-("1,5" becomes 15 birr, "12,34" becomes 1,234), and zero is accepted. Project rule:
-a value that will not normalize goes to review, never a guess. Fix: null on overflow
-(`Math.multiplyExact`), on bad grouping (`^\d{1,3}(,\d{3})*$`) and on 0 or less.
-Tests: anonymized fixtures for overflow, "1,5", "12,34", "1,2345" and "0.00" all come
-out `Unmatched`; corpus accuracy unchanged.
 
 ### R42 · P2 · M: A credit entry can never be corrected or removed
 `CustomerRepository.updateEntry` and `deleteEntry` (lines 64 and 66) are never called.
@@ -93,6 +75,18 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 26 updates, Gradle 9.8.2 and Compose BOM 2026.09.00. CI is green on it.)
 
 ## Done
+
+- 2026-11-02 · R41: The amount normalizer declines instead of guessing. Separators
+  are dropped only when the whole part is grouped in threes ("1,5" and "12,34" are
+  refused, not read as 15 and 1,234 birr). The santim arithmetic is exact, so a
+  17-digit amount is refused instead of wrapping negative. A narrow no-break space
+  (U+202F) is a separator (it used to cut "1 234.56" to 1 birr). The parser refuses a
+  zero amount; a zero balance is still read. Corpus accuracy unchanged. PR #71. (Tag
+  `v2026-11-02-2` not pushed: A6.)
+- 2026-11-02 · R40: Backup, restore and export run on the injected `@IoDispatcher`,
+  not on Main. A backup or export that fails after its file was opened deletes that
+  file; a file that could not be opened is left alone (a picker may have offered an
+  existing file to replace). PR #70. (Tag `v2026-11-02-1` not pushed: A6.)
 
 - 2026-11-01 · R39 part 1: A restore is refused while demo mode is on. The button is
   disabled with a line saying why, a chosen file does not open the passphrase dialog,
