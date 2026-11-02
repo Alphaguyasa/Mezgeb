@@ -11,13 +11,28 @@ package et.alpha.mezgeb.parser.normalize
  * `500`, `500.5`, `500.50`, `1,234.56`, `1 234.56`, `1234.56`, `ETB 1,234.56`,
  * `1,234.56 ETB`, `Birr 500`, `ብር 500`, `ETB27.00`, and `2000.0.` where a sentence
  * period follows the amount.
+ *
+ * It declines rather than guesses (ROADMAP R41). A whole part with separators must be
+ * grouped in threes: "1,5" and "12,34" are not 15 and 1,234 birr, they are something
+ * the template did not expect, and the message goes to review. An amount too large for
+ * a `Long` of santim is refused instead of wrapping round to a negative number.
  */
 object AmountNormalizer {
 
     private val CURRENCY_TOKENS = listOf("ETB", "BIRR", "ብር", "BR")
 
-    /** Digits, separators and at most one decimal part. */
-    private val AMOUNT_PATTERN = Regex("""\d[\d,\s ]*(?:\.\d+)?""")
+    /**
+     * Digits, separators and at most one decimal part. The narrow no-break space
+     * (U+202F) is a separator too: without it, "1\u202F234.56" was read as 1 birr.
+     */
+    private val AMOUNT_PATTERN = Regex("""\d[\d,\s \u202F]*(?:\.\d+)?""")
+
+    /**
+     * A whole part that carries separators: one to three digits, then groups of exactly
+     * three, each after a comma, a space or a no-break space. A whole part with no
+     * separator at all is plain digits and is not held to this.
+     */
+    private val GROUPED_WHOLE = Regex("""\d{1,3}(?:[, \u00A0\u202F]\d{3})+""")
 
     /**
      * @return santim, or null when [raw] carries no parseable amount.
@@ -38,7 +53,7 @@ object AmountNormalizer {
 
         // "2000.0." — a sentence period rides along on the capture. Strip trailing
         // separators so the fractional part is not left dangling.
-        candidate = candidate.trimEnd('.', ',', ' ', ' ')
+        candidate = candidate.trimEnd('.', ',', ' ', ' ', '\u202F')
         if (candidate.isEmpty()) return null
 
         val decimalIndex = candidate.lastIndexOf('.')
@@ -55,6 +70,12 @@ object AmountNormalizer {
         val wholeDigits = wholePart.filter { it.isDigit() }
         if (wholeDigits.isEmpty() && fractionPart.isEmpty()) return null
 
+        // Separators are dropped only once they are known to be thousands separators.
+        // Dropping them blindly read "1,5" as 15 birr and "12,34" as 1,234.
+        if (wholeDigits.length != wholePart.length && !GROUPED_WHOLE.matches(wholePart)) {
+            return null
+        }
+
         // Pad or truncate the fraction to exactly two digits. "500.5" is 50050, not
         // 50005 — a single decimal place means tenths of a birr.
         val fractionDigits = fractionPart.filter { it.isDigit() }
@@ -66,7 +87,12 @@ object AmountNormalizer {
 
         val whole = if (wholeDigits.isEmpty()) 0L else wholeDigits.toLongOrNull() ?: return null
         val santim = santimPart.toLongOrNull() ?: return null
-        return whole * 100 + santim
+        // Exact arithmetic: a 17-digit amount times 100 used to wrap to a negative Long.
+        return try {
+            Math.addExact(Math.multiplyExact(whole, 100L), santim)
+        } catch (ignored: ArithmeticException) {
+            null
+        }
     }
 
     /**

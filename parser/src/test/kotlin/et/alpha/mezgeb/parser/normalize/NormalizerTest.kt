@@ -78,6 +78,54 @@ class AmountNormalizerTest {
         assertNull(AmountNormalizer.toMinor("   "))
         assertNull(AmountNormalizer.toMinor("no digits here"))
     }
+
+    // --- Declines rather than guesses (ROADMAP R41) ------------------------------------
+
+    @Test
+    fun `separators grouped in threes are thousands separators`() {
+        assertEquals(123456789, AmountNormalizer.toMinor("1,234,567.89"))
+        assertEquals(123456789, AmountNormalizer.toMinor("1 234 567.89"))
+        assertEquals(123456789, AmountNormalizer.toMinor("1\u00A0234\u00A0567.89"))
+        assertEquals(123456789, AmountNormalizer.toMinor("1\u202F234\u202F567.89"))
+        assertEquals(100000, AmountNormalizer.toMinor("1,000"))
+        // A sentence comma after the amount is not part of it.
+        assertEquals(100000, AmountNormalizer.toMinor("1,000,"))
+    }
+
+    @Test
+    fun `separators not grouped in threes are refused`() {
+        assertNull(AmountNormalizer.toMinor("1,5"), "not 15 birr")
+        assertNull(AmountNormalizer.toMinor("12,34"), "not 1,234 birr")
+        assertNull(AmountNormalizer.toMinor("1,2345"))
+        assertNull(AmountNormalizer.toMinor("1,234,56"))
+        assertNull(AmountNormalizer.toMinor("1,,000"))
+        assertNull(AmountNormalizer.toMinor("1,.50"))
+        assertNull(AmountNormalizer.toMinor("12,34.00"))
+        // Two numbers side by side are not one large number.
+        assertNull(AmountNormalizer.toMinor("500 2000"))
+    }
+
+    @Test
+    fun `an amount too large for a Long of santim is refused, not wrapped`() {
+        // 17 digits of birr: times 100 this used to wrap to a negative number.
+        assertNull(AmountNormalizer.toMinor("99999999999999999"))
+        assertNull(AmountNormalizer.toMinor("99,999,999,999,999,999.00"))
+        assertNull(AmountNormalizer.toMinor("92233720368547758.08"))
+        // Twenty digits does not even fit before the multiply.
+        assertNull(AmountNormalizer.toMinor("12345678901234567890"))
+    }
+
+    @Test
+    fun `the largest amount that fits is read exactly`() {
+        assertEquals(Long.MAX_VALUE, AmountNormalizer.toMinor("92233720368547758.07"))
+    }
+
+    /** Zero is a real balance. The parser, not the normalizer, refuses a zero amount. */
+    @Test
+    fun `zero normalizes to zero`() {
+        assertEquals(0L, AmountNormalizer.toMinor("0.00"))
+        assertEquals(0L, AmountNormalizer.toMinor("ETB 0"))
+    }
 }
 
 class PhoneNormalizerTest {

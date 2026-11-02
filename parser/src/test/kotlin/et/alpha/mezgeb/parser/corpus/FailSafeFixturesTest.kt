@@ -84,6 +84,53 @@ class FailSafeFixturesTest {
         assertNotRead(CBE, "   ")
     }
 
+    // --- Amounts that will not normalize (ROADMAP R41) -----------------------------------
+
+    private fun assertUnmatched(body: String) {
+        val outcome = parse(TELEBIRR, body)
+        assertIs<ParseOutcome.Unmatched>(outcome, "expected the review queue, got $outcome")
+    }
+
+    private fun withAmount(amount: String) =
+        TELEBIRR_RECEIVED.replace("ETB 2,000.00", "ETB $amount")
+
+    @Test
+    fun `an amount with a comma in the wrong place goes to review`() {
+        assertUnmatched(withAmount("1,5"))
+        assertUnmatched(withAmount("12,34"))
+        assertUnmatched(withAmount("1,2345"))
+        assertUnmatched(withAmount("12,34.00"))
+    }
+
+    @Test
+    fun `an amount too large to store goes to review`() {
+        assertUnmatched(withAmount("99999999999999999"))
+        assertUnmatched(withAmount("99,999,999,999,999,999.00"))
+    }
+
+    @Test
+    fun `a zero amount goes to review`() {
+        assertUnmatched(withAmount("0.00"))
+        assertUnmatched(withAmount("0"))
+    }
+
+    @Test
+    fun `a balance with a comma in the wrong place drops the balance, not the payment`() {
+        val body = TELEBIRR_RECEIVED.replace("ETB 2,001.70", "ETB 20,01.70")
+        val success = assertIs<ParseOutcome.Success>(parse(TELEBIRR, body))
+
+        assertEquals(200_000L, success.fields.amountMinor)
+        assertNull(success.fields.balanceAfterMinor, "a malformed balance must not be guessed")
+    }
+
+    @Test
+    fun `a zero balance is still read`() {
+        val body = TELEBIRR_RECEIVED.replace("ETB 2,001.70", "ETB 0.00")
+        val success = assertIs<ParseOutcome.Success>(parse(TELEBIRR, body))
+
+        assertEquals(0L, success.fields.balanceAfterMinor)
+    }
+
     // --- Unexpected formats --------------------------------------------------------------
 
     @Test
