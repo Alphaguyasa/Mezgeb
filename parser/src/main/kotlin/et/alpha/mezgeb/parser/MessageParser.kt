@@ -159,7 +159,10 @@ class MessageParser(
             return Extraction.Failed(UnmatchedReason.FIELD_EXTRACTION_FAILED)
         }
 
+        // A transaction of zero birr is not one. The normalizer allows zero, because a
+        // balance of 0.00 is real, so the amount is held to "more than zero" here.
         val amountMinor = AmountNormalizer.toMinor(group(SemanticField.AMOUNT))
+            ?.takeIf { it > 0 }
             ?: return Extraction.Failed(UnmatchedReason.NO_AMOUNT)
 
         val direction = DirectionResolver.resolve(rule, body, group(SemanticField.DIRECTION))
