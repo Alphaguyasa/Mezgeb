@@ -9,17 +9,20 @@ import et.alpha.mezgeb.data.repo.RuleRepository
 import et.alpha.mezgeb.data.repo.TransactionFilter
 import et.alpha.mezgeb.data.repo.TransactionRepository
 import et.alpha.mezgeb.data.settings.SettingsRepository
+import et.alpha.mezgeb.di.IoDispatcher
 import et.alpha.mezgeb.domain.report.BuildReportUseCase
 import et.alpha.mezgeb.domain.report.CsvExporter
 import et.alpha.mezgeb.domain.report.PdfExporter
 import et.alpha.mezgeb.domain.report.Report
 import et.alpha.mezgeb.domain.report.ReportPeriod
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.OutputStream
 import java.time.Clock
 import java.time.ZoneId
@@ -79,6 +82,7 @@ class ReportsViewModel @Inject constructor(
     private val pdfExporter: PdfExporter,
     private val clock: Clock,
     private val zone: ZoneId,
+    @param:IoDispatcher private val io: CoroutineDispatcher,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ReportsUiState())
@@ -130,13 +134,31 @@ class ReportsViewModel @Inject constructor(
     /**
      * Writes into a stream the system picker opened for us.
      *
+     * The write runs on [io]: a year of transactions as CSV, or a PDF page drawn and
+     * written through a content provider, is too slow for the main thread on a cheap
+     * phone (ROADMAP R40).
+     *
      * @param uri only for handing to a share sheet afterwards; nothing is read back.
+     * @param deleteFile removes the file the picker created, when a write that had
+     *   opened it fails. An empty or half-written export left in Downloads would be
+     *   shared as if it were whole. A file that could not be opened is left alone:
+     *   some pickers let the user choose an existing file to replace, and that file is
+     *   still whole until it is opened for writing.
      */
-    fun export(kind: ExportKind, uri: String, openStream: () -> OutputStream?) {
+    fun export(
+        kind: ExportKind,
+        uri: String,
+        openStream: () -> OutputStream?,
+        deleteFile: () -> Unit,
+    ) {
         viewModelScope.launch {
-            val result = runCatching {
-                val stream = openStream() ?: error("no output stream for $uri")
-                stream.use { writeExport(kind, it) }
+            val result = withContext(io) {
+                var opened = false
+                runCatching {
+                    val stream = openStream() ?: error("no output stream for $uri")
+                    opened = true
+                    stream.use { writeExport(kind, it) }
+                }.onFailure { if (opened) runCatching(deleteFile) }
             }
 
             _state.update {

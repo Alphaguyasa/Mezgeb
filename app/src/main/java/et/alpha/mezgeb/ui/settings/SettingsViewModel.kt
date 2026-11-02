@@ -7,6 +7,7 @@ import et.alpha.mezgeb.data.demo.DemoModeController
 import et.alpha.mezgeb.data.settings.AppLanguage
 import et.alpha.mezgeb.data.settings.LanguagePreference
 import et.alpha.mezgeb.data.settings.SettingsRepository
+import et.alpha.mezgeb.di.IoDispatcher
 import et.alpha.mezgeb.domain.backup.BackupCrypto
 import et.alpha.mezgeb.domain.backup.BackupRepository
 import et.alpha.mezgeb.domain.backup.RestoreException
@@ -14,11 +15,13 @@ import et.alpha.mezgeb.domain.backup.RestoreFailure
 import et.alpha.mezgeb.domain.lock.AppLockRepository
 import et.alpha.mezgeb.domain.lock.AppLockState
 import et.alpha.mezgeb.domain.lock.PinCredential
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.InputStream
 import java.io.OutputStream
 import java.time.Clock
@@ -108,6 +111,12 @@ sealed interface SettingsEvent {
  * here, and only for as long as the file picker is open: the ViewModel outlives a
  * rotation, which a Compose `remember` did not (ROADMAP R38). A process death loses
  * it, on purpose, and [writeBackup] then refuses rather than guessing.
+ *
+ * Backup and restore run on [io], never on the main thread. A backup derives its key
+ * with 210,000 PBKDF2 rounds, encodes the whole ledger as JSON and writes it through a
+ * content provider; on a cheap phone that is long enough for "app not responding"
+ * (ROADMAP R40). `BackupRepository` does not switch dispatcher itself, so it is done
+ * here, where the stream is opened.
  */
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -118,6 +127,7 @@ class SettingsViewModel @Inject constructor(
     private val languages: LanguagePreference,
     private val settings: SettingsRepository,
     private val clock: Clock,
+    @param:IoDispatcher private val io: CoroutineDispatcher,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
@@ -285,9 +295,12 @@ class SettingsViewModel @Inject constructor(
      * Writes the backup to the file the picker returned, with the passphrase held by
      * [holdBackupPassphrase].
      *
-     * @param deleteFile removes the file the picker just created. Used only when there
-     *   is no passphrase to write it with: the picker has already made an empty file,
-     *   and leaving it behind would look like a backup that is not one.
+     * @param deleteFile removes the file the picker just created. Used when there is no
+     *   passphrase to write it with, and when a write that had opened the file fails:
+     *   an empty or half-written file left behind would look like a backup that is not
+     *   one (ROADMAP R40). A file that could not be opened is left alone, because some
+     *   pickers let the user choose an existing file to replace, and that file is still
+     *   whole until it is opened for writing.
      */
     fun writeBackup(uri: String, openStream: () -> OutputStream?, deleteFile: () -> Unit) {
         val passphrase = heldPassphrase
@@ -305,9 +318,13 @@ class SettingsViewModel @Inject constructor(
         _state.update { it.copy(isBusy = true, dialog = null) }
         viewModelScope.launch {
             val result = try {
-                runCatching {
-                    val stream = openStream() ?: error("no output stream")
-                    stream.use { backups.writeBackup(passphrase, it) }
+                withContext(io) {
+                    var opened = false
+                    runCatching {
+                        val stream = openStream() ?: error("no output stream")
+                        opened = true
+                        stream.use { backups.writeBackup(passphrase, it) }
+                    }.onFailure { if (opened) runCatching(deleteFile) }
                 }
             } finally {
                 passphrase.fill(Char.MIN_VALUE)
@@ -353,10 +370,12 @@ class SettingsViewModel @Inject constructor(
         }
         _state.update { it.copy(isBusy = true, dialog = null) }
         viewModelScope.launch {
-            val result = runCatching {
-                val stream = openStream() ?: error("no input stream")
-                stream.use { backups.restore(it, passphrase.toCharArray()) }
-            }.getOrElse { Result.failure(it) }
+            val result = withContext(io) {
+                runCatching {
+                    val stream = openStream() ?: error("no input stream")
+                    stream.use { backups.restore(it, passphrase.toCharArray()) }
+                }.getOrElse { Result.failure(it) }
+            }
 
             _state.update { current ->
                 current.copy(

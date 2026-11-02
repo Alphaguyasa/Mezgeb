@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
@@ -84,9 +85,12 @@ fun ReportsRoute(
     // spreadsheet app waiting to open it.
     val createDocument = rememberLauncherForActivityResult(CreateExportDocument()) { uri ->
         if (uri != null) {
-            viewModel.export(pendingKind, uri.toString()) {
-                context.contentResolver.openOutputStream(uri)
-            }
+            viewModel.export(
+                kind = pendingKind,
+                uri = uri.toString(),
+                openStream = { context.contentResolver.openOutputStream(uri) },
+                deleteFile = { DocumentsContract.deleteDocument(context.contentResolver, uri) },
+            )
         }
     }
 

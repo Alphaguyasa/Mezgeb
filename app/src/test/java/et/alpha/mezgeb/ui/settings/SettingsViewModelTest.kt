@@ -14,8 +14,10 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -25,6 +27,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -35,6 +38,7 @@ import java.io.OutputStream
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import kotlin.coroutines.ContinuationInterceptor
 
 /**
  * Settings, with demo mode as the part worth the most attention: it is the only switch
@@ -55,9 +59,17 @@ class SettingsViewModelTest {
     private val now = Instant.parse("2026-10-12T09:00:00Z").toEpochMilli()
     private val clock = Clock.fixed(Instant.ofEpochMilli(now), ZoneOffset.UTC)
 
+    /**
+     * The dispatcher the ViewModel is given for backup and restore. Unconfined, so the
+     * other tests read the outcome straight away; a distinct instance from Main, so a
+     * test can tell which one the work ran on (ROADMAP R40).
+     */
+    private lateinit var io: CoroutineDispatcher
+
     @Before
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
+        io = UnconfinedTestDispatcher()
         every { lockRepository.isLockEnabled() } returns false
         every { lockRepository.isBiometricEnabled() } returns false
         every { lockRepository.timeoutSeconds() } returns 60
@@ -70,7 +82,7 @@ class SettingsViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     private fun viewModel() =
-        SettingsViewModel(lockRepository, lockState, backups, demoMode, languages, settings, clock)
+        SettingsViewModel(lockRepository, lockState, backups, demoMode, languages, settings, clock, io)
 
     // --- Initial state -----------------------------------------------------------------
 
@@ -343,6 +355,82 @@ class SettingsViewModelTest {
 
         assertEquals(SettingsMessage.BackupFailed, viewModel.state.value.message)
         coVerify(exactly = 0) { settings.recordBackup(any()) }
+    }
+
+    /** ROADMAP R40: 210,000 PBKDF2 rounds and a JSON encode must not run on Main. */
+    @Test
+    fun `a backup is written on the io dispatcher`() = runTest {
+        var ranOn: Any? = null
+        coEvery { backups.writeBackup(any(), any()) } coAnswers {
+            ranOn = currentCoroutineContext()[ContinuationInterceptor]
+            Unit
+        }
+
+        viewModel().backUp()
+
+        assertSame(io, ranOn)
+    }
+
+    /** ROADMAP R40: a half-written file would look like a backup that is not one. */
+    @Test
+    fun `a failed backup removes the file it started`() = runTest {
+        coEvery { backups.writeBackup(any(), any()) } throws IOException("disk full")
+        var deleted = 0
+
+        val viewModel = viewModel()
+        viewModel.backUp(onDelete = { deleted++ })
+
+        assertEquals(1, deleted)
+        assertEquals(SettingsMessage.BackupFailed, viewModel.state.value.message)
+        assertFalse(viewModel.state.value.isBusy)
+    }
+
+    /**
+     * A file that never opened was never truncated. It may be an older backup the user
+     * chose to replace, so it is left as it was.
+     */
+    @Test
+    fun `a backup that cannot open its file leaves the file alone`() = runTest {
+        var deleted = 0
+
+        val viewModel = viewModel()
+        viewModel.backUp(onDelete = { deleted++ }, openStream = { null })
+
+        assertEquals(0, deleted)
+        assertEquals(SettingsMessage.BackupFailed, viewModel.state.value.message)
+    }
+
+    @Test
+    fun `a backup written in full keeps its file`() = runTest {
+        var deleted = 0
+
+        viewModel().backUp(onDelete = { deleted++ })
+
+        assertEquals(0, deleted)
+    }
+
+    @Test
+    fun `a failed backup whose delete also fails still says it failed`() = runTest {
+        coEvery { backups.writeBackup(any(), any()) } throws IOException("disk full")
+
+        val viewModel = viewModel()
+        viewModel.backUp(onDelete = { throw SecurityException("no") })
+
+        assertEquals(SettingsMessage.BackupFailed, viewModel.state.value.message)
+        assertFalse(viewModel.state.value.isBusy)
+    }
+
+    @Test
+    fun `a restore runs on the io dispatcher`() = runTest {
+        var ranOn: Any? = null
+        coEvery { backups.restore(any(), any()) } coAnswers {
+            ranOn = currentCoroutineContext()[ContinuationInterceptor]
+            throw IOException("unreadable")
+        }
+
+        viewModel().restore("correct horse") { ByteArrayInputStream(ByteArray(0)) }
+
+        assertSame(io, ranOn)
     }
 
     @Test
