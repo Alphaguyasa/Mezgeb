@@ -21,8 +21,11 @@ object AmountNormalizer {
 
     private val CURRENCY_TOKENS = listOf("ETB", "BIRR", "ብር", "BR")
 
-    /** Digits, separators and at most one decimal part. */
-    private val AMOUNT_PATTERN = Regex("""\d[\d,\s ]*(?:\.\d+)?""")
+    /**
+     * Digits, separators and at most one decimal part. The narrow no-break space
+     * (U+202F) is a separator too: without it, "1\u202F234.56" was read as 1 birr.
+     */
+    private val AMOUNT_PATTERN = Regex("""\d[\d,\s \u202F]*(?:\.\d+)?""")
 
     /**
      * A whole part that carries separators: one to three digits, then groups of exactly
@@ -50,7 +53,7 @@ object AmountNormalizer {
 
         // "2000.0." — a sentence period rides along on the capture. Strip trailing
         // separators so the fractional part is not left dangling.
-        candidate = candidate.trimEnd('.', ',', ' ', ' ')
+        candidate = candidate.trimEnd('.', ',', ' ', ' ', '\u202F')
         if (candidate.isEmpty()) return null
 
         val decimalIndex = candidate.lastIndexOf('.')
