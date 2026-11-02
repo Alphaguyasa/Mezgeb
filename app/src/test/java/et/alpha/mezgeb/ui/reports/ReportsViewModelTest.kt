@@ -23,8 +23,10 @@ import et.alpha.mezgeb.domain.report.BuildReportUseCase
 import et.alpha.mezgeb.domain.report.PdfExporter
 import et.alpha.mezgeb.domain.report.ReportPeriod
 import et.alpha.mezgeb.util.MezgebDates
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -40,6 +42,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.io.OutputStream
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
@@ -60,9 +64,13 @@ class ReportsViewModelTest : DatabaseTest() {
     private lateinit var customers: CustomerRepository
     private lateinit var rules: RuleRepository
 
+    /** Unconfined unless a test swaps in a queued one to see where the work runs. */
+    private lateinit var io: CoroutineDispatcher
+
     @Before
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
+        io = UnconfinedTestDispatcher()
         settingsHarness = SettingsHarness(tempFolder.root)
         transactions = TransactionRepository(db.transactionDao(), db.rawMessageDao())
         customers = CustomerRepository(db.customerDao(), db.creditEntryDao())
@@ -138,7 +146,12 @@ class ReportsViewModelTest : DatabaseTest() {
 
         viewModel.state.test {
             awaitItemWhere { it.report != null }
-            viewModel.export(ExportKind.LEDGER_CSV, "content://test/ledger.csv") { output }
+            viewModel.export(
+                ExportKind.LEDGER_CSV,
+                "content://test/ledger.csv",
+                { output },
+                deleteFile = {},
+            )
 
             val state = awaitItemWhere { it.exported != null }
             assertEquals("content://test/ledger.csv", state.exported?.uri)
@@ -163,7 +176,12 @@ class ReportsViewModelTest : DatabaseTest() {
 
         viewModel.state.test {
             awaitItemWhere { !it.isLoading }
-            viewModel.export(ExportKind.CREDIT_CSV, "content://test/credit.csv") { output }
+            viewModel.export(
+                ExportKind.CREDIT_CSV,
+                "content://test/credit.csv",
+                { output },
+                deleteFile = {},
+            )
             awaitItemWhere { it.exported != null }
             cancelAndIgnoreRemainingEvents()
         }
@@ -189,7 +207,12 @@ class ReportsViewModelTest : DatabaseTest() {
 
         viewModel.state.test {
             awaitItemWhere { !it.isLoading }
-            viewModel.export(ExportKind.PERIODS_CSV, "content://test/periods.csv") { output }
+            viewModel.export(
+                ExportKind.PERIODS_CSV,
+                "content://test/periods.csv",
+                { output },
+                deleteFile = {},
+            )
             awaitItemWhere { it.exported != null }
             cancelAndIgnoreRemainingEvents()
         }
@@ -202,13 +225,16 @@ class ReportsViewModelTest : DatabaseTest() {
 
     @Test
     fun `a failed write is reported rather than swallowed`() = runTest {
+        var deleted = 0
         val viewModel = viewModel()
 
         viewModel.state.test {
             awaitItemWhere { !it.isLoading }
             // The picker can hand back a uri that cannot be opened — a removed SD card,
             // a provider that has since died.
-            viewModel.export(ExportKind.LEDGER_CSV, "content://test/nowhere.csv") { null }
+            viewModel.export(ExportKind.LEDGER_CSV, "content://test/nowhere.csv", { null }) {
+                deleted++
+            }
 
             assertEquals(
                 ReportsUiState.ErrorKind.EXPORT_FAILED,
@@ -217,6 +243,81 @@ class ReportsViewModelTest : DatabaseTest() {
             assertNull(viewModel.state.value.exported)
             cancelAndIgnoreRemainingEvents()
         }
+        // ROADMAP R40: a file that never opened was never truncated. It may be an older
+        // export the user chose to replace, so it is left as it was.
+        assertEquals(0, deleted)
+    }
+
+    /** ROADMAP R40: a stream that fails halfway leaves no partial file to be shared. */
+    @Test
+    fun `a write that fails halfway deletes the file and reports it`() = runTest {
+        seedWeek()
+        var deleted = 0
+        val failing = object : OutputStream() {
+            override fun write(b: Int) = throw IOException("disk full")
+        }
+        val viewModel = viewModel()
+
+        viewModel.state.test {
+            awaitItemWhere { it.report != null }
+            viewModel.export(ExportKind.LEDGER_CSV, "content://test/full.csv", { failing }) {
+                deleted++
+            }
+
+            awaitItemWhere { it.errorMessage != null }
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertEquals(1, deleted)
+        assertNull(viewModel.state.value.exported)
+    }
+
+    @Test
+    fun `a write that succeeds keeps its file`() = runTest {
+        seedWeek()
+        var deleted = 0
+        val viewModel = viewModel()
+
+        viewModel.state.test {
+            awaitItemWhere { it.report != null }
+            viewModel.export(
+                ExportKind.LEDGER_CSV,
+                "content://test/ledger.csv",
+                { ByteArrayOutputStream() },
+            ) { deleted++ }
+            awaitItemWhere { it.exported != null }
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertEquals(0, deleted)
+    }
+
+    /**
+     * ROADMAP R40. With a queued dispatcher standing in for IO, nothing is opened or
+     * written until that dispatcher runs: the export does not happen on Main.
+     */
+    @Test
+    fun `an export is written on the io dispatcher, not on main`() = runTest {
+        seedWeek()
+        io = StandardTestDispatcher(testScheduler)
+        var opened = false
+        val output = ByteArrayOutputStream()
+        val viewModel = viewModel()
+
+        viewModel.state.test {
+            awaitItemWhere { it.report != null }
+            viewModel.export(
+                ExportKind.LEDGER_CSV,
+                "content://test/ledger.csv",
+                { opened = true; output },
+                deleteFile = {},
+            )
+            assertFalse("opened on Main, before the io dispatcher ran", opened)
+
+            testScheduler.advanceUntilIdle()
+            awaitItemWhere { it.exported != null }
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertTrue(opened)
+        assertTrue(output.size() > 0)
     }
 
     private fun viewModel() = ReportsViewModel(
@@ -229,6 +330,7 @@ class ReportsViewModelTest : DatabaseTest() {
         pdfExporter = PdfExporter(ApplicationProvider.getApplicationContext<Context>(), zone),
         clock = clock,
         zone = zone,
+        io = io,
     )
 
     private fun period(
