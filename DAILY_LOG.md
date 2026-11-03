@@ -5,6 +5,65 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-11-03: Twenty-first daily run (scheduled)
+
+**Start.** CI on `main` was green (`126793f`, the docs PR from the last run). Model
+check: the models overview still lists Opus 5.5 (`claude-opus-5-5`) as the newest
+Opus. This run used it, so no switch was needed. Fable 5.1 was ignored, as Alpha
+decided. No answers had been written into NEEDS_APPROVAL.md.
+
+**Environment.** JDK 21, no Android SDK, so no Gradle build ran locally. CI judged
+both PRs.
+
+**R42 (correct or remove a credit entry), PR #73, merged (`a585242`).**
+- Tapping a statement line opens the credit form for that entry. `CreditEntry`
+  gained an optional `entryId`. The row has a TalkBack click label and a 48dp
+  minimum height.
+- A correction changes the amount, the day and the note through
+  `CreditEntryDao.updateDetails`, a targeted `UPDATE`. The kind and the repayment
+  link are never written, so an unlink made on the statement while the form is open
+  is not undone. The list of payments to link is hidden while correcting.
+- Remove is in the top bar and asks first. `ConfirmDelete` does nothing unless the
+  dialog is open. Removing a linked repayment frees the payment, which stays in the
+  ledger.
+- An entry removed elsewhere is not re-created (`SAVE_FAILED`). An entry id that
+  belongs to another customer is treated as missing. Closed periods keep their
+  snapshotted figures.
+- Found while doing it: `canSave` did not check `isSaved`, so a tap in the moment
+  between a save and the screen closing could record the same credit twice. Fixed.
+- Tests: 10 new in `CreditBookViewModelTest`, 2 in `CustomerCreditDaoTest`, 2 in
+  `CustomersAccessibilityTest`. Strings in English and Amharic.
+- **CI:** red on the first run. The test sources did not compile: my new
+  accessibility test lacked the `getOrNull` import. No test had run. Fixed on the
+  branch (attempt 1 of 2), and green on the second run.
+
+**R43 (`CreditEntryViewModel` tests), PR #74, merged (`791712e`).** 11 tests in a new
+`CreditEntryViewModelTest` cover the keypad cap and digits, what cannot be saved, note
+trimming and the picked day, `SAVE_FAILED` with a retry (forced by an id collision),
+re-ranking on every amount change, the 7-day window, and a second pick replacing the
+first. The roadmap said the ViewModel had no tests. In fact `CreditBookViewModelTest`
+already went through its main flows, but none of the rules above. Test-only.
+**CI:** green on the first run.
+
+**Tags.** `v2026-11-03-1` (#73) and `v2026-11-03-2` (#74) were created locally.
+Pushing failed again ("remote end hung up") (A6).
+
+**Dependabot.** #12, #14, #15, #22 and #40 still wait on A7. Not touched.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R42: correct or remove a credit entry from the statement (#73). R43: tests for the credit form (#74) |
+| Merged | #73 yes (`a585242`), #74 yes (`791712e`). Tags `v2026-11-03-1`/`-2` created but **could not be pushed** (A6) |
+| Failed or blocked | #73 failed CI once (a missing import in a new test, before any test ran), fixed on the branch. Tag push (A6). R39 part 2 waits on A9. No local Gradle |
+| Roadmap | 5 open, 1 unblocked (R44). R39 part 2, R10, R11 and R12 wait on A9, A1, A2 and A7. No replan yet (the open list is 5, not fewer); the next run replans after R44 |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #22, #40), A8 unique index, A9 capture during demo mode (R39 part 2) |
+| Next | R44 (share a customer's statement as text), then a replan: a fresh audit and new roadmap items |
+
+---
+
 ## 2026-11-02: Twentieth daily run (scheduled)
 
 **Start.** CI on `main` was green (`23bb632`, the docs PR from the last run). Model

@@ -19,7 +19,7 @@ re-checked when picked up. R29 and R30 were done on the second 2026-10-28 run. R
 2026-10-29, and R33 and R22 on the second 2026-10-29 run. R34 and R35 were done on 2026-10-30. R36 and R37 were done on 2026-10-31, and the
 list then fell to 3, so the same run replanned: R38 to R44 come from a fresh code audit,
 and R38 and R39 were checked by hand against the code. R38 and R39 part 1 were done on
-2026-11-01. R40 and R41 were done on 2026-11-02.
+2026-11-01. R40 and R41 were done on 2026-11-02. R42 and R43 were done on 2026-11-03.
 
 ## Open
 
@@ -35,19 +35,6 @@ and is deleted the same way. Part 1 (no approval needed): refuse a restore while
 mode is on, with a message. Part 2 waits on **NEEDS_APPROVAL.md A9** (what capture
 does during a demo). Tests: restore in demo mode is refused and nothing is written;
 part 2 per the decision.
-
-### R42 · P2 · M: A credit entry can never be corrected or removed
-`CustomerRepository.updateEntry` and `deleteEntry` (lines 64 and 66) are never called.
-A mistyped credit (5,000 instead of 500) stays in the balance for good; the only way
-out is a fake repayment. Fix: edit and delete on a statement line, with a confirm step.
-Closed-period snapshots stay as they are. Tests: Turbine tests for edit and delete;
-the balance follows; a closed period's figures do not change.
-
-### R43 · P2 · S: `CreditEntryViewModel` has no tests
-Every other screen ViewModel has a test. Untested: the keypad cap, re-ranking of
-repayment suggestions on each amount change, link and unlink, the double-save guard,
-and `SAVE_FAILED`. Tests: Turbine with in-memory Room, including that a payment is
-never linked automatically.
 
 ### R44 · P3 · S: Share a customer's statement as text
 `CustomerDetailScreen.kt:78-82` only offers a reminder SMS. When a customer disputes a
@@ -75,6 +62,20 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 26 updates, Gradle 9.8.2 and Compose BOM 2026.09.00. CI is green on it.)
 
 ## Done
+
+- 2026-11-03 · R43: `CreditEntryViewModelTest` (11 tests) covers the credit form's
+  own rules: the keypad cap at 10,000,000.00 birr, double zero and backspace, a zero
+  amount and a missing customer refused, the note trimmed and the picked day kept,
+  `SAVE_FAILED` with the form kept for a retry, payments re-ranked on every amount
+  change, the 7-day window and money going out, and a second pick replacing the
+  first. Test-only. PR #74. (Tag `v2026-11-03-2` not pushed: A6.)
+- 2026-11-03 · R42: A statement line opens the credit form for that entry. A
+  correction changes the amount, the day and the note through a targeted `UPDATE`,
+  so the kind and the repayment link are never written over. Remove asks first. An
+  entry removed elsewhere is not re-created, and another customer's entry cannot be
+  opened. Closed periods keep their snapshotted figures (tested). Also fixed: a saved
+  entry could be saved again in the moment before the screen closed. PR #73. (Tag
+  `v2026-11-03-1` not pushed: A6.)
 
 - 2026-11-02 · R41: The amount normalizer declines instead of guessing. Separators
   are dropped only when the whole part is grouped in threes ("1,5" and "12,34" are
