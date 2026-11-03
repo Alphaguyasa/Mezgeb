@@ -91,6 +91,15 @@ fun MezgebNavHost(
                             MezgebDestination.CreditEntry(it, isRepayment = true),
                         )
                     },
+                    onOpenEntry = { customerId, entryId ->
+                        navController.navigate(
+                            MezgebDestination.CreditEntry(
+                                customerId,
+                                isRepayment = false,
+                                entryId = entryId,
+                            ),
+                        )
+                    },
                 )
             }
             composable<MezgebDestination.CreditEntry> {

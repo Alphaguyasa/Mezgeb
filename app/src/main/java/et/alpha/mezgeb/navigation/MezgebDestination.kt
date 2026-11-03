@@ -77,11 +77,15 @@ sealed interface MezgebDestination {
      * One destination for both because they are the same form — an amount, a date, a
      * note — differing only in sign and in whether captured payments are offered to
      * link against.
+     *
+     * @param entryId an existing entry to correct or remove. Null means a new entry,
+     *   the usual case. When set, [isRepayment] is ignored: the entry's own kind wins.
      */
     @Serializable
     data class CreditEntry(
         val customerId: String,
         val isRepayment: Boolean,
+        val entryId: String? = null,
     ) : MezgebDestination
 }
 

@@ -33,8 +33,26 @@ interface CreditEntryDao {
     @Update
     suspend fun update(entry: CreditEntryEntity)
 
+    /** Returns the number of rows removed: 0 when the entry was already gone. */
     @Query("DELETE FROM credit_entries WHERE id = :id")
-    suspend fun delete(id: String)
+    suspend fun delete(id: String): Int
+
+    /**
+     * Corrects what a person typed: the amount, the day and the note.
+     *
+     * A targeted update rather than [update] with a whole row, so a correction can
+     * never carry a stale [CreditEntryEntity.linkedTransactionId] back over an unlink
+     * made on the statement in the meantime, and can never turn credit into a
+     * repayment. Returns the number of rows changed: 0 when the entry is gone.
+     */
+    @Query(
+        """
+        UPDATE credit_entries
+        SET amountMinor = :amountMinor, occurredAt = :occurredAt, note = :note
+        WHERE id = :id
+        """,
+    )
+    suspend fun updateDetails(id: String, amountMinor: Long, occurredAt: Long, note: String?): Int
 
     @Query("SELECT * FROM credit_entries WHERE id = :id")
     suspend fun getById(id: String): CreditEntryEntity?

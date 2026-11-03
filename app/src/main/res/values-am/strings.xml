@@ -224,6 +224,12 @@
     <string name="credit_archive_title">ይህ ደንበኛ ይቀመጥ?</string>
     <string name="credit_archive_body">ከዝርዝርዎ ይወጣሉ፤ አብራችሁ የመዘገባችሁት ሁሉ ግን ይቀመጣል።</string>
     <string name="credit_save_failed">ማስቀመጥ አልተቻለም። እንደገና ይሞክሩ።</string>
+    <string name="credit_entry_edit_title">መዝገቡን አስተካክል</string>
+    <string name="credit_entry_open_label">አስተካክል ወይም አስወግድ</string>
+    <string name="credit_entry_delete">አስወግድ</string>
+    <string name="credit_entry_delete_title">ይህ መዝገብ ይወገድ?</string>
+    <string name="credit_entry_delete_body">ከዚህ ደንበኛ ሂሳብ መግለጫ ይወጣል፤ ቀሪ ሂሳቡም ይቀየራል። አስቀድመው የዘጓቸው ጊዜያት አሃዞቻቸውን ይይዛሉ። ይህ ሊመለስ አይችልም።</string>
+    <string name="credit_entry_delete_failed">ማስወገድ አልተቻለም። እንደገና ይሞክሩ።</string>
     <string name="credit_match_heading">ከእነዚህ ክፍያዎች አንዱ ነበር?</string>
     <string name="credit_match_none">ባለፈው ሳምንት ያልተያዘ ክፍያ አልደረሰም።</string>
     <string name="credit_match_amount">ተመሳሳይ መጠን</string>

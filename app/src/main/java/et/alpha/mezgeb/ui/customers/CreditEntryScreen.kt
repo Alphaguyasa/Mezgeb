@@ -11,12 +11,17 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -57,8 +62,10 @@ fun CreditEntryRoute(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(state.isSaved) {
-        if (state.isSaved) onBack()
+    // Saved, deleted, or the entry being corrected was already removed: in each case
+    // the statement behind this screen is the place to look now.
+    LaunchedEffect(state.isSaved, state.entryNotFound) {
+        if (state.isSaved || state.entryNotFound) onBack()
     }
 
     CreditEntryScreen(
@@ -80,21 +87,42 @@ fun CreditEntryScreen(
     val spacing = MezgebTheme.spacing
     val snackbarHostState = remember { SnackbarHostState() }
     var showDatePicker by remember { mutableStateOf(false) }
-    val errorText = stringResource(R.string.credit_save_failed)
+    val saveFailedText = stringResource(R.string.credit_save_failed)
+    val deleteFailedText = stringResource(R.string.credit_entry_delete_failed)
 
     LaunchedEffect(state.errorMessage) {
-        if (state.errorMessage != null) {
-            snackbarHostState.showSnackbar(errorText)
-            onEvent(CreditEntryEvent.ErrorShown)
+        val text = when (state.errorMessage) {
+            CreditEntryUiState.ErrorKind.SAVE_FAILED -> saveFailedText
+            CreditEntryUiState.ErrorKind.DELETE_FAILED -> deleteFailedText
+            null -> return@LaunchedEffect
         }
+        snackbarHostState.showSnackbar(text)
+        onEvent(CreditEntryEvent.ErrorShown)
     }
 
     MezgebScaffold(
         title = stringResource(
-            if (state.isRepayment) R.string.credit_record_repayment else R.string.credit_add_sale,
+            when {
+                state.isEditing -> R.string.credit_entry_edit_title
+                state.isRepayment -> R.string.credit_record_repayment
+                else -> R.string.credit_add_sale
+            },
         ),
         modifier = modifier,
         navigationIcon = { BackButton(onBack) },
+        actions = {
+            if (state.isEditing) {
+                IconButton(
+                    onClick = { onEvent(CreditEntryEvent.RequestDelete) },
+                    enabled = state.canDelete,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Delete,
+                        contentDescription = stringResource(R.string.credit_entry_delete),
+                    )
+                }
+            }
+        },
         snackbarHostState = snackbarHostState,
     ) { inner ->
         Column(
@@ -145,7 +173,9 @@ fun CreditEntryScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            if (state.isRepayment) {
+            // A correction keeps the entry's link as it is (see CreditEntryViewModel), so
+            // the list of payments to link is for new repayments only.
+            if (state.isRepayment && !state.isEditing) {
                 MatchList(
                     matches = state.matches,
                     linkedTransactionId = state.linkedTransactionId,
@@ -163,6 +193,24 @@ fun CreditEntryScreen(
                 Text(stringResource(R.string.action_save))
             }
         }
+    }
+
+    if (state.isConfirmingDelete) {
+        AlertDialog(
+            onDismissRequest = { onEvent(CreditEntryEvent.DismissDelete) },
+            title = { Text(stringResource(R.string.credit_entry_delete_title)) },
+            text = { Text(stringResource(R.string.credit_entry_delete_body)) },
+            confirmButton = {
+                TextButton(onClick = { onEvent(CreditEntryEvent.ConfirmDelete) }) {
+                    Text(stringResource(R.string.credit_entry_delete))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { onEvent(CreditEntryEvent.DismissDelete) }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            },
+        )
     }
 
     if (showDatePicker) {

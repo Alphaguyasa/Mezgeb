@@ -223,4 +223,30 @@ class CustomerCreditDaoTest : DatabaseTest() {
 
         assertNull(credit.getById("e1"))
     }
+
+    @Test
+    fun `a correction changes amount, day and note, and nothing else`() = runTest {
+        customers.insert(customer("c1"))
+        credit.insert(creditEntry("e1", "c1", CreditKind.REPAYMENT, 500_000, T0, linkedTransactionId = "t1"))
+
+        assertEquals(1, credit.updateDetails("e1", 5_000, T0 + DAY, "NOTE_01"))
+
+        val row = credit.getById("e1")!!
+        assertEquals(5_000L, row.amountMinor)
+        assertEquals(T0 + DAY, row.occurredAt)
+        assertEquals("NOTE_01", row.note)
+        assertEquals(CreditKind.REPAYMENT, row.kind)
+        assertEquals("t1", row.linkedTransactionId)
+    }
+
+    @Test
+    fun `correcting or deleting a missing entry changes nothing and says so`() = runTest {
+        customers.insert(customer("c1"))
+        credit.insert(creditEntry("e1", "c1", CreditKind.CREDIT_GIVEN, 10_000, T0))
+
+        assertEquals(0, credit.updateDetails("gone", 5_000, T0, null))
+        assertEquals(0, credit.delete("gone"))
+        assertEquals(1, credit.delete("e1"))
+        assertTrue(credit.observeForCustomer("c1").first().isEmpty())
+    }
 }

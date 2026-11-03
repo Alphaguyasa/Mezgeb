@@ -249,6 +249,12 @@
     <string name="credit_archive_title">Archive this customer?</string>
     <string name="credit_archive_body">They come off your list, and everything you recorded together is kept.</string>
     <string name="credit_save_failed">Could not save. Try again.</string>
+    <string name="credit_entry_edit_title">Correct entry</string>
+    <string name="credit_entry_open_label">correct or remove</string>
+    <string name="credit_entry_delete">Remove</string>
+    <string name="credit_entry_delete_title">Remove this entry?</string>
+    <string name="credit_entry_delete_body">It comes off this customer\'s statement and the balance changes. Periods you already closed keep their figures. This cannot be undone.</string>
+    <string name="credit_entry_delete_failed">Could not remove. Try again.</string>
     <string name="credit_match_heading">Was this one of these payments?</string>
     <string name="credit_match_none">No payment arrived in the last week that is not already accounted for.</string>
     <string name="credit_match_amount">Same amount</string>

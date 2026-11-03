@@ -61,9 +61,33 @@ class CustomerRepository @Inject constructor(
         creditEntryDao.insert(entry.toEntity())
     }
 
-    suspend fun updateEntry(entry: CreditEntry) = creditEntryDao.update(entry.toEntity())
+    suspend fun getEntry(id: String): CreditEntry? = creditEntryDao.getById(id)?.toDomain()
 
-    suspend fun deleteEntry(id: String) = creditEntryDao.delete(id)
+    /**
+     * Corrects a mistyped entry's amount, day and note. Its kind and its link stay.
+     *
+     * Closed reconciliation periods are not touched: their credit figures were
+     * snapshotted into the session row when they closed, so a correction shows in the
+     * statement and in open periods only.
+     *
+     * @return true when the entry existed and was changed.
+     */
+    suspend fun correctEntry(id: String, amountMinor: Long, occurredAt: Long, note: String?): Boolean {
+        require(amountMinor > 0) {
+            "CreditEntry.amountMinor is always positive; kind carries the sign"
+        }
+        return creditEntryDao.updateDetails(id, amountMinor, occurredAt, note) > 0
+    }
+
+    /**
+     * Removes an entry that should never have been recorded.
+     *
+     * A linked repayment takes its link with it, which frees the captured payment to
+     * be matched again; the payment itself stays in the ledger.
+     *
+     * @return true when the entry existed and was removed.
+     */
+    suspend fun deleteEntry(id: String): Boolean = creditEntryDao.delete(id) > 0
 
     suspend fun linkRepaymentToTransaction(entryId: String, transactionId: String?) =
         creditEntryDao.setLinkedTransaction(entryId, transactionId)
