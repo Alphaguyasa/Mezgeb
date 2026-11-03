@@ -2,6 +2,7 @@ package et.alpha.mezgeb.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import et.alpha.mezgeb.R
