@@ -1,6 +1,8 @@
 package et.alpha.mezgeb.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import et.alpha.mezgeb.R
 import et.alpha.mezgeb.domain.credit.CustomerCredit
@@ -8,11 +10,14 @@ import et.alpha.mezgeb.domain.model.CreditEntry
 import et.alpha.mezgeb.domain.model.CreditKind
 import et.alpha.mezgeb.domain.model.CreditStatementLine
 import et.alpha.mezgeb.domain.model.Customer
+import et.alpha.mezgeb.ui.customers.CreditEntryScreen
+import et.alpha.mezgeb.ui.customers.CreditEntryUiState
 import et.alpha.mezgeb.ui.customers.CustomerDetailScreen
 import et.alpha.mezgeb.ui.customers.CustomerDetailUiState
 import et.alpha.mezgeb.ui.customers.CustomersScreen
 import et.alpha.mezgeb.ui.customers.CustomersUiState
 import et.alpha.mezgeb.util.MoneyFormatter
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -83,6 +88,39 @@ class CustomersAccessibilityTest {
         checks.assertSpoken(
             context.getString(R.string.credit_statement_balance_settled_content_description),
         )
+    }
+
+    @Test
+    fun `every statement line says that a tap corrects or removes it`() {
+        showStatement()
+
+        // TalkBack reads "double tap to correct or remove": a statement line does not
+        // look like something that can be changed, so it has to say so (ROADMAP R42).
+        val label = context.getString(R.string.credit_entry_open_label)
+        val lines = compose.onAllNodes(hasClickAction()).fetchSemanticsNodes()
+            .filter { it.config.getOrNull(SemanticsActions.OnClick)?.label == label }
+        assertEquals(4, lines.size)
+    }
+
+    @Test
+    fun `the correction screen names and sizes every control, remove included`() {
+        checks.show {
+            CreditEntryScreen(
+                state = CreditEntryUiState(
+                    isLoading = false,
+                    customer = Customer("1", "ABEBE", null, null, 0L),
+                    isEditing = true,
+                    amountMinor = 50_000,
+                    occurredAt = 1_782_900_000_000L,
+                    note = "NOTE_01",
+                ),
+                onEvent = {},
+                onBack = {},
+            )
+        }
+
+        checks.assertControlsAreNamedAndLargeEnough()
+        checks.assertSpoken(context.getString(R.string.credit_entry_delete))
     }
 
     private fun showCustomers() {

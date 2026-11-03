@@ -2,6 +2,7 @@ package et.alpha.mezgeb.ui.customers
 
 import android.content.Context
 import android.content.Intent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -57,6 +58,7 @@ fun CustomerDetailRoute(
     onBack: () -> Unit,
     onAddCredit: (String) -> Unit,
     onRecordRepayment: (String) -> Unit,
+    onOpenEntry: (customerId: String, entryId: String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CustomerDetailViewModel = hiltViewModel(),
 ) {
@@ -75,6 +77,7 @@ fun CustomerDetailRoute(
         onBack = onBack,
         onAddCredit = { state.credit?.let { onAddCredit(it.customer.id) } },
         onRecordRepayment = { state.credit?.let { onRecordRepayment(it.customer.id) } },
+        onOpenEntry = { entryId -> state.credit?.let { onOpenEntry(it.customer.id, entryId) } },
         onSendReminder = {
             val phone = viewModel.customerPhone()
             val message = viewModel.reminderMessage(defaultTemplate)
@@ -95,6 +98,7 @@ fun CustomerDetailScreen(
     onRecordRepayment: () -> Unit,
     onSendReminder: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenEntry: (entryId: String) -> Unit = {},
 ) {
     val spacing = MezgebTheme.spacing
     val credit = state.credit
@@ -202,7 +206,11 @@ fun CustomerDetailScreen(
                     )
                 }
                 items(state.statement, key = { it.entry.id }) { line ->
-                    StatementRow(line = line, onUnlink = { onEvent(CustomerDetailEvent.UnlinkEntry(it)) })
+                    StatementRow(
+                        line = line,
+                        onOpen = onOpenEntry,
+                        onUnlink = { onEvent(CustomerDetailEvent.UnlinkEntry(it)) },
+                    )
                     HorizontalDivider()
                 }
             }
@@ -327,13 +335,27 @@ private fun BalanceHeadline(credit: CustomerCredit, modifier: Modifier = Modifie
     }
 }
 
-/** One line of the statement: what happened, and the balance after it. */
+/**
+ * One line of the statement: what happened, and the balance after it.
+ *
+ * Tapping it opens the line for correction or removal (ROADMAP R42). The click label
+ * tells TalkBack what a double tap does, because a statement line does not look like
+ * something that can be changed.
+ */
 @Composable
-private fun StatementRow(line: CreditStatementLine, onUnlink: (String) -> Unit) {
+private fun StatementRow(
+    line: CreditStatementLine,
+    onOpen: (String) -> Unit,
+    onUnlink: (String) -> Unit,
+) {
     val spacing = MezgebTheme.spacing
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClickLabel = stringResource(R.string.credit_entry_open_label)) {
+                onOpen(line.entry.id)
+            }
+            .heightIn(min = spacing.touchTarget)
             .padding(horizontal = spacing.screenGutter, vertical = spacing.md),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(spacing.md),

@@ -38,11 +38,24 @@ data class CreditEntryUiState(
     val isSaving: Boolean = false,
     val isSaved: Boolean = false,
     val errorMessage: ErrorKind? = null,
+    /** Correcting an entry already on the statement, rather than adding one. */
+    val isEditing: Boolean = false,
+    /** The entry being corrected is gone (removed elsewhere); there is nothing to show. */
+    val entryNotFound: Boolean = false,
+    val isConfirmingDelete: Boolean = false,
 ) {
-    val canSave: Boolean get() = amountMinor > 0 && customer != null && !isSaving
+    /**
+     * [isSaved] is part of the guard: between a save finishing and the screen closing,
+     * one more tap would otherwise record the same credit a second time.
+     */
+    val canSave: Boolean
+        get() = amountMinor > 0 && customer != null && !isSaving && !isSaved && !entryNotFound
+
+    val canDelete: Boolean
+        get() = isEditing && !isLoading && !isSaving && !isSaved && !entryNotFound
     val amountText: String get() = MoneyFormatter.formatUnsigned(amountMinor)
 
-    enum class ErrorKind { SAVE_FAILED }
+    enum class ErrorKind { SAVE_FAILED, DELETE_FAILED }
 }
 
 sealed interface CreditEntryEvent {
@@ -57,6 +70,11 @@ sealed interface CreditEntryEvent {
 
     data object Save : CreditEntryEvent
     data object ErrorShown : CreditEntryEvent
+
+    /** Deleting is two steps: ask, then confirm. Editing only. */
+    data object RequestDelete : CreditEntryEvent
+    data object DismissDelete : CreditEntryEvent
+    data object ConfirmDelete : CreditEntryEvent
 }
 
 /**
@@ -68,6 +86,14 @@ sealed interface CreditEntryEvent {
  * automatically: a wrong link makes a debt vanish against an unrelated payment, and
  * it is discovered weeks later at reconciliation with no way to tell which record
  * lied.
+ *
+ * Opened with an entry id, the same form corrects that entry instead (a mistyped
+ * 5,000 for 500 would otherwise sit in the balance for good) or removes it. A
+ * correction changes the amount, the day and the note only. The kind stays, because
+ * turning credit into a repayment is a different event, not a typo. The link stays
+ * too, and is not offered for change here: the statement already has an unlink
+ * action, and offering a fresh list of payments would replace a link without the
+ * person seeing which one it replaced.
  */
 @HiltViewModel
 class CreditEntryViewModel @Inject constructor(
@@ -91,6 +117,11 @@ class CreditEntryViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val customer = customers.getCustomer(route.customerId)
+            val entryId = route.entryId
+            if (entryId != null) {
+                loadForEdit(entryId, customer)
+                return@launch
+            }
             if (route.isRepayment) {
                 candidates = transactions.unlinkedIncomingSince(
                     clock.millis() - MATCH_WINDOW_DAYS * MezgebDates.DAY_MILLIS,
@@ -122,6 +153,39 @@ class CreditEntryViewModel @Inject constructor(
 
             CreditEntryEvent.Save -> save()
             CreditEntryEvent.ErrorShown -> _state.update { it.copy(errorMessage = null) }
+
+            CreditEntryEvent.RequestDelete -> _state.update {
+                if (it.canDelete) it.copy(isConfirmingDelete = true) else it
+            }
+            CreditEntryEvent.DismissDelete -> _state.update { it.copy(isConfirmingDelete = false) }
+            CreditEntryEvent.ConfirmDelete -> delete()
+        }
+    }
+
+    private suspend fun loadForEdit(entryId: String, customer: Customer?) {
+        // An entry that belongs to someone else is treated as missing: the route
+        // names both, and they have to agree before anything is changed.
+        val entry = customers.getEntry(entryId)?.takeIf { it.customerId == route.customerId }
+        _state.update {
+            if (entry == null) {
+                it.copy(
+                    isLoading = false,
+                    customer = customer,
+                    isEditing = true,
+                    entryNotFound = true,
+                )
+            } else {
+                it.copy(
+                    isLoading = false,
+                    customer = customer,
+                    isEditing = true,
+                    isRepayment = entry.kind == CreditKind.REPAYMENT,
+                    amountMinor = entry.amountMinor,
+                    occurredAt = entry.occurredAt,
+                    note = entry.note.orEmpty(),
+                    linkedTransactionId = entry.linkedTransactionId,
+                )
+            }
         }
     }
 
@@ -136,7 +200,7 @@ class CreditEntryViewModel @Inject constructor(
 
     /** Re-ranks on every amount change: the amount is the strongest signal there is. */
     private fun CreditEntryUiState.withMatches(): CreditEntryUiState {
-        if (!isRepayment || customer == null) return this
+        if (!isRepayment || customer == null || isEditing) return this
         return copy(matches = matcher.rank(candidates, customer, amountMinor))
     }
 
@@ -147,7 +211,21 @@ class CreditEntryViewModel @Inject constructor(
 
         _state.update { it.copy(isSaving = true) }
         viewModelScope.launch {
+            val note = current.note.trim().takeIf { it.isNotEmpty() }
+            val entryId = route.entryId
             val result = runCatching {
+                if (entryId != null) {
+                    val changed = customers.correctEntry(
+                        id = entryId,
+                        amountMinor = current.amountMinor,
+                        occurredAt = current.occurredAt,
+                        note = note,
+                    )
+                    // Removed elsewhere while this screen was open: saving it would
+                    // have to re-create it, which is not what a correction means.
+                    check(changed) { "entry no longer exists" }
+                    return@runCatching
+                }
                 customers.insertEntry(
                     CreditEntry(
                         id = ids.newId(),
@@ -160,7 +238,7 @@ class CreditEntryViewModel @Inject constructor(
                         // Always positive; the kind carries the sign.
                         amountMinor = current.amountMinor,
                         occurredAt = current.occurredAt,
-                        note = current.note.trim().takeIf { it.isNotEmpty() },
+                        note = note,
                         linkedTransactionId = current.linkedTransactionId,
                     ),
                 )
@@ -173,6 +251,30 @@ class CreditEntryViewModel @Inject constructor(
                     it.copy(
                         isSaving = false,
                         errorMessage = CreditEntryUiState.ErrorKind.SAVE_FAILED,
+                    )
+                }
+            }
+        }
+    }
+
+    private fun delete() {
+        val entryId = route.entryId ?: return
+        // Only from the confirm dialog: nothing is removed on a single tap.
+        val current = _state.value
+        if (!current.isConfirmingDelete || !current.canDelete) return
+
+        _state.update { it.copy(isSaving = true, isConfirmingDelete = false) }
+        viewModelScope.launch {
+            // An entry already gone counts as removed: the outcome the person asked
+            // for is true either way.
+            val result = runCatching { customers.deleteEntry(entryId) }
+            _state.update {
+                if (result.isSuccess) {
+                    it.copy(isSaving = false, isSaved = true)
+                } else {
+                    it.copy(
+                        isSaving = false,
+                        errorMessage = CreditEntryUiState.ErrorKind.DELETE_FAILED,
                     )
                 }
             }

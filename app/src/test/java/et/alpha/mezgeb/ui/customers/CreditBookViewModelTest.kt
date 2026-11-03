@@ -8,6 +8,7 @@ import et.alpha.mezgeb.data.local.DatabaseTest
 import et.alpha.mezgeb.data.local.T0
 import et.alpha.mezgeb.data.local.creditEntry
 import et.alpha.mezgeb.data.local.customer
+import et.alpha.mezgeb.data.local.entity.ReconciliationSessionEntity
 import et.alpha.mezgeb.data.local.transaction
 import et.alpha.mezgeb.data.repo.CustomerRepository
 import et.alpha.mezgeb.data.repo.TransactionRepository
@@ -15,6 +16,7 @@ import et.alpha.mezgeb.data.settings.SettingsHarness
 import et.alpha.mezgeb.domain.credit.ComputeCustomerBalanceUseCase
 import et.alpha.mezgeb.domain.credit.SuggestRepaymentMatchesUseCase
 import et.alpha.mezgeb.domain.model.CreditKind
+import et.alpha.mezgeb.domain.model.SessionStatus
 import et.alpha.mezgeb.util.IdGenerator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -344,6 +346,231 @@ class CreditBookViewModelTest : DatabaseTest() {
         assertEquals(-5_000L, customers.observeCustomer("c1").first()?.balanceMinor)
     }
 
+    // --- Correcting and removing an entry (R42) ---------------------------------------
+
+    @Test
+    fun `opening an entry loads it for correction`() = runTest {
+        seedCustomer("c1", "Abebe", givenMinor = 500_000)
+
+        creditEntryViewModel("c1", isRepayment = true, entryId = "c1_given").state.test {
+            val state = awaitItemWhere { !it.isLoading }
+            assertTrue(state.isEditing)
+            // The entry's own kind wins over the route's flag.
+            assertFalse(state.isRepayment)
+            assertEquals(500_000L, state.amountMinor)
+            assertEquals(T0, state.occurredAt)
+            assertTrue(state.matches.isEmpty())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a mistyped credit is corrected and the balance follows`() = runTest {
+        seedCustomer("c1", "Abebe", givenMinor = 500_000)
+        val viewModel = creditEntryViewModel("c1", isRepayment = false, entryId = "c1_given")
+
+        viewModel.state.test {
+            awaitItemWhere { !it.isLoading }
+            // 5,000.00 was typed; 500.00 was meant. Two backspaces drop a zero each.
+            viewModel.onEvent(CreditEntryEvent.BackspacePressed)
+            viewModel.onEvent(CreditEntryEvent.BackspacePressed)
+            viewModel.onEvent(CreditEntryEvent.NoteChanged("  sugar  "))
+            viewModel.onEvent(CreditEntryEvent.Save)
+            awaitItemWhere { it.isSaved }
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        val entry = customers.observeEntries("c1").first().single()
+        assertEquals("c1_given", entry.id)
+        assertEquals(CreditKind.CREDIT_GIVEN, entry.kind)
+        assertEquals(5_000L, entry.amountMinor)
+        assertEquals("sugar", entry.note)
+        assertEquals(5_000L, customers.observeCustomer("c1").first()?.balanceMinor)
+    }
+
+    @Test
+    fun `a correction keeps the link as it is in the database, not as it was loaded`() = runTest {
+        db.customerDao().insert(customer("c1", name = "Abebe"))
+        db.transactionDao().insert(transaction("t1", amountMinor = 45_000, occurredAt = now - DAY))
+        db.creditEntryDao().insert(
+            creditEntry("r1", "c1", CreditKind.REPAYMENT, 45_000, linkedTransactionId = "t1"),
+        )
+        val viewModel = creditEntryViewModel("c1", isRepayment = true, entryId = "r1")
+
+        viewModel.state.test {
+            assertEquals("t1", awaitItemWhere { !it.isLoading }.linkedTransactionId)
+            // Unlinked on the statement while this screen was open.
+            customers.linkRepaymentToTransaction("r1", null)
+            viewModel.onEvent(CreditEntryEvent.DigitPressed(0))
+            viewModel.onEvent(CreditEntryEvent.Save)
+            awaitItemWhere { it.isSaved }
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        val entry = customers.observeEntries("c1").first().single()
+        assertEquals(450_000L, entry.amountMinor)
+        assertEquals(CreditKind.REPAYMENT, entry.kind)
+        assertNull(entry.linkedTransactionId)
+    }
+
+    @Test
+    fun `removing an entry asks first, then the balance follows`() = runTest {
+        seedCustomer("c1", "Abebe", givenMinor = 50_000, repaidMinor = 20_000)
+        val viewModel = creditEntryViewModel("c1", isRepayment = true, entryId = "c1_repaid")
+
+        viewModel.state.test {
+            awaitItemWhere { !it.isLoading }
+            // A confirm with no question asked removes nothing.
+            viewModel.onEvent(CreditEntryEvent.ConfirmDelete)
+            assertFalse(viewModel.state.value.isSaved)
+            assertEquals(2, customers.observeEntries("c1").first().size)
+
+            viewModel.onEvent(CreditEntryEvent.RequestDelete)
+            assertTrue(awaitItemWhere { it.isConfirmingDelete }.isConfirmingDelete)
+
+            viewModel.onEvent(CreditEntryEvent.DismissDelete)
+            awaitItemWhere { !it.isConfirmingDelete }
+            assertEquals(2, customers.observeEntries("c1").first().size)
+
+            viewModel.onEvent(CreditEntryEvent.RequestDelete)
+            awaitItemWhere { it.isConfirmingDelete }
+            viewModel.onEvent(CreditEntryEvent.ConfirmDelete)
+            awaitItemWhere { it.isSaved }
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        assertEquals(listOf("c1_given"), customers.observeEntries("c1").first().map { it.id })
+        assertEquals(50_000L, customers.observeCustomer("c1").first()?.balanceMinor)
+    }
+
+    @Test
+    fun `removing a linked repayment frees the payment and keeps it in the ledger`() = runTest {
+        db.customerDao().insert(customer("c1", name = "Abebe"))
+        db.transactionDao().insert(transaction("t1", amountMinor = 45_000, occurredAt = now - DAY))
+        db.creditEntryDao().insert(
+            creditEntry("r1", "c1", CreditKind.REPAYMENT, 45_000, linkedTransactionId = "t1"),
+        )
+        val viewModel = creditEntryViewModel("c1", isRepayment = true, entryId = "r1")
+
+        viewModel.state.test {
+            awaitItemWhere { !it.isLoading }
+            viewModel.onEvent(CreditEntryEvent.RequestDelete)
+            viewModel.onEvent(CreditEntryEvent.ConfirmDelete)
+            awaitItemWhere { it.isSaved }
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        assertNull(customers.repaymentForTransaction("t1"))
+        assertEquals("t1", db.transactionDao().getById("t1")?.id)
+    }
+
+    @Test
+    fun `delete is not offered on a new entry`() = runTest {
+        db.customerDao().insert(customer("c1", name = "Abebe"))
+        val viewModel = creditEntryViewModel("c1", isRepayment = false)
+
+        viewModel.state.test {
+            val state = awaitItemWhere { !it.isLoading }
+            assertFalse(state.canDelete)
+            viewModel.onEvent(CreditEntryEvent.RequestDelete)
+            viewModel.onEvent(CreditEntryEvent.ConfirmDelete)
+            assertFalse(viewModel.state.value.isConfirmingDelete)
+            assertFalse(viewModel.state.value.isSaved)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `an entry removed elsewhere is not re-created by saving a correction`() = runTest {
+        seedCustomer("c1", "Abebe", givenMinor = 50_000)
+        val viewModel = creditEntryViewModel("c1", isRepayment = false, entryId = "c1_given")
+
+        viewModel.state.test {
+            awaitItemWhere { !it.isLoading }
+            customers.deleteEntry("c1_given")
+            viewModel.onEvent(CreditEntryEvent.Save)
+            val state = awaitItemWhere { it.errorMessage != null }
+            assertEquals(CreditEntryUiState.ErrorKind.SAVE_FAILED, state.errorMessage)
+            assertFalse(state.isSaved)
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        assertTrue(customers.observeEntries("c1").first().isEmpty())
+    }
+
+    @Test
+    fun `another customer's entry cannot be opened through this one`() = runTest {
+        seedCustomer("c1", "Abebe", givenMinor = 50_000)
+        seedCustomer("c2", "Chaltu", givenMinor = 10_000)
+        val viewModel = creditEntryViewModel("c2", isRepayment = false, entryId = "c1_given")
+
+        viewModel.state.test {
+            val state = awaitItemWhere { !it.isLoading }
+            assertTrue(state.entryNotFound)
+            assertFalse(state.canSave)
+            assertFalse(state.canDelete)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a closed period keeps its credit figures after an entry is corrected or removed`() =
+        runTest {
+            seedCustomer("c1", "Abebe", givenMinor = 50_000, repaidMinor = 20_000)
+            val closed = ReconciliationSessionEntity(
+                id = "s1",
+                periodStart = T0 - DAY,
+                periodEnd = T0 + DAY,
+                expectedTotalMinor = null,
+                capturedInMinor = 0,
+                capturedOutMinor = 0,
+                cashRecordedMinor = 0,
+                creditGivenMinor = 50_000,
+                creditRepaidMinor = 20_000,
+                status = SessionStatus.CLOSED,
+                closedAt = T0 + 2 * DAY,
+                note = null,
+            )
+            db.reconciliationSessionDao().insert(closed)
+
+            val edit = creditEntryViewModel("c1", isRepayment = false, entryId = "c1_given")
+            edit.state.test {
+                awaitItemWhere { !it.isLoading }
+                edit.onEvent(CreditEntryEvent.BackspacePressed)
+                edit.onEvent(CreditEntryEvent.Save)
+                awaitItemWhere { it.isSaved }
+                cancelAndIgnoreRemainingEvents()
+            }
+            val remove = creditEntryViewModel("c1", isRepayment = true, entryId = "c1_repaid")
+            remove.state.test {
+                awaitItemWhere { !it.isLoading }
+                remove.onEvent(CreditEntryEvent.RequestDelete)
+                remove.onEvent(CreditEntryEvent.ConfirmDelete)
+                awaitItemWhere { it.isSaved }
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            assertEquals(5_000L, customers.observeCustomer("c1").first()?.balanceMinor)
+            assertEquals(closed, db.reconciliationSessionDao().getById("s1"))
+        }
+
+    @Test
+    fun `a saved entry cannot be saved a second time before the screen closes`() = runTest {
+        db.customerDao().insert(customer("c1", name = "Abebe"))
+        val viewModel = creditEntryViewModel("c1", isRepayment = false)
+
+        viewModel.state.test {
+            awaitItemWhere { it.customer != null }
+            press(viewModel, 1, 0, 0)
+            viewModel.onEvent(CreditEntryEvent.Save)
+            assertFalse(awaitItemWhere { it.isSaved }.canSave)
+            viewModel.onEvent(CreditEntryEvent.Save)
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        assertEquals(1, customers.observeEntries("c1").first().size)
+    }
+
     // --- Fixtures ---------------------------------------------------------------------
 
     private fun customersViewModel() = CustomersViewModel(
@@ -362,7 +589,11 @@ class CreditBookViewModelTest : DatabaseTest() {
         savedStateHandle = SavedStateHandle(mapOf("customerId" to customerId)),
     )
 
-    private fun creditEntryViewModel(customerId: String, isRepayment: Boolean) =
+    private fun creditEntryViewModel(
+        customerId: String,
+        isRepayment: Boolean,
+        entryId: String? = null,
+    ) =
         CreditEntryViewModel(
             customers = customers,
             transactions = transactions,
@@ -370,7 +601,11 @@ class CreditBookViewModelTest : DatabaseTest() {
             ids = IdGenerator { "entry_1" },
             clock = clock,
             savedStateHandle = SavedStateHandle(
-                mapOf("customerId" to customerId, "isRepayment" to isRepayment),
+                mapOf(
+                    "customerId" to customerId,
+                    "isRepayment" to isRepayment,
+                    "entryId" to entryId,
+                ),
             ),
         )
 
