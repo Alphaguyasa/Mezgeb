@@ -232,6 +232,14 @@
     <string name="credit_add_sale">Give credit</string>
     <string name="credit_record_repayment">Record payment</string>
     <string name="credit_send_reminder">Send a reminder</string>
+    <string name="credit_share_statement">Share statement</string>
+    <!-- The shared statement text. Sent by an app the shop owner picks, never by Mezgeb. -->
+    <string name="credit_share_title">Statement for {name}</string>
+    <!-- Placeholders: {name}; {day} {kind} {amount} {balance}. Keep the braces. -->
+    <string name="credit_share_line">{day} · {kind} · {amount} · balance {balance}</string>
+    <string name="credit_share_balance_owed">Owed to the shop: {amount}</string>
+    <string name="credit_share_balance_shop_owes">Owed by the shop: {amount}</string>
+    <string name="credit_share_balance_settled">Nothing owed.</string>
     <string name="credit_edit_customer">Edit customer</string>
     <string name="credit_customer_not_found">This customer no longer exists.</string>
     <string name="credit_statement_heading">Statement</string>

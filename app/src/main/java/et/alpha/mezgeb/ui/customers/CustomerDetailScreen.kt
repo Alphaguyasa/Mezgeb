@@ -30,6 +30,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -46,12 +47,15 @@ import et.alpha.mezgeb.designsystem.component.EmptyState
 import et.alpha.mezgeb.designsystem.component.MezgebScaffold
 import et.alpha.mezgeb.domain.credit.CustomerCredit
 import et.alpha.mezgeb.domain.credit.ReminderMessage
+import et.alpha.mezgeb.domain.credit.StatementText
 import et.alpha.mezgeb.domain.model.CreditEntry
 import et.alpha.mezgeb.domain.model.CreditKind
 import et.alpha.mezgeb.domain.model.CreditStatementLine
 import et.alpha.mezgeb.domain.model.Customer
 import et.alpha.mezgeb.ui.common.rememberDayLabel
+import et.alpha.mezgeb.util.MezgebDates
 import et.alpha.mezgeb.util.MoneyFormatter
+import java.time.ZoneId
 
 @Composable
 fun CustomerDetailRoute(
@@ -65,6 +69,9 @@ fun CustomerDetailRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val defaultTemplate = stringResource(R.string.credit_reminder_default_template)
+    val statementLabels = statementLabels()
+    val shareChooserTitle = stringResource(R.string.credit_share_statement)
+    val locale = LocalConfiguration.current.locales[0]
 
     // Archiving takes the customer off this list; there is nothing left to look at.
     LaunchedEffect(state.isArchived) {
@@ -85,9 +92,32 @@ fun CustomerDetailRoute(
                 context.startSafely(ReminderMessage.intent(phone, message))
             }
         },
+        onShareStatement = {
+            val zone = ZoneId.systemDefault()
+            val text = viewModel.statementText(statementLabels) { at ->
+                MezgebDates.formatFullDate(at, zone, locale)
+            }
+            if (text != null) {
+                context.startSafely(StatementText.intent(text, shareChooserTitle))
+            }
+        },
         modifier = modifier,
     )
 }
+
+/** The statement's words in the current language, for [StatementText]. */
+@Composable
+private fun statementLabels() = StatementText.Labels(
+    title = stringResource(R.string.credit_share_title),
+    kindGiven = stringResource(R.string.credit_kind_given),
+    kindRepayment = stringResource(R.string.credit_kind_repayment),
+    kindAdjustment = stringResource(R.string.credit_kind_adjustment),
+    line = stringResource(R.string.credit_share_line),
+    balanceOwed = stringResource(R.string.credit_share_balance_owed),
+    balanceShopOwes = stringResource(R.string.credit_share_balance_shop_owes),
+    balanceSettled = stringResource(R.string.credit_share_balance_settled),
+    empty = stringResource(R.string.credit_statement_empty_title),
+)
 
 @Composable
 fun CustomerDetailScreen(
@@ -99,6 +129,7 @@ fun CustomerDetailScreen(
     onSendReminder: () -> Unit,
     modifier: Modifier = Modifier,
     onOpenEntry: (entryId: String) -> Unit = {},
+    onShareStatement: () -> Unit = {},
 ) {
     val spacing = MezgebTheme.spacing
     val credit = state.credit
@@ -181,6 +212,23 @@ fun CustomerDetailScreen(
                             .heightIn(min = spacing.touchTarget),
                     ) {
                         Text(stringResource(R.string.credit_send_reminder))
+                    }
+                }
+            }
+
+            // For a disputed balance: the dated lines, not just the total (ROADMAP R44).
+            if (state.canShareStatement) {
+                item("share") {
+                    OutlinedButton(
+                        onClick = onShareStatement,
+                        modifier = Modifier
+                            .padding(
+                                horizontal = spacing.screenGutter,
+                                vertical = spacing.sm,
+                            )
+                            .heightIn(min = spacing.touchTarget),
+                    ) {
+                        Text(stringResource(R.string.credit_share_statement))
                     }
                 }
             }
