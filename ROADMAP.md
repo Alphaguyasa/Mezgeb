@@ -19,7 +19,10 @@ re-checked when picked up. R29 and R30 were done on the second 2026-10-28 run. R
 2026-10-29, and R33 and R22 on the second 2026-10-29 run. R34 and R35 were done on 2026-10-30. R36 and R37 were done on 2026-10-31, and the
 list then fell to 3, so the same run replanned: R38 to R44 come from a fresh code audit,
 and R38 and R39 were checked by hand against the code. R38 and R39 part 1 were done on
-2026-11-01. R40 and R41 were done on 2026-11-02. R42 and R43 were done on 2026-11-03.
+2026-11-01. R40 and R41 were done on 2026-11-02. R42 and R43 were done on 2026-11-03. R44 was done on 2026-11-04, and
+the list then fell to 4 (all blocked), so the same run replanned: R45 to R53 come from a
+fresh code audit. R45, R46 and R47 were checked by hand against the code; the others
+carry the audit's file and line evidence and are re-checked when picked up.
 
 ## Open
 
@@ -36,12 +39,63 @@ mode is on, with a message. Part 2 waits on **NEEDS_APPROVAL.md A9** (what captu
 does during a demo). Tests: restore in demo mode is refused and nothing is written;
 part 2 per the decision.
 
-### R44 · P3 · S: Share a customer's statement as text
-`CustomerDetailScreen.kt:78-82` only offers a reminder SMS. When a customer disputes a
-balance, the shop should be able to send the dated lines and the running balance.
-Fix: "Share statement" builds plain text from the statement and opens the share sheet
-(`ACTION_SEND`; no permission, no network). English and Amharic. Tests: the text
-builder (order, signs, balance, empty statement) and an accessibility check.
+### R45 · P0 · S: The inbox import stops after its first page if one row is blank
+**In progress 2026-11-04 (PR #77).** `direct` only. `SmsImportWorker` stopped on
+`page.size < PAGE_SIZE`, but `SmsInboxReader.readRows` skips rows with no address or
+no body, so one such row in the first 500 ended the import early (`SmsImportWorker.kt:102`).
+Fix: the page reports the cursor rows it read, and the loop pages and stops on that.
+
+### R46 · P0 · S: Backups leave out deleted transactions
+`BackupRepository.kt:32` reads `listFiltered(...)`, which is `WHERE isDeleted = 0`
+(`TransactionDao.kt:169-170`). Provider-reference dedup deliberately matches deleted
+rows (`CaptureCoordinator.kt:257-264`). After a restore, a deleted payment that arrives
+again (a reposted notification, the inbox import) is recorded as new, and
+`possibleDuplicateOfId` and `CreditEntry.linkedTransactionId` can point at rows that
+are gone. Fix: a DAO query for every row, deleted ones included, used by the backup.
+No schema change. Tests: a round trip keeps `isDeleted` rows; after a restore, the
+second copy of a deleted payment is `Duplicate(PROVIDER_TXN_ID)`.
+
+### R47 · P0 · S: A cash entry can be saved twice
+`CashEntryViewModel.kt:39`: `canSave = amountMinor > 0 && !isSaving`, with no
+`!isSaved`, so Save works again between the save and the screen closing. That is the
+bug R42 fixed in the credit form. Fix: add `&& !isSaved`. Test: two Saves insert once.
+
+### R48 · P1 · M: An error during capture crashes the app and loses the message
+The application scope (`di/AppModule.kt`) has no `CoroutineExceptionHandler`, and the
+listener launches `coordinator.capture` on it (`MezgebNotificationListener.kt:89`). A
+failed write (full storage on a cheap phone) crashes the process on every
+notification. `TransactionDetailViewModel` save, delete and reconciled toggle also have
+no error handling. Fix: a handler that records only a count and a time (no content) and
+shows it in capture health; `runCatching` around the startup jobs and the detail writes.
+Tests: a throwing coordinator crashes nothing and the count goes up.
+
+### R49 · P2 · S: Tapping the reconcile reminder does nothing
+`ReconcileReminderWorker.notifyIfPermitted` sets no content intent. Fix: an immutable
+`PendingIntent` to `MainActivity`, opening Reconcile. No permission. Test: the posted
+notification has it.
+
+### R50 · P2 · S: Built-in category names show in English in the Amharic UI
+`DatabaseSeeder.SYSTEM_CATEGORIES` stores "Sales", "Rent" and the rest as literals, and
+every screen and the report show `category.name` as stored. Fix: map the system ids
+(`cat_*`) to string resources at display time. Names the shop typed stay. No migration.
+Tests: the resolver in the `am` locale.
+
+### R51 · P2 · S: The privacy purge reads every stored message on every launch
+`PrivacyPurge.run()` runs on each `onCreate` and pages through all of `raw_messages`.
+Fix: store a purge-rules version and run only when it changes or after a restore.
+Tests: runs once per version, again after a restore.
+
+### R52 · P3 · S: A message in the review queue can never be dismissed
+`ReviewEvent` has only `Reprocess`. Promotions from an allowed sender stay forever and
+reconcile counts their sniffed amounts as possible explanations
+(`ReconcilePeriodUseCase.kt:183-191`). Fix: "Not a payment" marks an `UNMATCHED` row
+`IGNORED`. Strings in both languages. Tests: the event, reconcile no longer counts it,
+a parsed row is refused.
+
+### R53 · P2 · S: Ledger search treats `%` and `_` as wildcards
+`TransactionDao.kt:146-149` uses `LIKE '%' || :query || '%'` with no `ESCAPE`, so a
+search for `%` matches every row. Fix: escape the query and add `ESCAPE '\'`. Tests:
+a DAO test for `%`, `_` and a backslash.
 
 ### R10 · P1 · L: Encrypt the database at rest
 **Blocked: see NEEDS_APPROVAL.md A1.** This needs a new native dependency
@@ -62,6 +116,13 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 26 updates, Gradle 9.8.2 and Compose BOM 2026.09.00. CI is green on it.)
 
 ## Done
+
+- 2026-11-04 · R44: A "Share statement" button on the customer screen sends the
+  statement as plain text through the share sheet (`ACTION_SEND` in a chooser): dated
+  lines, signed amounts, the balance after each line and the balance now. No
+  permission, no network, no phone number needed. Notes stay out. English and
+  Amharic. `StatementText` plus 11 tests, 2 ViewModel tests, 2 accessibility
+  checks. PR #76.
 
 - 2026-11-03 · R43: `CreditEntryViewModelTest` (11 tests) covers the credit form's
   own rules: the keypad cap at 10,000,000.00 birr, double zero and backspace, a zero
