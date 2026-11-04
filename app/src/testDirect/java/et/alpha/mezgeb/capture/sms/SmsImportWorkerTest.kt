@@ -140,6 +140,40 @@ class SmsImportWorkerTest : DatabaseTest() {
     }
 
     @Test
+    fun `a blank row inside a full page does not end the import early`() = runTest {
+        // 1,200 cursor rows, three pages of 500. Rows 10 and 700 have no body, as rows
+        // from an old backup app do. Before R45 the first page came back with 499
+        // rows, looked like the last page, and 700 payments were never read.
+        val rows = (1..1_200).map { i ->
+            val body = if (i == 10 || i == 700) "" else "credited with ETB $i.00 today."
+            row("CBE", body, T0 + i * 1_000L)
+        }
+
+        val result = worker(FakeInboxSource(*rows.toTypedArray())).doWork()
+
+        val output = (result as ListenableWorker.Result.Success).outputData
+        assertEquals(1_198, output.getInt(SmsImportWorker.KEY_IMPORTED, -1))
+        assertEquals(1_200, output.getInt(SmsImportWorker.KEY_SCANNED, -1))
+        assertEquals(0, output.getInt(SmsImportWorker.KEY_DUPLICATES, -1))
+        assertEquals(1_198, transactions.listTransactions(TransactionFilter()).size)
+        assertEquals(T0 + 1_200 * 1_000L, settings.observeSmsImportSince().first())
+    }
+
+    @Test
+    fun `a page of only blank rows is passed over, not taken as the end`() = runTest {
+        // The whole first page is blank. The import must still reach the payment
+        // on the second page.
+        val rows = (1..500).map { row("CBE", "", T0 + it) } +
+            row("CBE", "credited with ETB 7.00 today.", T0 + 10_000)
+
+        val result = worker(FakeInboxSource(*rows.toTypedArray())).doWork()
+
+        val output = (result as ListenableWorker.Result.Success).outputData
+        assertEquals(1, output.getInt(SmsImportWorker.KEY_IMPORTED, -1))
+        assertEquals(501, output.getInt(SmsImportWorker.KEY_SCANNED, -1))
+    }
+
+    @Test
     fun `without the permission the import fails rather than half-runs`() = runTest {
         Shadows.shadowOf(context as android.app.Application)
             .denyPermissions(Manifest.permission.READ_SMS)
@@ -172,16 +206,28 @@ class SmsImportWorkerTest : DatabaseTest() {
 
     private fun row(address: String, body: String, date: Long) = InboxRow(address, body, date)
 
+    /**
+     * Pages the way the provider does: `offset` and `limit` count cursor rows, and a
+     * row with a blank address or body is read but not kept, as in
+     * [SmsInboxReader.readPage]. The old fake dropped blank rows before paging, which
+     * is why it could not catch an import that stopped at the first short page.
+     */
     private class FakeInboxSource(vararg rows: InboxRow) : InboxSource {
         private val rows = rows.toList()
 
         override fun count(since: Long): Int = rows.count { it.date > since }
 
-        override fun page(since: Long, offset: Int, limit: Int): List<InboxRow> = rows
-            .filter { it.date > since }
-            .sortedBy { it.date }
-            .drop(offset)
-            .take(limit)
+        override fun page(since: Long, offset: Int, limit: Int): InboxPage {
+            val read = rows
+                .filter { it.date > since }
+                .sortedBy { it.date }
+                .drop(offset)
+                .take(limit)
+            return InboxPage(
+                rows = read.filter { it.address.isNotBlank() && it.body.isNotBlank() },
+                rowsRead = read.size,
+            )
+        }
     }
 
     private companion object {
