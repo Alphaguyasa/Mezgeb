@@ -21,7 +21,7 @@ list then fell to 3, so the same run replanned: R38 to R44 come from a fresh cod
 and R38 and R39 were checked by hand against the code. R38 and R39 part 1 were done on
 2026-11-01. R40 and R41 were done on 2026-11-02. R42 and R43 were done on 2026-11-03. R44 was done on 2026-11-04, and
 the list then fell to 4 (all blocked), so the same run replanned: R45 to R53 come from a
-fresh code audit. R45, R46 and R47 were checked by hand against the code; the others
+fresh code audit. R45 was done the same run. R45, R46 and R47 were checked by hand against the code; the others
 carry the audit's file and line evidence and are re-checked when picked up.
 
 ## Open
@@ -38,12 +38,6 @@ and is deleted the same way. Part 1 (no approval needed): refuse a restore while
 mode is on, with a message. Part 2 waits on **NEEDS_APPROVAL.md A9** (what capture
 does during a demo). Tests: restore in demo mode is refused and nothing is written;
 part 2 per the decision.
-
-### R45 · P0 · S: The inbox import stops after its first page if one row is blank
-**In progress 2026-11-04 (PR #77).** `direct` only. `SmsImportWorker` stopped on
-`page.size < PAGE_SIZE`, but `SmsInboxReader.readRows` skips rows with no address or
-no body, so one such row in the first 500 ended the import early (`SmsImportWorker.kt:102`).
-Fix: the page reports the cursor rows it read, and the loop pages and stops on that.
 
 ### R46 · P0 · S: Backups leave out deleted transactions
 `BackupRepository.kt:32` reads `listFiltered(...)`, which is `WHERE isDeleted = 0`
@@ -116,6 +110,12 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 26 updates, Gradle 9.8.2 and Compose BOM 2026.09.00. CI is green on it.)
 
 ## Done
+
+- 2026-11-04 · R45: The inbox import (`direct`) no longer stops after its first
+  page when one row has no address or no body. `InboxSource.page()` returns an
+  `InboxPage` with the kept rows and the cursor rows read, and the worker pages and
+  stops on rows read. The test fake now pages like the provider; new tests over 1,200
+  rows and an all-blank first page. PR #77.
 
 - 2026-11-04 · R44: A "Share statement" button on the customer screen sends the
   statement as plain text through the share sheet (`ACTION_SEND` in a chooser): dated

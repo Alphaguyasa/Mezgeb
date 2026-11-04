@@ -5,6 +5,66 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-11-04: Twenty-second daily run (scheduled)
+
+**Start.** CI on `main` was green (`abfe18c`, the docs PR from the last run). Model
+check: the models overview still lists Opus 5.5 (`claude-opus-5-5`) as the newest
+Opus. This run used it, so no switch was needed. Fable 5.1 was ignored, as Alpha
+decided. No answers had been written into NEEDS_APPROVAL.md.
+
+**Environment.** JDK 21, no Android SDK, so no Gradle build ran locally. CI judged
+both PRs.
+
+**R44 (share a customer's statement as text), PR #76, merged (`d0fd057`).**
+- A "Share statement" button on the customer screen, shown whenever the statement has
+  lines. No phone number is needed.
+- `domain/credit/StatementText` builds the text: a title, one line per entry, oldest
+  first (date with year, kind, signed amount, balance after), then the balance now.
+  It opens the share sheet (`ACTION_SEND` in a chooser). No permission, no network,
+  and Mezgeb sends nothing itself.
+- Notes are left out on purpose, because they are the shop's own notes.
+- The strings use `{name}`-style placeholders, filled in one pass, so a name like
+  `{amount}` or `100%` prints as typed. English and Amharic.
+- Tests: 11 in `StatementTextTest` (one checks that the test labels match the shipped
+  English strings), 2 ViewModel tests, 2 accessibility checks.
+- **CI:** red on the first run. My new accessibility assertion used `assertSpoken`,
+  which only reads content descriptions, and a button is named by its text. Every
+  other test passed. Fixed on the branch with `assertControlNamed` (attempt 1 of 2),
+  green on the second run.
+
+**Replan.** After R44 the open list fell to 4, all blocked (R39 part 2, R10, R11,
+R12). A fresh audit (code read, delegated to a sub-agent, then checked by hand for
+the top three) added R45 to R53. The top three are P0: the inbox import stops early
+(R45), backups leave out deleted transactions (R46), and a cash entry can be saved
+twice (R47).
+
+**R45 (the inbox import stops early), PR #77, merged (`b47c85f`).** `direct` only. A
+row with no address or no body is skipped, so one in the first 500 made a full page
+look like the last one, and an inbox of thousands stopped after about 500 messages.
+`InboxSource.page()` now returns the kept rows and the cursor rows read, and the worker
+pages and stops on rows read. The old test fake filtered before paging, so it could not
+catch this; the new one pages like the provider. New tests: 1,200 rows with two blanks,
+and an all-blank first page. **CI:** green on the first run.
+
+**Tags.** `v2026-11-04-1` (#76) and `v2026-11-04-2` (#77) were created locally.
+Pushing failed again ("remote end hung up") (A6).
+
+**Dependabot.** #12, #14, #15, #22 and #40 still wait on A7. Not touched.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R44: share a customer's statement as text (#76). R45: the inbox import no longer stops after its first page (#77) |
+| Merged | #76 yes (`d0fd057`), #77 yes (`b47c85f`). Tags `v2026-11-04-1`/`-2` created but **could not be pushed** (A6) |
+| Failed or blocked | #76 failed CI once (my new test assertion looked for a content description, not a button's text), fixed on the branch. Tag push (A6). R39 part 2 waits on A9. No local Gradle |
+| Roadmap | **Replanned**: R45 to R53 added from a fresh audit. 12 open, 8 unblocked (R46 to R53); R39 part 2, R10, R11 and R12 wait on A9, A1, A2 and A7 |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #22, #40), A8 unique index, A9 capture during demo mode (R39 part 2) |
+| Next | R46 (backups keep deleted transactions), then R47 (cash entry saved twice) |
+
+---
+
 ## 2026-11-03: Twenty-first daily run (scheduled)
 
 **Start.** CI on `main` was green (`126793f`, the docs PR from the last run). Model
