@@ -28,7 +28,7 @@ class SmsInboxReaderTest {
             arrayOf("127", "you have received ETB 20.00", 1_700_000_060_000L),
         )
 
-        val rows = SmsInboxReader.readRows(cursor)
+        val rows = SmsInboxReader.readPage(cursor).rows
 
         assertEquals(2, rows.size)
         assertEquals("CBE", rows[0].address)
@@ -45,10 +45,13 @@ class SmsInboxReaderTest {
             arrayOf("CBE", "credited with ETB 12.00", 4L),
         )
 
-        val rows = SmsInboxReader.readRows(cursor)
+        val page = SmsInboxReader.readPage(cursor)
 
-        assertEquals(1, rows.size)
-        assertEquals(4L, rows[0].date)
+        assertEquals(1, page.rows.size)
+        assertEquals(4L, page.rows[0].date)
+        // All four were read. The import pages on this number, so the three blank rows
+        // still move it on (ROADMAP R45).
+        assertEquals(4, page.rowsRead)
     }
 
     @Test
@@ -56,7 +59,10 @@ class SmsInboxReaderTest {
         // Some OEM providers rename or omit columns. Nothing is better than a crash.
         val cursor = MatrixCursor(arrayOf("_id")).apply { addRow(arrayOf(1)) }
 
-        assertTrue(SmsInboxReader.readRows(cursor).isEmpty())
+        val page = SmsInboxReader.readPage(cursor)
+        assertTrue(page.rows.isEmpty())
+        // Counted as read, so the import moves past them rather than asking again.
+        assertEquals(1, page.rowsRead)
     }
 
     private fun cursor(vararg rows: Array<Any?>): MatrixCursor = MatrixCursor(

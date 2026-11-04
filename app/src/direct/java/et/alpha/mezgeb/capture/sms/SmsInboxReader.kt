@@ -15,6 +15,17 @@ data class InboxRow(
 )
 
 /**
+ * One page of the inbox: the rows worth capturing, and how many cursor rows were read
+ * to get them.
+ *
+ * The two differ when a row has no address or no body and is skipped. The import
+ * pages and stops on [rowsRead], never on `rows.size`: one blank row in a full page
+ * once made a 499-row page look like the last one, and an inbox of thousands stopped
+ * after its first 500 messages (ROADMAP R45).
+ */
+data class InboxPage(val rows: List<InboxRow>, val rowsRead: Int)
+
+/**
  * Where an import reads its rows from. One implementation, plus whatever a test
  * needs — the worker's job is the funnel and the cursor, not the content provider.
  */
@@ -23,8 +34,11 @@ interface InboxSource {
     /** How many rows an import starting at `since` will look at. For the progress bar. */
     fun count(since: Long): Int
 
-    /** Rows newer than `since`, oldest first, from `offset`. */
-    fun page(since: Long, offset: Int, limit: Int): List<InboxRow>
+    /**
+     * Up to `limit` cursor rows newer than `since`, oldest first, from `offset`.
+     * `offset` counts cursor rows, skipped ones included.
+     */
+    fun page(since: Long, offset: Int, limit: Int): InboxPage
 }
 
 /**
@@ -54,7 +68,7 @@ class SmsInboxReader @Inject constructor(
      * arriving mid-import cannot shift the window and make a row be skipped. The new
      * message is captured by the listener anyway, and would be a duplicate here.
      */
-    override fun page(since: Long, offset: Int, limit: Int): List<InboxRow> =
+    override fun page(since: Long, offset: Int, limit: Int): InboxPage =
         context.contentResolver.query(
             Telephony.Sms.Inbox.CONTENT_URI,
             PROJECTION,
@@ -63,7 +77,7 @@ class SmsInboxReader @Inject constructor(
             // The SMS provider passes sortOrder through to SQLite, which is what makes
             // LIMIT/OFFSET here work at all. It is not part of the documented contract.
             "${Telephony.Sms.DATE} ASC LIMIT $limit OFFSET $offset",
-        )?.use(::readRows).orEmpty()
+        )?.use(::readPage) ?: InboxPage(emptyList(), rowsRead = 0)
 
     internal companion object {
 
@@ -80,21 +94,27 @@ class SmsInboxReader @Inject constructor(
          * would otherwise become a crash halfway through an eight-thousand message
          * import.
          */
-        fun readRows(cursor: Cursor): List<InboxRow> {
+        fun readPage(cursor: Cursor): InboxPage {
             val addressColumn = cursor.getColumnIndex(Telephony.Sms.ADDRESS)
             val bodyColumn = cursor.getColumnIndex(Telephony.Sms.BODY)
             val dateColumn = cursor.getColumnIndex(Telephony.Sms.DATE)
-            if (addressColumn < 0 || bodyColumn < 0 || dateColumn < 0) return emptyList()
+            // Every row was still read, so the import moves past them instead of
+            // reading the same page again.
+            if (addressColumn < 0 || bodyColumn < 0 || dateColumn < 0) {
+                return InboxPage(emptyList(), rowsRead = cursor.count)
+            }
 
             val rows = ArrayList<InboxRow>(cursor.count)
+            var read = 0
             while (cursor.moveToNext()) {
+                read++
                 val address = cursor.getString(addressColumn)
                 val body = cursor.getString(bodyColumn)
                 val date = cursor.getLong(dateColumn)
                 if (address.isNullOrBlank() || body.isNullOrBlank()) continue
                 rows += InboxRow(address = address, body = body, date = date)
             }
-            return rows
+            return InboxPage(rows, rowsRead = read)
         }
     }
 }
