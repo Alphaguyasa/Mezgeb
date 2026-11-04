@@ -67,11 +67,13 @@ class SmsImportWorker @AssistedInject constructor(
 
         while (true) {
             val page = reader.page(since = since, offset = offset, limit = PAGE_SIZE)
-            if (page.isEmpty()) break
+            if (page.rowsRead == 0) break
+            // Cursor rows, not kept rows: a skipped blank row still takes a place in
+            // the provider's OFFSET (ROADMAP R45).
+            offset += page.rowsRead
+            scanned += page.rowsRead
 
-            for (row in page) {
-                scanned++
-                offset++
+            for (row in page.rows) {
                 if (row.date > newestDate) newestDate = row.date
 
                 val outcome = coordinator.capture(
@@ -99,7 +101,9 @@ class SmsImportWorker @AssistedInject constructor(
             setProgress(progressData(imported, scanned, total))
             notifyProgress(scanned = scanned, total = total)
 
-            if (page.size < PAGE_SIZE) break
+            // A short page is the last one. Judged on rows read, because a page with
+            // one blank row in it is not the end of the inbox.
+            if (page.rowsRead < PAGE_SIZE) break
         }
 
         // Only after a clean pass. A run that dies halfway leaves the cursor where it
