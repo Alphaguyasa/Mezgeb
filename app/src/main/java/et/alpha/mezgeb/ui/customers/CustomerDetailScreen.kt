@@ -69,7 +69,7 @@ fun CustomerDetailRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val defaultTemplate = stringResource(R.string.credit_reminder_default_template)
-    val statementLabels = statementLabels()
+    val statementLabels = shareLabels()
     val shareChooserTitle = stringResource(R.string.credit_share_statement)
     val locale = LocalConfiguration.current.locales[0]
 
@@ -107,7 +107,7 @@ fun CustomerDetailRoute(
 
 /** The statement's words in the current language, for [StatementText]. */
 @Composable
-private fun statementLabels() = StatementText.Labels(
+private fun shareLabels() = StatementText.Labels(
     title = stringResource(R.string.credit_share_title),
     kindGiven = stringResource(R.string.credit_kind_given),
     kindRepayment = stringResource(R.string.credit_kind_repayment),
