@@ -73,7 +73,12 @@ class CustomersAccessibilityTest {
         checks.assertControlsAreNamedAndLargeEnough()
         checks.assertSpoken(context.getString(R.string.credit_edit_customer))
         checks.assertSpoken(context.getString(R.string.cd_navigate_back))
-        checks.assertSpoken(context.getString(R.string.credit_share_statement))
+        // A button is read by its text, not a content description, so this looks among
+        // the controls rather than using assertSpoken.
+        checks.assertControlNamed(
+            compose.onAllNodes(hasClickAction()).fetchSemanticsNodes(),
+            context.getString(R.string.credit_share_statement),
+        )
     }
 
     @Test
