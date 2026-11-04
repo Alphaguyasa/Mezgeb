@@ -10,6 +10,7 @@ import et.alpha.mezgeb.data.settings.SettingsRepository
 import et.alpha.mezgeb.domain.credit.ComputeCustomerBalanceUseCase
 import et.alpha.mezgeb.domain.credit.CustomerCredit
 import et.alpha.mezgeb.domain.credit.ReminderMessage
+import et.alpha.mezgeb.domain.credit.StatementText
 import et.alpha.mezgeb.domain.model.CreditStatementLine
 import et.alpha.mezgeb.navigation.MezgebDestination
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +36,9 @@ data class CustomerDetailUiState(
         get() = credit?.owesMoney == true && !credit.customer.phone.isNullOrBlank()
 
     val isEmpty: Boolean get() = statement.isEmpty()
+
+    /** No phone needed: the share sheet can go to any app, or to a printer. */
+    val canShareStatement: Boolean get() = credit != null && statement.isNotEmpty()
 }
 
 /** Name and phone, while they are being edited. */
@@ -144,6 +148,25 @@ class CustomerDetailViewModel @Inject constructor(
             template = storedTemplate?.takeIf { it.isNotBlank() } ?: defaultTemplate,
             customerName = credit.customer.name,
             balanceMinor = credit.balanceMinor,
+        )
+    }
+
+    /**
+     * The statement as text for the share sheet, or null when there is nothing on it.
+     *
+     * @param labels the words for the current language, read by the UI.
+     * @param formatDay the UI's date format for the current zone and language.
+     */
+    fun statementText(labels: StatementText.Labels, formatDay: (Long) -> String): String? {
+        val current = state.value
+        val credit = current.credit ?: return null
+        if (!current.canShareStatement) return null
+        return StatementText.build(
+            customerName = credit.customer.name,
+            lines = current.statement,
+            balanceMinor = credit.balanceMinor,
+            labels = labels,
+            formatDay = formatDay,
         )
     }
 

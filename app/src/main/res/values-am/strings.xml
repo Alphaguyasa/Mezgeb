@@ -208,6 +208,12 @@
     <string name="credit_add_sale">ዱቤ ስጥ</string>
     <string name="credit_record_repayment">ክፍያ መዝግብ</string>
     <string name="credit_send_reminder">ማስታወሻ ላክ</string>
+    <string name="credit_share_statement">ማብራሪያውን አጋራ</string>
+    <string name="credit_share_title">የ{name} የሒሳብ ማብራሪያ</string>
+    <string name="credit_share_line">{day} · {kind} · {amount} · ቀሪ {balance}</string>
+    <string name="credit_share_balance_owed">ለሱቁ የሚከፈል ቀሪ፦ {amount}</string>
+    <string name="credit_share_balance_shop_owes">ሱቁ የሚከፍለው ቀሪ፦ {amount}</string>
+    <string name="credit_share_balance_settled">ምንም ዕዳ የለም።</string>
     <string name="credit_edit_customer">ደንበኛን አስተካክል</string>
     <string name="credit_customer_not_found">ይህ ደንበኛ ከእንግዲህ የለም።</string>
     <string name="credit_statement_heading">ማብራሪያ</string>

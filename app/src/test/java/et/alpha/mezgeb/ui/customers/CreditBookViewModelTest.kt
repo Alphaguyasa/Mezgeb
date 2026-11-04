@@ -14,6 +14,7 @@ import et.alpha.mezgeb.data.repo.CustomerRepository
 import et.alpha.mezgeb.data.repo.TransactionRepository
 import et.alpha.mezgeb.data.settings.SettingsHarness
 import et.alpha.mezgeb.domain.credit.ComputeCustomerBalanceUseCase
+import et.alpha.mezgeb.domain.credit.StatementText
 import et.alpha.mezgeb.domain.credit.SuggestRepaymentMatchesUseCase
 import et.alpha.mezgeb.domain.model.CreditKind
 import et.alpha.mezgeb.domain.model.SessionStatus
@@ -214,6 +215,44 @@ class CreditBookViewModelTest : DatabaseTest() {
                 "Ato Abebe, 450.00 ETB qq.",
                 viewModel.reminderMessage("unused default"),
             )
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `the shared statement is the statement on screen, with no phone needed`() = runTest {
+        seedCustomer("c1", "Abebe", givenMinor = 50_000, phone = null)
+        db.creditEntryDao().insert(
+            creditEntry("e2", "c1", CreditKind.REPAYMENT, 20_000, occurredAt = T0 + DAY),
+        )
+        val viewModel = detailViewModel("c1")
+
+        viewModel.state.test {
+            val state = awaitItemWhere { it.statement.size == 2 }
+            assertTrue(state.canShareStatement)
+            assertEquals(
+                listOf(
+                    "Abebe",
+                    "",
+                    "$T0:CREDIT:+500.00 ETB:500.00 ETB",
+                    "${T0 + DAY}:PAID:−200.00 ETB:300.00 ETB",
+                    "",
+                    "OWED 300.00 ETB",
+                ).joinToString("\n"),
+                viewModel.statementText(SHARE_LABELS) { it.toString() },
+            )
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `an empty statement is not offered for sharing`() = runTest {
+        seedCustomer("c1", "Abebe", givenMinor = 0, phone = "+251911000001")
+        val viewModel = detailViewModel("c1")
+
+        viewModel.state.test {
+            assertFalse(awaitItemWhere { it.credit != null }.canShareStatement)
+            assertNull(viewModel.statementText(SHARE_LABELS) { it.toString() })
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -638,5 +677,20 @@ class CreditBookViewModelTest : DatabaseTest() {
         var item = awaitItem()
         while (!predicate(item)) item = awaitItem()
         return item
+    }
+
+    private companion object {
+        /** Short labels, so the expected text shows the layout and not the wording. */
+        val SHARE_LABELS = StatementText.Labels(
+            title = "{name}",
+            kindGiven = "CREDIT",
+            kindRepayment = "PAID",
+            kindAdjustment = "ADJUSTED",
+            line = "{day}:{kind}:{amount}:{balance}",
+            balanceOwed = "OWED {amount}",
+            balanceShopOwes = "SHOP OWES {amount}",
+            balanceSettled = "SETTLED",
+            empty = "EMPTY",
+        )
     }
 }

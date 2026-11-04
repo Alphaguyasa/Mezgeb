@@ -3,7 +3,9 @@ package et.alpha.mezgeb.ui
 import androidx.annotation.StringRes
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.junit4.createComposeRule
 import et.alpha.mezgeb.R
 import et.alpha.mezgeb.domain.credit.CustomerCredit
@@ -71,6 +73,34 @@ class CustomersAccessibilityTest {
         checks.assertControlsAreNamedAndLargeEnough()
         checks.assertSpoken(context.getString(R.string.credit_edit_customer))
         checks.assertSpoken(context.getString(R.string.cd_navigate_back))
+        // A button is read by its text, not a content description, so this looks among
+        // the controls rather than using assertSpoken.
+        checks.assertControlNamed(
+            compose.onAllNodes(hasClickAction()).fetchSemanticsNodes(),
+            context.getString(R.string.credit_share_statement),
+        )
+    }
+
+    @Test
+    fun `an empty statement has nothing to share`() {
+        checks.show {
+            CustomerDetailScreen(
+                state = CustomerDetailUiState(
+                    isLoading = false,
+                    credit = credit("1", "ABEBE", 0, days = null, overdue = false),
+                    statement = emptyList(),
+                ),
+                onEvent = {},
+                onBack = {},
+                onAddCredit = {},
+                onRecordRepayment = {},
+                onSendReminder = {},
+            )
+        }
+
+        checks.assertControlsAreNamedAndLargeEnough()
+        compose.onAllNodesWithText(context.getString(R.string.credit_share_statement))
+            .assertCountEquals(0)
     }
 
     @Test
