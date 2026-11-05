@@ -7,6 +7,7 @@ import et.alpha.mezgeb.data.repo.TransactionFilter
 import et.alpha.mezgeb.data.repo.TransactionRepository
 import et.alpha.mezgeb.data.settings.SettingsHarness
 import et.alpha.mezgeb.data.settings.SettingsRepository
+import et.alpha.mezgeb.domain.backup.BackupRepository
 import et.alpha.mezgeb.domain.model.CaptureSource
 import et.alpha.mezgeb.domain.model.CategoryRule
 import et.alpha.mezgeb.domain.model.Direction
@@ -23,6 +24,7 @@ import et.alpha.mezgeb.parser.rule.ParserRule
 import et.alpha.mezgeb.util.IdGenerator
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -32,6 +34,8 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -175,6 +179,25 @@ class CaptureCoordinatorTest : DatabaseTest() {
         transactions.softDelete((first as CaptureOutcome.Recorded).transactionId, NOW + 1_000)
 
         // The inbox copy is worded differently, so only the reference can catch it.
+        val second = coordinator.capture(imported(TELEBIRR_FULL_SMS, receivedAt = NOW + 2_000))
+
+        assertEquals(CaptureOutcome.Duplicate(DedupTier.PROVIDER_TXN_ID), second)
+        assertTrue(allTransactions().isEmpty())
+    }
+
+    @Test
+    fun `a deleted payment stays deleted through a backup and restore`() = runTest {
+        val first = coordinator.capture(notification(TELEBIRR_NOTIFICATION))
+        transactions.softDelete((first as CaptureOutcome.Recorded).transactionId, NOW + 1_000)
+
+        // The backup used to read only the visible ledger, so the deleted row was not
+        // in the file, and after a restore nothing was left for the reference to match.
+        val backups = BackupRepository(db, Json { ignoreUnknownKeys = true })
+        val passphrase = "correct horse battery staple".toCharArray()
+        val file = ByteArrayOutputStream()
+        backups.writeBackup(passphrase, file)
+        backups.restore(ByteArrayInputStream(file.toByteArray()), passphrase).getOrThrow()
+
         val second = coordinator.capture(imported(TELEBIRR_FULL_SMS, receivedAt = NOW + 2_000))
 
         assertEquals(CaptureOutcome.Duplicate(DedupTier.PROVIDER_TXN_ID), second)

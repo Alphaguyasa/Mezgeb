@@ -56,6 +56,25 @@ class BackupRoundTripTest : DatabaseTest() {
                 occurredAt = T0,
             ),
         )
+        // A payment the shop deleted, and a second capture flagged as a possible
+        // duplicate of it. Both have to come back exactly as they were.
+        db.transactionDao().insert(
+            transaction(
+                "t_deleted",
+                amountMinor = 30_000,
+                providerTxnId = "REF0000001",
+                occurredAt = T0 + 1_000,
+                isDeleted = true,
+            ),
+        )
+        db.transactionDao().insert(
+            transaction(
+                "t_lookalike",
+                amountMinor = 30_000,
+                occurredAt = T0 + 2_000,
+                possibleDuplicateOfId = "t_deleted",
+            ),
+        )
         db.customerDao().insert(customer("c1", name = "አበበ", phone = "+251911000001"))
         db.creditEntryDao().insert(
             creditEntry("e1", "c1", CreditKind.CREDIT_GIVEN, 50_000, occurredAt = T0),
@@ -81,6 +100,27 @@ class BackupRoundTripTest : DatabaseTest() {
         assertEquals(before.rowCount, result.getOrThrow().rowsRestored)
         // Deep equality on the entities, not on counts.
         assertEquals(before, snapshot())
+    }
+
+    @Test
+    fun `a deleted transaction is backed up and comes back still deleted`() = runTest {
+        seed()
+        val file = ByteArrayOutputStream()
+        repository.writeBackup(passphrase, file)
+        wipe()
+
+        repository.restore(ByteArrayInputStream(file.toByteArray()), passphrase).getOrThrow()
+
+        val deleted = db.transactionDao().getById("t_deleted")
+        assertNotNull(deleted)
+        assertTrue(deleted!!.isDeleted)
+        // Still hidden from the ledger, so a restore does not undo a delete.
+        val visible = db.transactionDao()
+            .listFiltered(null, null, null, null, null, null, null, null)
+            .map { it.id }
+        assertEquals(listOf("t_lookalike", "t1"), visible)
+        // The flag on the second capture still points at a row that exists.
+        assertEquals("t_deleted", db.transactionDao().getById("t_lookalike")?.possibleDuplicateOfId)
     }
 
     @Test
@@ -220,8 +260,13 @@ class BackupRoundTripTest : DatabaseTest() {
         val result = repository.restore(ByteArrayInputStream(file.toByteArray()), passphrase)
 
         assertEquals(5, result.getOrThrow().schemaVersion)
-        assertEquals(before, snapshot())
-        assertNull(db.transactionDao().getById("t1")?.possibleDuplicateOfId)
+        // A v5 file cannot carry the flag, so it comes back null on every row and
+        // everything else comes back as it was.
+        val expected = before.copy(
+            transactions = before.transactions.map { it.copy(possibleDuplicateOfId = null) },
+        )
+        assertEquals(expected, snapshot())
+        assertNull(db.transactionDao().getById("t_lookalike")?.possibleDuplicateOfId)
     }
 
     @Test
@@ -280,7 +325,7 @@ class BackupRoundTripTest : DatabaseTest() {
 
     private suspend fun snapshot() = BackupPayload(
         rawMessages = db.rawMessageDao().getAll(),
-        transactions = db.transactionDao().listFiltered(null, null, null, null, null, null, null, null),
+        transactions = db.transactionDao().getAllIncludingDeleted(),
         customers = db.customerDao().getAll(),
         creditEntries = db.creditEntryDao().getAll(),
         categories = db.categoryDao().getAll(),

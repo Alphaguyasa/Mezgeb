@@ -196,6 +196,18 @@ interface TransactionDao {
         query: String?,
     ): List<TransactionEntity>
 
+    /**
+     * Every row, deleted ones included. Only the backup reads this.
+     *
+     * A deleted Transaction is not gone: provider-reference dedup matches it on
+     * purpose, so the second copy of a payment the shop deleted is not recorded again,
+     * and `possibleDuplicateOfId` or a credit entry's `linkedTransactionId` can still
+     * point at it. A backup that dropped these rows would quietly undo all three after
+     * a restore.
+     */
+    @Query("SELECT * FROM transactions ORDER BY occurredAt DESC, id DESC")
+    suspend fun getAllIncludingDeleted(): List<TransactionEntity>
+
     @Query("SELECT * FROM transactions WHERE isDeleted = 0 ORDER BY occurredAt DESC LIMIT :limit")
     fun observeRecent(limit: Int): Flow<List<TransactionEntity>>
 

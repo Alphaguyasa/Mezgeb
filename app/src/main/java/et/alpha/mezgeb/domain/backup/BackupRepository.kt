@@ -29,11 +29,8 @@ class BackupRepository @Inject constructor(
     suspend fun writeBackup(passphrase: CharArray, output: OutputStream) {
         val payload = BackupPayload(
             rawMessages = database.rawMessageDao().getAll(),
-            transactions = database.transactionDao().listFiltered(
-                from = null, to = null, channel = null, direction = null,
-                categoryId = null, isReconciled = null, isPossibleDuplicate = null,
-                query = null,
-            ),
+            // Deleted rows too. The ledger hides them, but dedup still needs them.
+            transactions = database.transactionDao().getAllIncludingDeleted(),
             customers = database.customerDao().getAll(),
             creditEntries = database.creditEntryDao().getAll(),
             categories = database.categoryDao().getAll(),
