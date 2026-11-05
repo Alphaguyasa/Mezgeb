@@ -5,6 +5,59 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-11-05: Twenty-third daily run (scheduled)
+
+**Start.** CI on `main` was green (`01b248a`, the docs PR from the last run). Model
+check: the models overview still lists Opus 5.5 (`claude-opus-5-5`) as the newest
+Opus. This run used it, so no switch was needed. Fable 5.1 was ignored, as Alpha
+decided. No answers had been written into NEEDS_APPROVAL.md.
+
+**Environment.** JDK 21, no Android SDK, so no Gradle build ran locally. CI judged
+both PRs. The checkout's local `origin/main` ref was stale (it pointed at a 10-30
+commit). I caught this before committing R47 and rebuilt that branch from a fresh
+fetch. R46 had already been branched from the right commit.
+
+**R46 (backups leave out deleted transactions), PR #79, merged (`49a962f`).**
+- The backup read `listFiltered(...)`, which hides rows with `isDeleted = 1`. After
+  a restore, the second copy of a deleted payment was recorded as new, because
+  provider-reference dedup had nothing left to match. A possible-duplicate flag could
+  also point at a row that no longer existed.
+- The new `TransactionDao.getAllIncludingDeleted()` feeds the backup. No schema
+  change. Restored rows keep `isDeleted`, so the ledger still hides them.
+- Tests: the round-trip seed now has a deleted row and a lookalike flagged against
+  it. A new test checks that the deleted row comes back still deleted and still
+  hidden. A capture test covers the whole path: capture, delete, back up, restore,
+  then the inbox copy is `Duplicate(PROVIDER_TXN_ID)`. The schema-5 test now expects
+  the flag to be null, because a v5 file cannot carry it.
+- **CI:** green on the first run.
+
+**R47 (a cash entry can be saved twice), PR #80, merged (`af1b2ca`).**
+- `canSave` now also needs `!isSaved`. A failed save still allows a retry.
+- New test: two Saves insert one row and raise no error.
+- **CI:** red on the first run. The existing failed-write test made its write fail
+  by saving twice with a fixed id, and that second save is exactly what the fix now
+  refuses. The test now seeds a row with the same id and saves once. It also checks
+  that a failed save can be tried again (attempt 1 of 2). Green on the second run.
+
+**Tags.** `v2026-11-05-1` (#79) and `v2026-11-05-2` (#80) were created locally.
+Pushing failed again ("remote end hung up") (A6).
+
+**Dependabot.** #12, #14, #15, #22 and #40 still wait on A7. Not touched.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R46: backups keep deleted transactions (#79). R47: a cash entry can no longer be saved twice (#80) |
+| Merged | #79 yes (`49a962f`), #80 yes (`af1b2ca`). Tags `v2026-11-05-1`/`-2` created but **could not be pushed** (A6) |
+| Failed or blocked | #80 failed CI once (an old test relied on the double save the fix removes), fixed on the branch. Tag push (A6). R39 part 2 waits on A9. No local Gradle |
+| Roadmap | No replan. 10 open, 6 unblocked (R48 to R53); R39 part 2, R10, R11 and R12 wait on A9, A1, A2 and A7 |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #22, #40), A8 unique index, A9 capture during demo mode (R39 part 2) |
+| Next | R48 (a capture error crashes the app), then R49 (tapping the reconcile reminder does nothing) |
+
+---
+
 ## 2026-11-04: Twenty-second daily run (scheduled)
 
 **Start.** CI on `main` was green (`abfe18c`, the docs PR from the last run). Model
