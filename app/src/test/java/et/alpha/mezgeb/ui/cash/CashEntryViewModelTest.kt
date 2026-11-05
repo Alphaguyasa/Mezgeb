@@ -114,6 +114,30 @@ class CashEntryViewModelTest : DatabaseTest() {
     }
 
     @Test
+    fun `a second save after the first one succeeded writes nothing`() = runTest {
+        // Fresh ids for every insert, so a second save would show up as a second row
+        // rather than as a key conflict.
+        var next = 0
+        val viewModel = CashEntryViewModel(
+            transactions = transactions,
+            rules = RuleRepository(db.categoryDao(), db.categoryRuleDao(), db.parserRuleDao()),
+            ids = IdGenerator { "cash_${++next}" },
+            clock = Clock.fixed(Instant.ofEpochMilli(now), ZoneOffset.UTC),
+        )
+        "5000".forEach { viewModel.onEvent(CashEntryEvent.DigitPressed(it.digitToInt())) }
+
+        viewModel.onEvent(CashEntryEvent.Save)
+        assertTrue(viewModel.state.value.isSaved)
+        assertFalse(viewModel.state.value.canSave)
+
+        // The screen has not closed yet, and the shop owner taps Save again.
+        viewModel.onEvent(CashEntryEvent.Save)
+
+        assertEquals(1, transactions.listTransactions(TransactionFilter()).size)
+        assertNull(viewModel.state.value.errorMessage)
+    }
+
+    @Test
     fun `money out is saved as money out`() = runTest {
         press(1, 0, 0, 0)
         viewModel.onEvent(CashEntryEvent.DirectionChanged(Direction.OUT))

@@ -36,7 +36,11 @@ data class CashEntryUiState(
     val isSaved: Boolean = false,
     val errorMessage: ErrorKind? = null,
 ) {
-    val canSave: Boolean get() = amountMinor > 0 && !isSaving
+    /**
+     * Not after a save either. The screen closes on [isSaved], but not in the same
+     * frame, and a second tap in between would record the same cash twice.
+     */
+    val canSave: Boolean get() = amountMinor > 0 && !isSaving && !isSaved
     val amountText: String get() = MoneyFormatter.formatUnsigned(amountMinor)
 
     enum class ErrorKind { SAVE_FAILED }
