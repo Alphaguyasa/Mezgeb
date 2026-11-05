@@ -3,6 +3,7 @@ package et.alpha.mezgeb.ui.cash
 import app.cash.turbine.test
 import et.alpha.mezgeb.data.local.DatabaseTest
 import et.alpha.mezgeb.data.local.category
+import et.alpha.mezgeb.data.local.transaction
 import et.alpha.mezgeb.data.repo.RuleRepository
 import et.alpha.mezgeb.data.repo.TransactionFilter
 import et.alpha.mezgeb.data.repo.TransactionRepository
@@ -114,6 +115,30 @@ class CashEntryViewModelTest : DatabaseTest() {
     }
 
     @Test
+    fun `a second save after the first one succeeded writes nothing`() = runTest {
+        // Fresh ids for every insert, so a second save would show up as a second row
+        // rather than as a key conflict.
+        var next = 0
+        val viewModel = CashEntryViewModel(
+            transactions = transactions,
+            rules = RuleRepository(db.categoryDao(), db.categoryRuleDao(), db.parserRuleDao()),
+            ids = IdGenerator { "cash_${++next}" },
+            clock = Clock.fixed(Instant.ofEpochMilli(now), ZoneOffset.UTC),
+        )
+        "5000".forEach { viewModel.onEvent(CashEntryEvent.DigitPressed(it.digitToInt())) }
+
+        viewModel.onEvent(CashEntryEvent.Save)
+        assertTrue(viewModel.state.value.isSaved)
+        assertFalse(viewModel.state.value.canSave)
+
+        // The screen has not closed yet, and the shop owner taps Save again.
+        viewModel.onEvent(CashEntryEvent.Save)
+
+        assertEquals(1, transactions.listTransactions(TransactionFilter()).size)
+        assertNull(viewModel.state.value.errorMessage)
+    }
+
+    @Test
     fun `money out is saved as money out`() = runTest {
         press(1, 0, 0, 0)
         viewModel.onEvent(CashEntryEvent.DirectionChanged(Direction.OUT))
@@ -135,11 +160,12 @@ class CashEntryViewModelTest : DatabaseTest() {
 
     @Test
     fun `a failed write is reported rather than swallowed`() = runTest {
+        // The id generator is fixed for the test, and a row already holds that id, so
+        // the insert hits the primary key and takes the path a genuine write failure
+        // would. (This test used to get there by saving twice, which R47 now refuses.)
+        db.transactionDao().insert(transaction("cash_1", amountMinor = 100))
         press(5, 0, 0)
-        viewModel.onEvent(CashEntryEvent.Save)
 
-        // The id generator is fixed for the test, so saving again hits the primary key
-        // and takes the same path a genuine write failure would.
         viewModel.state.test {
             awaitItem()
             viewModel.onEvent(CashEntryEvent.Save)
@@ -151,6 +177,9 @@ class CashEntryViewModelTest : DatabaseTest() {
             CashEntryUiState.ErrorKind.SAVE_FAILED,
             viewModel.state.value.errorMessage,
         )
+        // A failed save can be tried again: it was never marked saved.
+        assertFalse(viewModel.state.value.isSaved)
+        assertTrue(viewModel.state.value.canSave)
     }
 
     private fun press(vararg digits: Int) {
