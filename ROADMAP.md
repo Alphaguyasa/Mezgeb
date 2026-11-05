@@ -22,7 +22,8 @@ and R38 and R39 were checked by hand against the code. R38 and R39 part 1 were d
 2026-11-01. R40 and R41 were done on 2026-11-02. R42 and R43 were done on 2026-11-03. R44 was done on 2026-11-04, and
 the list then fell to 4 (all blocked), so the same run replanned: R45 to R53 come from a
 fresh code audit. R45 was done the same run. R45, R46 and R47 were checked by hand against the code; the others
-carry the audit's file and line evidence and are re-checked when picked up.
+carry the audit's file and line evidence and are re-checked when picked up. R46 and R47 were done on
+2026-11-05.
 
 ## Open
 
@@ -38,21 +39,6 @@ and is deleted the same way. Part 1 (no approval needed): refuse a restore while
 mode is on, with a message. Part 2 waits on **NEEDS_APPROVAL.md A9** (what capture
 does during a demo). Tests: restore in demo mode is refused and nothing is written;
 part 2 per the decision.
-
-### R46 · P0 · S: Backups leave out deleted transactions
-`BackupRepository.kt:32` reads `listFiltered(...)`, which is `WHERE isDeleted = 0`
-(`TransactionDao.kt:169-170`). Provider-reference dedup deliberately matches deleted
-rows (`CaptureCoordinator.kt:257-264`). After a restore, a deleted payment that arrives
-again (a reposted notification, the inbox import) is recorded as new, and
-`possibleDuplicateOfId` and `CreditEntry.linkedTransactionId` can point at rows that
-are gone. Fix: a DAO query for every row, deleted ones included, used by the backup.
-No schema change. Tests: a round trip keeps `isDeleted` rows; after a restore, the
-second copy of a deleted payment is `Duplicate(PROVIDER_TXN_ID)`.
-
-### R47 · P0 · S: A cash entry can be saved twice
-`CashEntryViewModel.kt:39`: `canSave = amountMinor > 0 && !isSaving`, with no
-`!isSaved`, so Save works again between the save and the screen closing. That is the
-bug R42 fixed in the credit form. Fix: add `&& !isSaved`. Test: two Saves insert once.
 
 ### R48 · P1 · M: An error during capture crashes the app and loses the message
 The application scope (`di/AppModule.kt`) has no `CoroutineExceptionHandler`, and the
@@ -110,6 +96,16 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 26 updates, Gradle 9.8.2 and Compose BOM 2026.09.00. CI is green on it.)
 
 ## Done
+
+- 2026-11-05 · R47: A cash entry can no longer be saved twice. `canSave` now also
+  needs `!isSaved`, so a second tap between the save and the screen closing records
+  nothing. The failed-write test now fails the insert with a taken id instead of a
+  second save. PR #80.
+
+- 2026-11-05 · R46: Backups keep deleted transactions. The new
+  `TransactionDao.getAllIncludingDeleted()` feeds the backup, so after a restore the
+  second copy of a deleted payment is still `Duplicate(PROVIDER_TXN_ID)`, and the
+  possible-duplicate flags still point at real rows. No schema change. PR #79.
 
 - 2026-11-04 · R45: The inbox import (`direct`) no longer stops after its first
   page when one row has no address or no body. `InboxSource.page()` returns an
