@@ -3,6 +3,7 @@ package et.alpha.mezgeb.ui.cash
 import app.cash.turbine.test
 import et.alpha.mezgeb.data.local.DatabaseTest
 import et.alpha.mezgeb.data.local.category
+import et.alpha.mezgeb.data.local.transaction
 import et.alpha.mezgeb.data.repo.RuleRepository
 import et.alpha.mezgeb.data.repo.TransactionFilter
 import et.alpha.mezgeb.data.repo.TransactionRepository
@@ -159,11 +160,12 @@ class CashEntryViewModelTest : DatabaseTest() {
 
     @Test
     fun `a failed write is reported rather than swallowed`() = runTest {
+        // The id generator is fixed for the test, and a row already holds that id, so
+        // the insert hits the primary key and takes the path a genuine write failure
+        // would. (This test used to get there by saving twice, which R47 now refuses.)
+        db.transactionDao().insert(transaction("cash_1", amountMinor = 100))
         press(5, 0, 0)
-        viewModel.onEvent(CashEntryEvent.Save)
 
-        // The id generator is fixed for the test, so saving again hits the primary key
-        // and takes the same path a genuine write failure would.
         viewModel.state.test {
             awaitItem()
             viewModel.onEvent(CashEntryEvent.Save)
@@ -175,6 +177,9 @@ class CashEntryViewModelTest : DatabaseTest() {
             CashEntryUiState.ErrorKind.SAVE_FAILED,
             viewModel.state.value.errorMessage,
         )
+        // A failed save can be tried again: it was never marked saved.
+        assertFalse(viewModel.state.value.isSaved)
+        assertTrue(viewModel.state.value.canSave)
     }
 
     private fun press(vararg digits: Int) {
