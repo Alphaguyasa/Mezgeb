@@ -5,6 +5,65 @@ One entry per run, newest first. Each entry ends with the REPORT table from CLAU
 
 ---
 
+## 2026-11-06: Twenty-fourth daily run (scheduled)
+
+**Start.** CI on `main` was green (`e54f043`, the docs PR from the last run). Model
+check: the models overview still lists Opus 5.5 (`claude-opus-5-5`) as the newest
+Opus. This run used it, so no switch was needed. Fable 5.1 was ignored, as Alpha
+decided. No answers had been written into NEEDS_APPROVAL.md.
+
+**Environment.** JDK 21, no Android SDK, so no Gradle build ran locally. CI judged
+both PRs.
+
+**R48 (a capture error crashes the app), PR #82, merged (`15e6da9`).**
+- The new `capture/BackgroundFailureLog` gives the application scope a
+  `CoroutineExceptionHandler`. A failure is counted in DataStore (a count and a time
+  only). The exception is never logged or stored, because SQLite puts refused values
+  into its messages.
+- Today shows a dismissible "Something could not be saved" card with the count and the
+  last time. It says the likely cause (full storage) and that a payment from that
+  moment may be missing. English and Amharic.
+- The startup steps (privacy purge, seed, first-run stamp) each run on their own.
+- Transaction detail: every write goes through one helper. A refusal shows "Could not
+  save. Try again." A refused save keeps the editor and what was typed.
+- Tests: the real `AppModule` scope survives two throwing captures and counts 2. Today
+  shows and clears the notice. Detail save, delete and the reconciled toggle refused.
+- **CI:** red on the first run. The new Robolectric test had no `@Config(sdk = [34])`,
+  and Robolectric refuses targetSdk 37. Pinned like every other Robolectric test.
+  Green on the second run (attempt 1 of 2).
+
+**R49 (tapping the reconcile reminder does nothing), PR #83, merged (`c23bb66`).**
+- The reminder carries an immutable `PendingIntent` to `MainActivity` with the
+  `OPEN_RECONCILE` action and no extras (`navigation/LaunchRequest`). The activity reads
+  it on a fresh start and in `onNewIntent`. The nav host opens Reconcile once a back
+  stack exists, behind the PIN lock, and never during onboarding. No permission change.
+- Tests: the posted notification's content intent (activity, immutable, the right
+  component and action). `LaunchRequestTest` checks flags, extras and unrelated intents.
+- **CI:** red on the first run, for the same missing `@Config`. Green on the second.
+
+**Merge order.** #83 merged first. #82 was then merged on its own green run, against
+the base before #83. The two share no files. The CI run on `main` after both merges
+checks them together.
+
+**Tags.** `v2026-11-06-1` (#83) and `v2026-11-06-2` (#82) were created locally.
+Pushing failed again ("remote end hung up") (A6).
+
+**Dependabot.** #12, #14, #15, #22 and #40 still wait on A7. Not touched.
+
+### Report
+
+| Field | Content |
+|---|---|
+| Done | R48: a background failure no longer crashes the app (#82). R49: tapping the reconcile reminder opens Reconcile (#83) |
+| Merged | #83 yes (`c23bb66`), #82 yes (`15e6da9`). Tags `v2026-11-06-1`/`-2` created but **could not be pushed** (A6) |
+| Failed or blocked | Both PRs failed CI once (a new Robolectric test without the SDK pin). Fixed on the branch. Tag push (A6). R39 part 2 waits on A9. No local Gradle |
+| Roadmap | No replan. 8 open, 4 unblocked (R50 to R53). R39 part 2, R10, R11 and R12 wait on A9, A1, A2 and A7. The next run replans if fewer than 5 are open |
+| Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
+| Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #22, #40), A8 unique index, A9 capture during demo mode (R39 part 2) |
+| Next | R53 (ledger search wildcards, a P2 bug), then R50 (category names in Amharic) |
+
+---
+
 ## 2026-11-05: Twenty-third daily run (scheduled)
 
 **Start.** CI on `main` was green (`01b248a`, the docs PR from the last run). Model

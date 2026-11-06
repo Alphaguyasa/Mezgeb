@@ -106,6 +106,8 @@ can then be added on request.
   (`d0fd057`, #76) and `v2026-11-04-2` (`b47c85f`, #77). Forty-two tags are missing now.
 - 2026-11-05: the same failure ("remote end hung up") for `v2026-11-05-1`
   (`49a962f`, #79) and `v2026-11-05-2` (`af1b2ca`, #80). Forty-four tags are missing now.
+- 2026-11-06: the same failure ("remote end hung up") for `v2026-11-06-1`
+  (`c23bb66`, #83) and `v2026-11-06-2` (`15e6da9`, #82). Forty-six tags are missing now.
 - **Effect:** you can still roll back. Every merge is a squash commit on `main` with
   its PR number, and the log lists each one. Only the named tags are missing.
 - **Options:** (a) do nothing (the log stays the rollback list); (b) create the tags

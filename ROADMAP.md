@@ -23,7 +23,7 @@ and R38 and R39 were checked by hand against the code. R38 and R39 part 1 were d
 the list then fell to 4 (all blocked), so the same run replanned: R45 to R53 come from a
 fresh code audit. R45 was done the same run. R45, R46 and R47 were checked by hand against the code; the others
 carry the audit's file and line evidence and are re-checked when picked up. R46 and R47 were done on
-2026-11-05.
+2026-11-05. R48 and R49 were done on 2026-11-06.
 
 ## Open
 
@@ -39,20 +39,6 @@ and is deleted the same way. Part 1 (no approval needed): refuse a restore while
 mode is on, with a message. Part 2 waits on **NEEDS_APPROVAL.md A9** (what capture
 does during a demo). Tests: restore in demo mode is refused and nothing is written;
 part 2 per the decision.
-
-### R48 · P1 · M: An error during capture crashes the app and loses the message
-The application scope (`di/AppModule.kt`) has no `CoroutineExceptionHandler`, and the
-listener launches `coordinator.capture` on it (`MezgebNotificationListener.kt:89`). A
-failed write (full storage on a cheap phone) crashes the process on every
-notification. `TransactionDetailViewModel` save, delete and reconciled toggle also have
-no error handling. Fix: a handler that records only a count and a time (no content) and
-shows it in capture health; `runCatching` around the startup jobs and the detail writes.
-Tests: a throwing coordinator crashes nothing and the count goes up.
-
-### R49 · P2 · S: Tapping the reconcile reminder does nothing
-`ReconcileReminderWorker.notifyIfPermitted` sets no content intent. Fix: an immutable
-`PendingIntent` to `MainActivity`, opening Reconcile. No permission. Test: the posted
-notification has it.
 
 ### R50 · P2 · S: Built-in category names show in English in the Amharic UI
 `DatabaseSeeder.SYSTEM_CATEGORIES` stores "Sales", "Rent" and the rest as literals, and
@@ -96,6 +82,19 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 26 updates, Gradle 9.8.2 and Compose BOM 2026.09.00. CI is green on it.)
 
 ## Done
+
+- 2026-11-06 · R48: A background failure no longer crashes the app. The application
+  scope carries a `CoroutineExceptionHandler` from the new `BackgroundFailureLog`, which
+  stores only a count and a time (the exception is not logged or stored). Today shows a
+  dismissible "Something could not be saved" card that says to free up space and check
+  the provider messages, in English and Amharic. The startup purge, seed and first-run
+  stamp each run on their own. The transaction detail writes (save, category,
+  reconciled, duplicate dismiss, delete) show "Could not save. Try again." A refused
+  save keeps the editor open. PR #82. (Tag `v2026-11-06-2` not pushed: A6.)
+- 2026-11-06 · R49: Tapping the reconcile reminder opens Reconcile. It carries an
+  immutable `PendingIntent` to `MainActivity` with the `OPEN_RECONCILE` action and no
+  extras. The request waits through the PIN lock and is dropped during onboarding.
+  No permission change. PR #83. (Tag `v2026-11-06-1` not pushed: A6.)
 
 - 2026-11-05 · R47: A cash entry can no longer be saved twice. `canSave` now also
   needs `!isSaved`, so a second tap between the save and the screen closing records
