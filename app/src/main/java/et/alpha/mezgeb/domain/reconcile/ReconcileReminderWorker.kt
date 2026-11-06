@@ -3,6 +3,7 @@ package et.alpha.mezgeb.domain.reconcile
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -21,6 +22,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import et.alpha.mezgeb.R
 import et.alpha.mezgeb.data.repo.ReconciliationRepository
 import et.alpha.mezgeb.data.settings.SettingsRepository
+import et.alpha.mezgeb.navigation.LaunchRequest
 import et.alpha.mezgeb.util.MezgebDates
 import java.time.Clock
 import java.util.concurrent.TimeUnit
@@ -93,10 +95,24 @@ class ReconcileReminderWorker @AssistedInject constructor(
                 .setContentText(context.getString(R.string.reconcile_reminder_body))
                 .setSmallIcon(R.drawable.ic_stat_mezgeb)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
+                // Without this, tapping the reminder did nothing at all (ROADMAP R49).
+                .setContentIntent(contentIntent())
                 .setAutoCancel(true)
                 .build(),
         )
     }
+
+    /**
+     * Immutable: nothing fills it in later, and a mutable PendingIntent handed to the
+     * system is one another app could rewrite. UPDATE_CURRENT keeps one intent per
+     * request code rather than piling up copies.
+     */
+    private fun contentIntent(): PendingIntent = PendingIntent.getActivity(
+        context,
+        CONTENT_REQUEST_CODE,
+        LaunchRequest.openReconcile(context),
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+    )
 
     companion object {
         const val WORK_NAME = "reconcile_reminder"
@@ -106,6 +122,7 @@ class ReconcileReminderWorker @AssistedInject constructor(
 
         private const val CHANNEL_ID = "mezgeb_reconcile"
         private const val NOTIFICATION_ID = 8001
+        private const val CONTENT_REQUEST_CODE = 8001
     }
 }
 

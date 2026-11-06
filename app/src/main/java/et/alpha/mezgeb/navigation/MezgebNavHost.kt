@@ -3,8 +3,10 @@ package et.alpha.mezgeb.navigation
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -37,6 +39,9 @@ fun MezgebNavHost(
     modifier: Modifier = Modifier,
     startDestination: MezgebDestination = MezgebDestination.Today,
     navController: NavHostController = rememberNavController(),
+    /** A screen the launching intent asked for. See [LaunchRequest]. */
+    launchRequest: MezgebDestination? = null,
+    onLaunchRequestHandled: () -> Unit = {},
 ) {
     val currentEntry by navController.currentBackStackEntryAsState()
     val currentDestination = currentEntry?.destination
@@ -138,6 +143,18 @@ fun MezgebNavHost(
             composable<MezgebDestination.CashEntry> {
                 CashEntryRoute(onBack = { navController.navigateUp() })
             }
+        }
+
+        // Keyed on the entry too, because the first composition has no back stack yet
+        // and the request has to wait for one. Onboarding is never skipped: a shop that
+        // has not finished it has nothing to reconcile, and the request is dropped.
+        LaunchedEffect(launchRequest, currentEntry == null) {
+            val target = launchRequest ?: return@LaunchedEffect
+            val entry = navController.currentBackStackEntry ?: return@LaunchedEffect
+            if (!entry.destination.hasRoute<MezgebDestination.Onboarding>()) {
+                navController.navigate(target) { launchSingleTop = true }
+            }
+            onLaunchRequestHandled()
         }
 
         if (currentDestination.isTopLevel()) {
