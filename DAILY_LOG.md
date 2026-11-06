@@ -60,7 +60,7 @@ Pushing failed again ("remote end hung up") (A6).
 | Roadmap | No replan. 8 open, 4 unblocked (R50 to R53). R39 part 2, R10, R11 and R12 wait on A9, A1, A2 and A7. The next run replans if fewer than 5 are open |
 | Model | Opus 5.5 (`claude-opus-5-5`), the newest Opus. No action for Alpha |
 | Needs approval | A1 DB encryption, A2 samples, A3 protect `main`, A6 tag push, A7 Dependabot authorship (#12, #14, #15, #22, #40), A8 unique index, A9 capture during demo mode (R39 part 2) |
-| Next | R53 (ledger search wildcards, a P2 bug), then R50 (category names in Amharic) |
+| Next | R50 (built-in category names in Amharic), then R51 (the privacy purge runs only when its rules change) |
 
 ---
 
