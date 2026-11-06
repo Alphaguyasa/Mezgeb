@@ -10,9 +10,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /** ROADMAP R49: the intents that open the app on a given screen. */
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34])
 class LaunchRequestTest {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
