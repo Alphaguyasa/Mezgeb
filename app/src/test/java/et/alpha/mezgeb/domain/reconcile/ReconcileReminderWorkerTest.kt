@@ -3,6 +3,7 @@ package et.alpha.mezgeb.domain.reconcile
 import android.Manifest
 import android.app.Application
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
@@ -10,6 +11,7 @@ import androidx.work.ListenableWorker
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 import androidx.work.testing.TestListenableWorkerBuilder
+import et.alpha.mezgeb.MainActivity
 import et.alpha.mezgeb.data.local.DatabaseTest
 import et.alpha.mezgeb.data.local.T0
 import et.alpha.mezgeb.data.local.entity.ReconciliationSessionEntity
@@ -17,10 +19,13 @@ import et.alpha.mezgeb.data.repo.ReconciliationRepository
 import et.alpha.mezgeb.data.settings.SettingsHarness
 import et.alpha.mezgeb.data.settings.SettingsRepository
 import et.alpha.mezgeb.domain.model.SessionStatus
+import et.alpha.mezgeb.navigation.LaunchRequest
+import et.alpha.mezgeb.navigation.MezgebDestination
 import et.alpha.mezgeb.util.MezgebDates
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -195,6 +200,26 @@ class ReconcileReminderWorkerTest : DatabaseTest() {
         }
 
         assertEquals(1, postedNotifications())
+    }
+
+    @Test
+    fun `tapping the reminder opens Reconcile through an immutable intent`() = runTest {
+        settings.markFirstRun(T0)
+
+        worker(now = T0 + 8 * DAY).doWork()
+
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val contentIntent = Shadows.shadowOf(manager).allNotifications.single().contentIntent
+        // Before ROADMAP R49 there was none, and a tap did nothing at all.
+        assertNotNull(contentIntent)
+        val shadow = Shadows.shadowOf(contentIntent)
+        assertTrue(shadow.isActivityIntent)
+        assertTrue(shadow.flags and PendingIntent.FLAG_IMMUTABLE != 0)
+
+        val intent = shadow.savedIntent
+        assertEquals(LaunchRequest.ACTION_OPEN_RECONCILE, intent.action)
+        assertEquals(MainActivity::class.java.name, intent.component?.className)
+        assertEquals(MezgebDestination.Reconcile, LaunchRequest.destinationFor(intent))
     }
 
     private fun postedNotifications(): Int {

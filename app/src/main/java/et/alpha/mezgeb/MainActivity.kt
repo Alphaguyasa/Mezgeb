@@ -1,6 +1,7 @@
 package et.alpha.mezgeb
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.setContent
@@ -8,6 +9,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
@@ -16,6 +19,8 @@ import et.alpha.mezgeb.data.settings.LanguagePreference
 import et.alpha.mezgeb.designsystem.MezgebTheme
 import et.alpha.mezgeb.designsystem.component.LocalDemoMode
 import et.alpha.mezgeb.domain.lock.AppLockState
+import et.alpha.mezgeb.navigation.LaunchRequest
+import et.alpha.mezgeb.navigation.MezgebDestination
 import et.alpha.mezgeb.navigation.MezgebNavHost
 import et.alpha.mezgeb.ui.lock.LockRoute
 import javax.inject.Inject
@@ -38,6 +43,12 @@ class MainActivity : FragmentActivity() {
     @Inject lateinit var demoMode: DemoModeStore
 
     /**
+     * A screen asked for by the launching intent (the reconcile reminder), waiting to
+     * be opened. It waits through the lock screen and is cleared once handled.
+     */
+    private var launchRequest by mutableStateOf<MezgebDestination?>(null)
+
+    /**
      * Applies the language override before any resource is resolved.
      *
      * [LanguagePreference] is constructed here rather than injected because this runs
@@ -51,6 +62,10 @@ class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Only on a fresh start: after a rotation or a process restore the activity
+        // still holds the old intent, and it has already been acted on.
+        if (savedInstanceState == null) launchRequest = LaunchRequest.destinationFor(intent)
 
         // FLAG_SECURE for the whole window rather than per screen.
         //
@@ -86,11 +101,22 @@ class MainActivity : FragmentActivity() {
                         // onboarding would be a visible flicker on exactly the launch
                         // that matters most.
                         state.isResolved ->
-                            MezgebNavHost(startDestination = state.startDestination)
+                            MezgebNavHost(
+                                startDestination = state.startDestination,
+                                launchRequest = launchRequest,
+                                onLaunchRequestHandled = { launchRequest = null },
+                            )
                     }
                 }
             }
         }
+    }
+
+    /** The app was already running when the reminder was tapped. */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        LaunchRequest.destinationFor(intent)?.let { launchRequest = it }
     }
 
     /**
