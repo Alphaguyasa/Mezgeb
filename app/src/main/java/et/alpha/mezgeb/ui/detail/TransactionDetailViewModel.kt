@@ -20,6 +20,7 @@ import et.alpha.mezgeb.navigation.MezgebDestination
 import et.alpha.mezgeb.parser.normalize.AmountNormalizer
 import et.alpha.mezgeb.util.IdGenerator
 import et.alpha.mezgeb.util.MoneyFormatter
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -65,7 +66,11 @@ data class TransactionDetailUiState(
     /** Set once the row is soft-deleted, so the screen can close itself. */
     val isDeleted: Boolean = false,
     val notFound: Boolean = false,
+    /** A write was refused (ROADMAP R48). What was typed is kept for another try. */
+    val errorMessage: ErrorKind? = null,
 ) {
+    enum class ErrorKind { SAVE_FAILED }
+
     val isEditing: Boolean get() = editor != null
 
     /** True when the counterparty gives a category rule something to match on. */
@@ -94,6 +99,9 @@ sealed interface TransactionDetailEvent {
     data object RequestDelete : TransactionDetailEvent
     data object DismissDelete : TransactionDetailEvent
     data object ConfirmDelete : TransactionDetailEvent
+
+    /** The screen has shown [TransactionDetailUiState.errorMessage]. */
+    data object ErrorShown : TransactionDetailEvent
 }
 
 /**
@@ -136,6 +144,7 @@ class TransactionDetailViewModel @Inject constructor(
             isConfirmingDelete = localState.isConfirmingDelete,
             isDeleted = transaction?.isDeleted == true,
             notFound = transaction == null,
+            errorMessage = localState.errorMessage,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -145,15 +154,20 @@ class TransactionDetailViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val transaction = transactions.getTransaction(transactionId) ?: return@launch
-            val raw = transaction.rawMessageId?.let { transactions.getRawMessage(it) }
-            // If a customer's repayment claims this payment, say so: from here the
-            // link explains where the money went, and it is the only place a shop
-            // owner would think to look for that.
-            val linkedName = customers.repaymentForTransaction(transactionId)
-                ?.let { customers.getCustomer(it.customerId) }
-                ?.name
-            local.update { it.copy(rawMessage = raw, linkedCustomerName = linkedName) }
+            // A failed read leaves the extras out rather than crashing the screen: the
+            // transaction itself still comes from the observed flow.
+            val extras = runCatchingNonCancellation {
+                val transaction = transactions.getTransaction(transactionId) ?: return@launch
+                val raw = transaction.rawMessageId?.let { transactions.getRawMessage(it) }
+                // If a customer's repayment claims this payment, say so: from here the
+                // link explains where the money went, and it is the only place a shop
+                // owner would think to look for that.
+                val linkedName = customers.repaymentForTransaction(transactionId)
+                    ?.let { customers.getCustomer(it.customerId) }
+                    ?.name
+                raw to linkedName
+            }.getOrNull() ?: return@launch
+            local.update { it.copy(rawMessage = extras.first, linkedCustomerName = extras.second) }
         }
     }
 
@@ -176,8 +190,8 @@ class TransactionDetailViewModel @Inject constructor(
 
             is TransactionDetailEvent.CategoryPicked -> applyCategory(event)
 
-            TransactionDetailEvent.ToggleReconciled -> viewModelScope.launch {
-                val transaction = state.value.transaction ?: return@launch
+            TransactionDetailEvent.ToggleReconciled -> write {
+                val transaction = state.value.transaction ?: return@write
                 transactions.setReconciled(
                     id = transaction.id,
                     isReconciled = !transaction.isReconciled,
@@ -187,7 +201,7 @@ class TransactionDetailViewModel @Inject constructor(
                 )
             }
 
-            TransactionDetailEvent.DismissPossibleDuplicate -> viewModelScope.launch {
+            TransactionDetailEvent.DismissPossibleDuplicate -> write {
                 transactions.clearPossibleDuplicate(transactionId)
             }
 
@@ -197,12 +211,43 @@ class TransactionDetailViewModel @Inject constructor(
             TransactionDetailEvent.DismissDelete ->
                 local.update { it.copy(isConfirmingDelete = false) }
 
-            TransactionDetailEvent.ConfirmDelete -> viewModelScope.launch {
-                // Soft delete. A shop's ledger never loses rows outright.
-                transactions.softDelete(transactionId, clock.millis())
+            TransactionDetailEvent.ConfirmDelete -> {
+                // The question closes either way, so that a refused delete shows its
+                // message on the screen rather than behind the dialog.
                 local.update { it.copy(isConfirmingDelete = false) }
+                write {
+                    // Soft delete. A shop's ledger never loses rows outright.
+                    transactions.softDelete(transactionId, clock.millis())
+                }
             }
+
+            TransactionDetailEvent.ErrorShown -> local.update { it.copy(errorMessage = null) }
         }
+    }
+
+    /**
+     * Runs one write and turns a refusal (a full disk, a locked database) into
+     * [TransactionDetailUiState.ErrorKind.SAVE_FAILED] instead of a crash. Before R48 an
+     * exception here reached `viewModelScope` unhandled and closed the app.
+     * [onSuccess] runs only when the write went through.
+     */
+    private fun write(onSuccess: () -> Unit = {}, block: suspend () -> Unit) {
+        viewModelScope.launch {
+            runCatchingNonCancellation { block() }
+                .onSuccess { onSuccess() }
+                .onFailure {
+                    local.update { it.copy(errorMessage = TransactionDetailUiState.ErrorKind.SAVE_FAILED) }
+                }
+        }
+    }
+
+    /** [runCatching] that lets cancellation through, so a closed screen stops cleanly. */
+    private inline fun <T> runCatchingNonCancellation(block: () -> T): Result<T> = try {
+        Result.success(block())
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
     private fun save() {
@@ -237,7 +282,9 @@ class TransactionDetailViewModel @Inject constructor(
 
         val now = clock.millis()
 
-        viewModelScope.launch {
+        // The editor stays open until the write has gone through, so a refused save
+        // keeps what was typed.
+        write(onSuccess = { local.update { it.copy(editor = null) } }) {
             transactions.update(
                 updated.copy(
                     editedAt = if (parsedFieldsChanged) now else original.editedAt,
@@ -247,16 +294,15 @@ class TransactionDetailViewModel @Inject constructor(
                     touchedAt = now,
                 ),
             )
-            local.update { it.copy(editor = null) }
         }
     }
 
     private fun applyCategory(event: TransactionDetailEvent.CategoryPicked) {
         val transaction = state.value.transaction ?: return
-        viewModelScope.launch {
+        write {
             transactions.setCategory(transaction.id, event.categoryId, clock.millis())
 
-            if (!event.alwaysApply || event.categoryId == null) return@launch
+            if (!event.alwaysApply || event.categoryId == null) return@write
             categoryRuleFor(transaction, event.categoryId)?.let { rules.insertCategoryRule(it) }
         }
     }
@@ -309,6 +355,7 @@ class TransactionDetailViewModel @Inject constructor(
         val isBodyExpanded: Boolean = false,
         val editor: TransactionEditor? = null,
         val isConfirmingDelete: Boolean = false,
+        val errorMessage: TransactionDetailUiState.ErrorKind? = null,
     )
 
     private companion object {

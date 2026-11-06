@@ -35,8 +35,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -49,6 +51,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import et.alpha.mezgeb.R
 import et.alpha.mezgeb.capture.CaptureHealth
+import et.alpha.mezgeb.data.settings.BackgroundFailures
 import et.alpha.mezgeb.designsystem.MezgebTheme
 import et.alpha.mezgeb.designsystem.component.EmptyState
 import et.alpha.mezgeb.designsystem.component.MezgebScaffold
@@ -59,7 +62,9 @@ import et.alpha.mezgeb.domain.model.Direction
 import et.alpha.mezgeb.ui.common.TransactionRow
 import et.alpha.mezgeb.ui.common.TransactionUiModel
 import et.alpha.mezgeb.ui.common.spokenNet
+import et.alpha.mezgeb.util.MezgebDates
 import et.alpha.mezgeb.util.MoneyFormatter
+import java.time.ZoneId
 
 @Composable
 fun TodayRoute(
@@ -182,6 +187,20 @@ fun TodayScreen(
                     CaptureHealthBanner(
                         health = state.captureHealth,
                         onFix = onFixCapture,
+                        modifier = Modifier.padding(
+                            start = spacing.screenGutter,
+                            end = spacing.screenGutter,
+                            bottom = spacing.lg,
+                        ),
+                    )
+                }
+            }
+
+            state.backgroundFailures?.let { failures ->
+                item("failures") {
+                    BackgroundFailuresCard(
+                        failures = failures,
+                        onDismiss = { onEvent(TodayEvent.BackgroundFailuresDismissed) },
                         modifier = Modifier.padding(
                             start = spacing.screenGutter,
                             end = spacing.screenGutter,
@@ -375,6 +394,58 @@ private fun CaptureHealthBanner(
                         },
                     ),
                 )
+            }
+        }
+    }
+}
+
+/**
+ * Says that background work failed (ROADMAP R48), most likely because storage is full.
+ *
+ * A payment that arrived at that moment may not be in the ledger, and nothing else on
+ * the screen would show it, so the card names the risk and what to check. It can be
+ * dismissed, unlike [CaptureHealthBanner]: once the owner has looked, there is nothing
+ * left to fix, and a new failure brings it back.
+ */
+@Composable
+private fun BackgroundFailuresCard(
+    failures: BackgroundFailures,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val spacing = MezgebTheme.spacing
+    val locale = LocalConfiguration.current.locales[0]
+    val zone = remember { ZoneId.systemDefault() }
+    val lastAt = remember(failures.lastAt, locale) {
+        MezgebDates.formatFullDate(failures.lastAt, zone, locale) + " " +
+            MezgebDates.formatTime(failures.lastAt, zone, locale)
+    }
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer,
+            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(spacing.xs),
+        ) {
+            Text(
+                text = stringResource(R.string.today_failures_title),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Text(
+                text = pluralStringResource(
+                    R.plurals.today_failures_body,
+                    failures.count,
+                    failures.count,
+                    lastAt,
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = spacing.touchTarget)) {
+                Text(stringResource(R.string.today_failures_dismiss))
             }
         }
     }

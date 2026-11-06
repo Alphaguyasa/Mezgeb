@@ -1,5 +1,6 @@
 package et.alpha.mezgeb.ui.detail
 
+import android.database.sqlite.SQLiteFullException
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
@@ -15,6 +16,8 @@ import et.alpha.mezgeb.domain.model.Direction
 import et.alpha.mezgeb.domain.model.MatchField
 import et.alpha.mezgeb.domain.model.MatchType
 import et.alpha.mezgeb.util.IdGenerator
+import io.mockk.coEvery
+import io.mockk.spyk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -239,8 +242,67 @@ class TransactionDetailViewModelTest : DatabaseTest() {
         }
     }
 
-    private fun viewModel(transactionId: String) = TransactionDetailViewModel(
-        transactions = transactions,
+    @Test
+    fun `a refused save keeps the editor open and says so`() = runTest {
+        seedParsedTransaction()
+        val failing = spyk(transactions)
+        coEvery { failing.update(any()) } throws SQLiteFullException("database or disk is full")
+        val viewModel = viewModel("t1", repository = failing)
+
+        viewModel.state.test {
+            awaitItemWhere { it.transaction != null }
+            viewModel.onEvent(TransactionDetailEvent.StartEdit)
+            val editor = awaitItemWhere { it.isEditing }.editor!!
+            viewModel.onEvent(TransactionDetailEvent.EditorChanged(editor.copy(amountText = "500.00")))
+            viewModel.onEvent(TransactionDetailEvent.SaveEdit)
+
+            val failed = awaitItemWhere { it.errorMessage != null }
+            assertEquals(TransactionDetailUiState.ErrorKind.SAVE_FAILED, failed.errorMessage)
+            // What was typed is still there for another try.
+            assertEquals("500.00", failed.editor?.amountText)
+
+            viewModel.onEvent(TransactionDetailEvent.ErrorShown)
+            assertNull(awaitItemWhere { it.errorMessage == null }.errorMessage)
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertEquals(45_000L, db.transactionDao().getById("t1")?.amountMinor)
+    }
+
+    @Test
+    fun `a refused delete or reconciled toggle says so and crashes nothing`() = runTest {
+        seedParsedTransaction()
+        val failing = spyk(transactions)
+        coEvery { failing.softDelete(any(), any()) } throws SQLiteFullException("database or disk is full")
+        coEvery { failing.setReconciled(any(), any(), any()) } throws SQLiteFullException("database or disk is full")
+        val viewModel = viewModel("t1", repository = failing)
+
+        viewModel.state.test {
+            awaitItemWhere { it.transaction != null }
+            viewModel.onEvent(TransactionDetailEvent.RequestDelete)
+            awaitItemWhere { it.isConfirmingDelete }
+            viewModel.onEvent(TransactionDetailEvent.ConfirmDelete)
+
+            val failed = awaitItemWhere { it.errorMessage != null }
+            assertFalse(failed.isConfirmingDelete)
+            assertFalse(failed.isDeleted)
+
+            viewModel.onEvent(TransactionDetailEvent.ErrorShown)
+            awaitItemWhere { it.errorMessage == null }
+            viewModel.onEvent(TransactionDetailEvent.ToggleReconciled)
+            assertEquals(
+                TransactionDetailUiState.ErrorKind.SAVE_FAILED,
+                awaitItemWhere { it.errorMessage != null }.errorMessage,
+            )
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertFalse(db.transactionDao().getById("t1")!!.isDeleted)
+    }
+
+    private fun viewModel(
+        transactionId: String,
+        repository: TransactionRepository = transactions,
+    ) = TransactionDetailViewModel(
+        transactions = repository,
         rules = rules,
         customers = CustomerRepository(db.customerDao(), db.creditEntryDao()),
         ids = IdGenerator { "rule_1" },

@@ -119,6 +119,7 @@
 
     <!-- Transaction detail -->
     <string name="detail_title">ግብይት</string>
+    <string name="detail_save_failed">ማስቀመጥ አልተቻለም። እንደገና ይሞክሩ።</string>
     <string name="detail_edit">ይህን ግብይት አስተካክል</string>
     <string name="detail_not_found">ይህ ግብይት ከእንግዲህ የለም።</string>
     <string name="detail_edited_notice">ከተያዘ በኋላ ይህን መዝገብ እርስዎ አስተካክለውታል።</string>
@@ -461,4 +462,10 @@
     <string name="today_backup_reminder_body_stale">የመጨረሻው ምትኬዎ ከ30 ቀን በላይ ሆኖታል። ስልኩ ከጠፋ ወይም ከተሰበረ ከዚያ ወዲህ የተመዘገበው ሁሉ አብሮ ይጠፋል።</string>
     <string name="today_backup_reminder_action">አሁን ምትኬ አስቀምጥ</string>
     <string name="today_backup_reminder_dismiss">አሁን አይደለም</string>
+    <string name="today_failures_title">አንድ ነገር ማስቀመጥ አልተቻለም</string>
+    <plurals name="today_failures_body">
+        <item quantity="one">ይህ %1$d ጊዜ ተከስቷል፤ የመጨረሻው %2$s ላይ ነበር። ብዙውን ጊዜ የስልኩ ማከማቻ ሲሞላ ይከሰታል፤ ስለዚህ ቦታ ያስለቅቁ። በዚያ ጊዜ የደረሰ ክፍያ ከመዝገቡ ሊጎድል ይችላል፤ የቴሌብር እና የባንክ መልእክቶችዎን ከመዝገቡ ጋር ያወዳድሩ።</item>
+        <item quantity="other">ይህ %1$d ጊዜ ተከስቷል፤ የመጨረሻው %2$s ላይ ነበር። ብዙውን ጊዜ የስልኩ ማከማቻ ሲሞላ ይከሰታል፤ ስለዚህ ቦታ ያስለቅቁ። በዚያ ጊዜ የደረሰ ክፍያ ከመዝገቡ ሊጎድል ይችላል፤ የቴሌብር እና የባንክ መልእክቶችዎን ከመዝገቡ ጋር ያወዳድሩ።</item>
+    </plurals>
+    <string name="today_failures_dismiss">እሺ</string>
 </resources>

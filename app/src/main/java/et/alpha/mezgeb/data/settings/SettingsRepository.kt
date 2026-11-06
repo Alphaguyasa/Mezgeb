@@ -61,6 +61,35 @@ class SettingsRepository @Inject constructor(
         }
     }
 
+    /**
+     * How many times background work (a capture, a startup job) failed, and when the
+     * last one did. Only a count and a time: the failure itself may carry a message
+     * body or an amount in its text, and none of that leaves the database.
+     */
+    fun observeBackgroundFailures(): Flow<BackgroundFailures?> = dataStore.data.map { prefs ->
+        val count = prefs[BACKGROUND_FAILURE_COUNT] ?: 0
+        val lastAt = prefs[BACKGROUND_FAILURE_AT]
+        if (count > 0 && lastAt != null) BackgroundFailures(count, lastAt) else null
+    }
+
+    suspend fun recordBackgroundFailure(at: Long) {
+        dataStore.edit { prefs ->
+            val count = prefs[BACKGROUND_FAILURE_COUNT] ?: 0
+            // Capped rather than wrapped, so a phone that fails on every notification
+            // for a year still shows a large number and not a negative one.
+            prefs[BACKGROUND_FAILURE_COUNT] = if (count == Int.MAX_VALUE) count else count + 1
+            prefs[BACKGROUND_FAILURE_AT] = at
+        }
+    }
+
+    /** The owner has seen the notice. A later failure starts the count again. */
+    suspend fun clearBackgroundFailures() {
+        dataStore.edit { prefs ->
+            prefs.remove(BACKGROUND_FAILURE_COUNT)
+            prefs.remove(BACKGROUND_FAILURE_AT)
+        }
+    }
+
     // --- Onboarding -----------------------------------------------------------------
 
     fun observeOnboardingCompleted(): Flow<Boolean> =
@@ -217,6 +246,8 @@ class SettingsRepository @Inject constructor(
         val LAST_CAPTURE_AT = longPreferencesKey("last_capture_at")
         val FIRST_RUN_AT = longPreferencesKey("first_run_at")
         val ACCESS_LOST_AT = longPreferencesKey("notification_access_lost_at")
+        val BACKGROUND_FAILURE_COUNT = intPreferencesKey("background_failure_count")
+        val BACKGROUND_FAILURE_AT = longPreferencesKey("background_failure_at")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val BATTERY_HINT_SHOWN = booleanPreferencesKey("battery_hint_shown")
         val WATCHED_PACKAGES = stringSetPreferencesKey("watched_packages")
@@ -226,3 +257,6 @@ class SettingsRepository @Inject constructor(
         val BACKUP_REMINDER_DISMISSED_AT = longPreferencesKey("backup_reminder_dismissed_at")
     }
 }
+
+/** See [SettingsRepository.observeBackgroundFailures]. */
+data class BackgroundFailures(val count: Int, val lastAt: Long)

@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
+import et.alpha.mezgeb.capture.BackgroundFailureLog
 import et.alpha.mezgeb.capture.PrivacyPurge
 import et.alpha.mezgeb.data.local.seed.DatabaseSeeder
 import et.alpha.mezgeb.data.settings.SettingsRepository
@@ -29,6 +30,8 @@ class MezgebApplication : Application(), Configuration.Provider {
 
     @Inject lateinit var privacyPurge: PrivacyPurge
 
+    @Inject lateinit var failures: BackgroundFailureLog
+
     @Inject @ApplicationScope lateinit var applicationScope: CoroutineScope
 
     /**
@@ -48,15 +51,19 @@ class MezgebApplication : Application(), Configuration.Provider {
         // app update may ship corrected bundled parser rules that need applying.
         // Off the main thread — the first call opens the database.
         applicationScope.launch {
+            // Each step on its own, so one that fails (a full disk, a locked file) does
+            // not stop the ones after it. A failure is counted, not thrown: the scope's
+            // handler would catch it too, but only after skipping the remaining steps.
+
             // Before anything else touches the database: earlier builds stored messages
             // this one refuses — credentials, and private messages from people — and
             // they should not survive an update by a minute longer than they have to.
-            privacyPurge.run()
+            runCatching { privacyPurge.run() }.onFailure { failures.record() }
 
-            seeder.seed()
+            runCatching { seeder.seed() }.onFailure { failures.record() }
             // Capture health measures silence from here until the first message
             // arrives, so this stamp has to exist before capture can be judged.
-            settings.markFirstRun(clock.millis())
+            runCatching { settings.markFirstRun(clock.millis()) }.onFailure { failures.record() }
         }
 
         // Idempotent, and cheap: WorkManager keeps the existing schedule.

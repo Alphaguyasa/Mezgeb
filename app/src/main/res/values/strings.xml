@@ -131,6 +131,7 @@
 
     <!-- Transaction detail -->
     <string name="detail_title">Transaction</string>
+    <string name="detail_save_failed">Could not save. Try again.</string>
     <string name="detail_edit">Edit this transaction</string>
     <string name="detail_not_found">This transaction no longer exists.</string>
     <string name="detail_edited_notice">You changed this record after it was captured.</string>
@@ -514,4 +515,10 @@
     <string name="today_backup_reminder_body_stale">Your last backup is more than 30 days old. If the phone is lost or broken, everything since then goes with it.</string>
     <string name="today_backup_reminder_action">Back up now</string>
     <string name="today_backup_reminder_dismiss">Not now</string>
+    <string name="today_failures_title">Something could not be saved</string>
+    <plurals name="today_failures_body">
+        <item quantity="one">This happened %1$d time, last on %2$s. It usually means the phone\'s storage is full, so free up some space. A payment that arrived then may be missing: compare your telebirr and bank messages with the ledger.</item>
+        <item quantity="other">This happened %1$d times, last on %2$s. It usually means the phone\'s storage is full, so free up some space. A payment that arrived then may be missing: compare your telebirr and bank messages with the ledger.</item>
+    </plurals>
+    <string name="today_failures_dismiss">OK</string>
 </resources>

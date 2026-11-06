@@ -8,6 +8,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import et.alpha.mezgeb.capture.BackgroundFailureLog
 import et.alpha.mezgeb.domain.lock.DeviceUptime
 import et.alpha.mezgeb.util.ClockLocalDays
 import et.alpha.mezgeb.util.LocalDays
@@ -85,13 +86,19 @@ object AppModule {
     /**
      * SupervisorJob so that one failed background task — a seed, an import — cannot
      * cancel every other piece of application-scoped work.
+     *
+     * The failure handler is what keeps that failed task from killing the process
+     * (ROADMAP R48). A SupervisorJob alone only protects the siblings: the exception
+     * still reaches the thread's default handler, and on Android that is a crash, on
+     * every notification for as long as the cause lasts.
      */
     @Provides
     @Singleton
     @ApplicationScope
     fun provideApplicationScope(
         @IoDispatcher dispatcher: CoroutineDispatcher,
-    ): CoroutineScope = CoroutineScope(SupervisorJob() + dispatcher)
+        failures: BackgroundFailureLog,
+    ): CoroutineScope = CoroutineScope(SupervisorJob() + dispatcher + failures.handler)
 
     /**
      * Lenient on unknown keys so that a rules asset written by a newer build does not

@@ -10,6 +10,7 @@ import et.alpha.mezgeb.capture.notification.CaptureAccess
 import et.alpha.mezgeb.capture.vendor.BatteryOptimizationHelper
 import et.alpha.mezgeb.data.repo.RuleRepository
 import et.alpha.mezgeb.data.repo.TransactionRepository
+import et.alpha.mezgeb.data.settings.BackgroundFailures
 import et.alpha.mezgeb.data.settings.SettingsRepository
 import et.alpha.mezgeb.domain.backup.BackupReminder
 import et.alpha.mezgeb.domain.backup.BackupReminderPolicy
@@ -47,6 +48,8 @@ data class TodayUiState(
     val hasEverCaptured: Boolean = false,
     /** Null when no backup reminder is due, or the owner said "not now" recently. */
     val backupReminder: BackupReminder? = null,
+    /** Background work that failed since the owner last said "OK" (ROADMAP R48). */
+    val backgroundFailures: BackgroundFailures? = null,
     val errorMessage: ErrorKind? = null,
 ) {
     val netMinor: Long get() = totalInMinor - totalOutMinor
@@ -61,6 +64,9 @@ sealed interface TodayEvent {
 
     /** "Not now" on the backup reminder. It comes back after another interval. */
     data object BackupReminderDismissed : TodayEvent
+
+    /** "OK" on the could-not-save notice. A later failure brings it back. */
+    data object BackgroundFailuresDismissed : TodayEvent
 }
 
 @HiltViewModel
@@ -106,12 +112,13 @@ class TodayViewModel @Inject constructor(
             list.map { it.toUiModel(categoryName = namesById[it.categoryId]) }
         }
 
-        val backupStamps = combine(
+        val stamps = combine(
             settings.observeLastBackupAt(),
             settings.observeFirstRunAt(),
             settings.observeBackupReminderDismissedAt(),
-        ) { lastBackupAt, firstRunAt, dismissedAt ->
-            BackupStamps(lastBackupAt, firstRunAt, dismissedAt)
+            settings.observeBackgroundFailures(),
+        ) { lastBackupAt, firstRunAt, dismissedAt, failures ->
+            Stamps(lastBackupAt, firstRunAt, dismissedAt, failures)
         }
 
         combine(
@@ -119,7 +126,7 @@ class TodayViewModel @Inject constructor(
             recent,
             transactions.observeUnmatchedCount(),
             captureHealth.observe(),
-            backupStamps,
+            stamps,
         ) { (inMinor, outMinor), rows, unmatched, health, stamps ->
             TodayUiState(
                 isLoading = false,
@@ -140,6 +147,7 @@ class TodayViewModel @Inject constructor(
                     dismissedAt = stamps.dismissedAt,
                     hasTransactions = rows.isNotEmpty(),
                 ),
+                backgroundFailures = stamps.backgroundFailures,
             )
         }
     }
@@ -154,6 +162,12 @@ class TodayViewModel @Inject constructor(
             TodayEvent.BackupReminderDismissed -> viewModelScope.launch {
                 settings.dismissBackupReminder(clock.millis())
             }
+
+            TodayEvent.BackgroundFailuresDismissed -> viewModelScope.launch {
+                // The same full disk that caused the notice can refuse this write. The
+                // notice then simply stays, which is the honest outcome.
+                runCatching { settings.clearBackgroundFailures() }
+            }
         }
     }
 
@@ -164,10 +178,11 @@ class TodayViewModel @Inject constructor(
         CaptureHealth.HEALTHY -> null
     }
 
-    private data class BackupStamps(
+    private data class Stamps(
         val lastBackupAt: Long?,
         val firstRunAt: Long?,
         val dismissedAt: Long?,
+        val backgroundFailures: BackgroundFailures?,
     )
 
     private companion object {
