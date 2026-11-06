@@ -295,6 +295,33 @@ class TodayViewModelTest : DatabaseTest() {
         }
     }
 
+    @Test
+    fun `a failed background write is shown with its count and time`() = runTest {
+        settingsHarness.repository.recordBackgroundFailure(at = now - 60_000)
+        settingsHarness.repository.recordBackgroundFailure(at = now - 1_000)
+
+        viewModel().state.test {
+            val state = awaitItemWhere { it.backgroundFailures != null }
+            assertEquals(2, state.backgroundFailures?.count)
+            assertEquals(now - 1_000, state.backgroundFailures?.lastAt)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `OK on the could-not-save notice clears it`() = runTest {
+        settingsHarness.repository.recordBackgroundFailure(at = now)
+        val viewModel = viewModel()
+
+        viewModel.state.test {
+            awaitItemWhere { it.backgroundFailures != null }
+            viewModel.onEvent(TodayEvent.BackgroundFailuresDismissed)
+            assertNull(awaitItemWhere { !it.isLoading && it.backgroundFailures == null }.backgroundFailures)
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertNull(settingsHarness.repository.observeBackgroundFailures().first())
+    }
+
     private fun viewModel() = TodayViewModel(
         transactions = transactions,
         rules = rules,

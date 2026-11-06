@@ -34,6 +34,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -98,10 +99,20 @@ fun TransactionDetailScreen(
     modifier: Modifier = Modifier,
 ) {
     val spacing = MezgebTheme.spacing
+    val snackbarHostState = remember { SnackbarHostState() }
+    val saveFailedText = stringResource(R.string.detail_save_failed)
+    LaunchedEffect(state.errorMessage) {
+        if (state.errorMessage != null) {
+            snackbarHostState.showSnackbar(saveFailedText)
+            onEvent(TransactionDetailEvent.ErrorShown)
+        }
+    }
+
     MezgebScaffold(
         title = stringResource(R.string.detail_title),
         modifier = modifier,
         navigationIcon = { BackButton(onClick = onBack) },
+        snackbarHostState = snackbarHostState,
         actions = {
             if (state.transaction != null && !state.isEditing) {
                 IconButton(onClick = { onEvent(TransactionDetailEvent.StartEdit) }) {
