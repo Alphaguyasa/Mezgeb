@@ -2,7 +2,7 @@
 
 The backlog is in priority order. Take the top open item that is not blocked. When an
 item is finished, move it to **Done** with its PR link. Replan when fewer than 5 items
-are open (see CLAUDE.md §5).
+are open (see the engineering handbook §5).
 
 Priority: **P0** is correctness, data loss or privacy. **P1** is safety nets and
 security. **P2** is quality, UX and debt. **P3** is features.
@@ -29,14 +29,14 @@ carry the audit's file and line evidence and are re-checked when picked up. R46 
 
 ### R39 · P0 · M: Demo mode loses real payments captured during a demo (part 2 open)
 **Part 1 done 2026-11-01 (PR #68): a restore is refused in demo mode. Part 2 is
-blocked: see NEEDS_APPROVAL.md A9.**
+blocked: see the decision log A9.**
 Demo mode swaps the whole database (`di/DatabaseModule.kt:42`), but the notification
 listener (`capture/notification/MezgebNotificationListener.kt:89`) and the `direct` SMS
 import keep capturing, with no demo check anywhere in `capture/`. Real payments that
 arrive during a demo go into the demo file, and `DemoModeController.disable()` (line
 83) deletes it. A restore is also allowed in demo mode (`SettingsViewModel.kt:281`)
 and is deleted the same way. Part 1 (no approval needed): refuse a restore while demo
-mode is on, with a message. Part 2 waits on **NEEDS_APPROVAL.md A9** (what capture
+mode is on, with a message. Part 2 waits on **the decision log A9** (what capture
 does during a demo). Tests: restore in demo mode is refused and nothing is written;
 part 2 per the decision.
 
@@ -64,12 +64,12 @@ search for `%` matches every row. Fix: escape the query and add `ESCAPE '\'`. Te
 a DAO test for `%`, `_` and a backslash.
 
 ### R10 · P1 · L: Encrypt the database at rest
-**Blocked: see NEEDS_APPROVAL.md A1.** This needs a new native dependency
+**Blocked: see the decision log A1.** This needs a new native dependency
 (SQLCipher), a one-time migration of the plaintext database, and a decision on
 deleting the plaintext file afterwards.
 
 ### R11 · P2 · M: Corpus coverage (Amharic templates, a 4th sender)
-**Blocked: see NEEDS_APPROVAL.md A2.** This needs real anonymized samples from a
+**Blocked: see the decision log A2.** This needs real anonymized samples from a
 phone, which a cloud run cannot collect.
 
 ### R12 · P2 · S: Revisit `android.disallowKotlinSourceSets=false`
@@ -322,7 +322,7 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
   pushed: A6.)
 - 2026-10-15 · R3: Project rules as guard tests, including the merged-manifest
   permissions per flavor. PR #7. (The tag `v2026-10-15-1` could not be pushed: see
-  NEEDS_APPROVAL A6.)
+  The decision log A6.)
 
 - 2026-10-14 · R2: The parser no longer reads a value from a cut-off message. Before
   the fix, 1,023 truncated variants parsed to wrong values; now none do. Malformed and

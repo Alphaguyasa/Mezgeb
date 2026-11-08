@@ -1,6 +1,6 @@
 # Dependabot opens a pull request when a dependency has a newer release or a known
 # vulnerability. It only opens PRs: nothing merges without green CI and the merge policy
-# in CLAUDE.md §8. Every Gradle update is still checked by hand for a transitive network
+# in the engineering handbook §8. Every Gradle update is still checked by hand for a transitive network
 # stack before it merges (CONVENTIONS.md hard constraint #1), because CI cannot see that.
 version: 2
 updates:

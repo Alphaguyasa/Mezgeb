@@ -6,7 +6,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * The project rules in CLAUDE.md §7 and CONVENTIONS.md, as tests.
+ * The project rules in the engineering handbook §7 and CONVENTIONS.md, as tests.
  *
  * Each of these was true when it was written and is the kind of thing a later change
  * breaks without anyone noticing: one stray import, one debug print of a message body,
