@@ -61,6 +61,8 @@ data class RuleBuilderUiState(
     val isSaving: Boolean = false,
     val savedRuleResolved: Int? = null,
     val resolvedManually: Boolean = false,
+    /** The last waiting message from this sender was dismissed as not a payment. */
+    val dismissedAll: Boolean = false,
     val errorMessage: ErrorKind? = null,
 ) {
     val example: RawMessage? get() = messages.getOrNull(exampleIndex)
@@ -91,6 +93,9 @@ sealed interface RuleBuilderEvent {
 
     /** Record this one message and move on, without saving a rule. */
     data object ResolveManually : RuleBuilderEvent
+
+    /** The example is not a payment: take it out of the review queue. */
+    data object DismissNotPayment : RuleBuilderEvent
 
     data object ErrorShown : RuleBuilderEvent
 }
@@ -157,6 +162,7 @@ class RuleBuilderViewModel @Inject constructor(
             RuleBuilderEvent.TestRule -> testRule()
             RuleBuilderEvent.SaveRule -> saveRule()
             RuleBuilderEvent.ResolveManually -> resolveManually()
+            RuleBuilderEvent.DismissNotPayment -> dismissNotPayment()
             RuleBuilderEvent.ErrorShown -> _state.update { it.copy(errorMessage = null) }
         }
     }
@@ -259,6 +265,41 @@ class RuleBuilderViewModel @Inject constructor(
                     it.copy(isSaving = false, resolvedManually = true)
                 } else {
                     it.copy(isSaving = false, errorMessage = RuleBuilderUiState.ErrorKind.SAVE_FAILED)
+                }
+            }
+        }
+    }
+
+    /**
+     * Dismisses the example only, not the sender: a promotion and a real payment can
+     * come from the same bank. The screen moves on to the next waiting message, and
+     * closes when there is none.
+     */
+    private fun dismissNotPayment() {
+        val current = _state.value
+        val message = current.example ?: return
+        if (current.isSaving) return
+
+        _state.update { it.copy(isSaving = true) }
+        viewModelScope.launch {
+            val result = runCatching { coordinator.dismissAsNotPayment(message.id) }
+            _state.update { state ->
+                if (result.isFailure) {
+                    state.copy(isSaving = false, errorMessage = RuleBuilderUiState.ErrorKind.SAVE_FAILED)
+                } else {
+                    // Gone from the queue either way: dismissed now, or resolved
+                    // elsewhere since the screen loaded. Neither should stay on screen.
+                    val remaining = state.messages.filterNot { it.id == message.id }
+                    state.copy(
+                        isSaving = false,
+                        messages = remaining,
+                        exampleIndex = 0,
+                        spans = emptyMap(),
+                        preview = null,
+                        inductionFailure = null,
+                        report = null,
+                        dismissedAll = remaining.isEmpty(),
+                    )
                 }
             }
         }

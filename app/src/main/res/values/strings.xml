@@ -198,6 +198,7 @@
     <string name="rule_test">Test</string>
     <string name="rule_save">Save rule</string>
     <string name="rule_resolve_one">Just record this one message</string>
+    <string name="rule_not_a_payment">Not a payment</string>
     <string name="rule_nothing_to_teach">There are no messages from this sender waiting.</string>
     <string name="rule_save_failed">Could not save the rule. Try again.</string>
     <!-- 1: messages matched, 2: messages tested against -->

@@ -217,6 +217,53 @@ class RuleBuilderViewModelTest : DatabaseTest() {
     }
 
     @Test
+    fun `not a payment dismisses only the example and moves to the next message`() = runTest {
+        seedQueue()
+        val viewModel = viewModel()
+
+        viewModel.state.test {
+            val loaded = awaitItemWhere { it.messages.isNotEmpty() }
+            val dismissedId = loaded.example!!.id
+            viewModel.onEvent(RuleBuilderEvent.TagSpan(SemanticField.AMOUNT, amountRange(loaded)))
+            awaitItemWhere { it.preview != null }
+
+            viewModel.onEvent(RuleBuilderEvent.DismissNotPayment)
+
+            val next = awaitItemWhere { it.messages.size == 2 }
+            assertTrue(next.messages.none { it.id == dismissedId })
+            // The spans were drawn on the dismissed text.
+            assertTrue(next.spans.isEmpty())
+            assertNull(next.preview)
+            assertFalse(next.dismissedAll)
+            cancelAndIgnoreRemainingEvents()
+
+            assertEquals(ParseState.IGNORED, transactions.getRawMessage(dismissedId)?.parseState)
+        }
+
+        assertTrue(transactions.listTransactions(TransactionFilter()).isEmpty())
+        assertEquals(2, transactions.getByParseState(ParseState.UNMATCHED).size)
+    }
+
+    @Test
+    fun `dismissing the last waiting message closes the screen`() = runTest {
+        seedQueue()
+        val viewModel = viewModel()
+
+        viewModel.state.test {
+            awaitItemWhere { it.messages.isNotEmpty() }
+            for (left in listOf(2, 1)) {
+                viewModel.onEvent(RuleBuilderEvent.DismissNotPayment)
+                assertFalse(awaitItemWhere { !it.isSaving && it.messages.size == left }.dismissedAll)
+            }
+            viewModel.onEvent(RuleBuilderEvent.DismissNotPayment)
+            assertTrue(awaitItemWhere { it.dismissedAll }.messages.isEmpty())
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        assertTrue(transactions.getByParseState(ParseState.UNMATCHED).isEmpty())
+    }
+
+    @Test
     fun `changing example clears spans drawn on the previous one`() = runTest {
         // Offsets belong to the text they were drawn on; carrying them over would tag
         // whatever happened to sit at those characters in a different message.

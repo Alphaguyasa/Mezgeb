@@ -180,6 +180,7 @@
     <string name="rule_test">ሞክር</string>
     <string name="rule_save">ሕጉን አስቀምጥ</string>
     <string name="rule_resolve_one">ይህን መልእክት ብቻ መዝግብ</string>
+    <string name="rule_not_a_payment">ክፍያ አይደለም</string>
     <string name="rule_nothing_to_teach">ከዚህ ላኪ የሚጠብቅ መልእክት የለም።</string>
     <string name="rule_save_failed">ሕጉን ማስቀመጥ አልተቻለም። እንደገና ይሞክሩ።</string>
     <plurals name="rule_report_matches">

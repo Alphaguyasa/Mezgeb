@@ -245,6 +245,10 @@ class TransactionRepository @Inject constructor(
     fun observeUnmatchedCount(): Flow<Int> =
         rawMessageDao.observeCountByParseState(ParseState.UNMATCHED)
 
+    /** See [RawMessageDao.dismissUnmatched]. True if the message left the queue. */
+    suspend fun dismissUnmatched(rawMessageId: String): Boolean =
+        rawMessageDao.dismissUnmatched(rawMessageId) == 1
+
     suspend fun markRawMessageResolved(id: String, state: ParseState, matchedRuleId: String?) =
         rawMessageDao.markResolved(id, state, matchedRuleId)
 

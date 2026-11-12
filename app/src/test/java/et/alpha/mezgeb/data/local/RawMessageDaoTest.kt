@@ -127,4 +127,32 @@ class RawMessageDaoTest : DatabaseTest() {
 
         assertEquals(listOf("a"), result.map { it.id })
     }
+
+    @Test
+    fun `not a payment takes a waiting message out of the queue and out of reconcile`() = runTest {
+        dao.insertIgnoringDuplicates(
+            rawMessage("promo", sender = "CBE", body = "Win ETB 5,000.00 this week!", parseState = ParseState.UNMATCHED),
+        )
+
+        assertEquals(1, dao.dismissUnmatched("promo"))
+
+        assertEquals(ParseState.IGNORED, dao.getById("promo")?.parseState)
+        assertTrue(dao.getUnmatchedBySender("CBE").isEmpty())
+        // Reconcile reads waiting messages through this query to explain a gap.
+        assertTrue(dao.getUnmatchedBetween(T0 - 1, T0 + 1).isEmpty())
+    }
+
+    @Test
+    fun `a message that is not waiting cannot be dismissed`() = runTest {
+        dao.insertIgnoringDuplicates(rawMessage("paid", sender = "CBE", parseState = ParseState.PARSED))
+        dao.insertIgnoringDuplicates(
+            rawMessage("byhand", sender = "CBE", parseState = ParseState.RESOLVED_MANUALLY),
+        )
+
+        assertEquals(0, dao.dismissUnmatched("paid"))
+        assertEquals(0, dao.dismissUnmatched("byhand"))
+        assertEquals(0, dao.dismissUnmatched("missing"))
+        assertEquals(ParseState.PARSED, dao.getById("paid")?.parseState)
+        assertEquals(ParseState.RESOLVED_MANUALLY, dao.getById("byhand")?.parseState)
+    }
 }

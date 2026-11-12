@@ -69,8 +69,8 @@ fun RuleBuilderRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     // Both endings leave nothing more to do on this screen.
-    LaunchedEffect(state.savedRuleResolved, state.resolvedManually) {
-        if (state.savedRuleResolved != null || state.resolvedManually) onBack()
+    LaunchedEffect(state.savedRuleResolved, state.resolvedManually, state.dismissedAll) {
+        if (state.savedRuleResolved != null || state.resolvedManually || state.dismissedAll) onBack()
     }
 
     RuleBuilderScreen(
@@ -172,6 +172,16 @@ fun RuleBuilderScreen(
                 modifier = Modifier.heightIn(min = spacing.touchTarget),
             ) {
                 Text(stringResource(R.string.rule_resolve_one))
+            }
+
+            TextButton(
+                onClick = { onEvent(RuleBuilderEvent.DismissNotPayment) },
+                enabled = state.example != null && !state.isSaving,
+                modifier = Modifier
+                    .heightIn(min = spacing.touchTarget)
+                    .testTag(TAG_NOT_A_PAYMENT),
+            ) {
+                Text(stringResource(R.string.rule_not_a_payment))
             }
         }
     }
@@ -510,6 +520,7 @@ private fun SemanticField.labelRes(): Int = when (this) {
 
 internal const val TAG_MESSAGE_BODY = "rule_builder_message"
 internal const val TAG_SAVE_RULE = "rule_builder_save"
+internal const val TAG_NOT_A_PAYMENT = "rule_builder_not_a_payment"
 
 internal fun tagChipFor(field: SemanticField): String = "rule_builder_chip_${field.name}"
 

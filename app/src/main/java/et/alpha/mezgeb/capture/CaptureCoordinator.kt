@@ -237,6 +237,19 @@ class CaptureCoordinator @Inject constructor(
         )
     }
 
+    /**
+     * The user says a waiting message is not a payment (a promotion, a notice from an
+     * allowed sender). It leaves the review queue as `IGNORED`, so reconcile stops
+     * counting its sniffed amount as a possible explanation for a gap.
+     *
+     * Under the same lock as capture and reprocessing, so it cannot interleave with a
+     * rule resolving the same message. A message that is no longer `UNMATCHED` is
+     * left alone and false is returned.
+     */
+    suspend fun dismissAsNotPayment(rawMessageId: String): Boolean = mutex.withLock {
+        transactions.dismissUnmatched(rawMessageId)
+    }
+
     private suspend fun record(
         rawMessageId: String,
         body: String,

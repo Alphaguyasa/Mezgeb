@@ -80,6 +80,18 @@ interface RawMessageDao {
     suspend fun markResolved(id: String, state: ParseState, matchedRuleId: String?)
 
     /**
+     * "Not a payment": takes one message out of the review queue by marking it
+     * `IGNORED`, the state capture gives a message it recognises as noise.
+     *
+     * Only an `UNMATCHED` row changes, in the same statement, so a message that was
+     * parsed or recorded by hand in the meantime keeps its state and its transaction.
+     *
+     * @return 1 if the message was dismissed, 0 if it was no longer waiting.
+     */
+    @Query("UPDATE raw_messages SET parseState = 'IGNORED' WHERE id = :id AND parseState = 'UNMATCHED'")
+    suspend fun dismissUnmatched(id: String): Int
+
+    /**
      * Every stored message, for the one job that has to look at all of them: finding
      * credentials an earlier build kept. Read in pages so a phone with a backfilled
      * inbox does not load thousands of bodies at once.
