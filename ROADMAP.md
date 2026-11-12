@@ -23,7 +23,28 @@ and R38 and R39 were checked by hand against the code. R38 and R39 part 1 were d
 the list then fell to 4 (all blocked), so the same run replanned: R45 to R53 come from a
 fresh code audit. R45 was done the same run. R45, R46 and R47 were checked by hand against the code; the others
 carry the audit's file and line evidence and are re-checked when picked up. R46 and R47 were done on
-2026-11-05. R48 and R49 were done on 2026-11-06.
+2026-11-05. R48 and R49 were done on 2026-11-06. On 2026-11-12 the "Make Mezgeb sellable" milestone was added at the top, and R53 and R51 were done.
+
+## M-next: Make Mezgeb sellable
+
+The next milestone. Its items come before the rest of the open list.
+
+- [ ] Decide what capture does during a demo (decision log A9), then finish R39 part 2 with tests
+- [x] R53: ledger and customer search treat `%` and `_` literally, with DAO tests (2026-11-12)
+- [x] R51: the privacy purge runs once per app version and after a restore (2026-11-12)
+- [ ] R50: built-in category names shown in the app's language
+- [ ] R52: "Not a payment" dismisses a message in the review queue
+- [ ] Decide who holds the release keystore, then add a signed release workflow
+- [ ] A weekly "money you may have missed" card built from the reconcile results
+- [ ] A guided demo tour over demo mode, Amharic first
+- [ ] A one-page sales sheet (problem, promise, price), for approval
+
+### Later
+
+Encryption at rest (R10, decision log A1) · corpus growth as real samples arrive (R11) ·
+a monthly statement export per customer · a nudge to send the encrypted backup to
+Telegram Saved Messages · rule packs exported and imported as a file · the SMS parser
+as a library other apps can embed.
 
 ## Open
 
@@ -46,22 +67,12 @@ every screen and the report show `category.name` as stored. Fix: map the system 
 (`cat_*`) to string resources at display time. Names the shop typed stay. No migration.
 Tests: the resolver in the `am` locale.
 
-### R51 · P2 · S: The privacy purge reads every stored message on every launch
-`PrivacyPurge.run()` runs on each `onCreate` and pages through all of `raw_messages`.
-Fix: store a purge-rules version and run only when it changes or after a restore.
-Tests: runs once per version, again after a restore.
-
 ### R52 · P3 · S: A message in the review queue can never be dismissed
 `ReviewEvent` has only `Reprocess`. Promotions from an allowed sender stay forever and
 reconcile counts their sniffed amounts as possible explanations
 (`ReconcilePeriodUseCase.kt:183-191`). Fix: "Not a payment" marks an `UNMATCHED` row
 `IGNORED`. Strings in both languages. Tests: the event, reconcile no longer counts it,
 a parsed row is refused.
-
-### R53 · P2 · S: Ledger search treats `%` and `_` as wildcards
-`TransactionDao.kt:146-149` uses `LIKE '%' || :query || '%'` with no `ESCAPE`, so a
-search for `%` matches every row. Fix: escape the query and add `ESCAPE '\'`. Tests:
-a DAO test for `%`, `_` and a backslash.
 
 ### R10 · P1 · L: Encrypt the database at rest
 **Blocked: see the decision log A1.** This needs a new native dependency
@@ -82,6 +93,15 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 26 updates, Gradle 9.8.2 and Compose BOM 2026.09.00. CI is green on it.)
 
 ## Done
+
+- 2026-11-12 · R53: Ledger and customer search treat `%`, `_` and `\\` literally. Both
+  searches use `instr(lower(column), lower(query)) > 0` instead of `LIKE`, which keeps
+  the same ASCII case folding. DAO tests for each character and for case.
+- 2026-11-12 · R51: The privacy purge no longer scans every stored message on every
+  launch. `PrivacyPurgeGate` keeps the installed version code per database file and
+  scans only when it changes, so the demo file and the real ledger are tracked apart. A
+  restore purges the restored rows inside its own transaction. Tests for the gate and
+  for a restore of a backup holding a PIN and a text from a person.
 
 - 2026-11-06 · R48: A background failure no longer crashes the app. The application
   scope carries a `CoroutineExceptionHandler` from the new `BackgroundFailureLog`, which
