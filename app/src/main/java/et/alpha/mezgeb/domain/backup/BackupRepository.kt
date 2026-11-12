@@ -1,6 +1,7 @@
 package et.alpha.mezgeb.domain.backup
 
 import androidx.room.withTransaction
+import et.alpha.mezgeb.capture.PrivacyPurge
 import et.alpha.mezgeb.data.local.MezgebDatabase
 import kotlinx.serialization.json.Json
 import java.io.InputStream
@@ -81,6 +82,14 @@ class BackupRepository @Inject constructor(
                 payload.reconciliationSessions.forEach {
                     database.reconciliationSessionDao().insert(it)
                 }
+
+                // A backup written by an older build can hold messages this build
+                // refuses (credentials, texts from people). The launch-time purge has
+                // already run for this version and will not look again, so the restored
+                // rows are cleaned here, in the same transaction: a refused message is
+                // never visible, even for a moment, and a purge that fails rolls the
+                // restore back with it.
+                PrivacyPurge(database.rawMessageDao()).run()
             }
             RestoreSummary(payload.rowCount, decrypted.schemaVersion)
         }

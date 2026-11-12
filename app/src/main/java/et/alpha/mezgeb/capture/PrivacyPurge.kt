@@ -19,8 +19,9 @@ data class PurgeSummary(
  *
  * [CaptureCoordinator] now declines both kinds on the way in, which does nothing for
  * the phones that already have them. A PIN in a ledger, or a friend's message, does
- * not become harmless because the next version would not have kept it. This runs on
- * every launch and is idempotent, so it cleans up on update and costs one scan after.
+ * not become harmless because the next version would not have kept it. It is
+ * idempotent. [PrivacyPurgeGate] runs it once per installed version at launch, and a
+ * restore runs it on the restored rows.
  *
  * Two rules, both found by putting the app on a real phone:
  *

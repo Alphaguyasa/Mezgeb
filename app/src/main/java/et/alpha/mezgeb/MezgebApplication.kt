@@ -5,7 +5,7 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
 import et.alpha.mezgeb.capture.BackgroundFailureLog
-import et.alpha.mezgeb.capture.PrivacyPurge
+import et.alpha.mezgeb.capture.PrivacyPurgeGate
 import et.alpha.mezgeb.data.local.seed.DatabaseSeeder
 import et.alpha.mezgeb.data.settings.SettingsRepository
 import et.alpha.mezgeb.di.ApplicationScope
@@ -28,7 +28,7 @@ class MezgebApplication : Application(), Configuration.Provider {
 
     @Inject lateinit var reconcileReminders: ReconcileReminderScheduler
 
-    @Inject lateinit var privacyPurge: PrivacyPurge
+    @Inject lateinit var privacyPurge: PrivacyPurgeGate
 
     @Inject lateinit var failures: BackgroundFailureLog
 
@@ -58,7 +58,8 @@ class MezgebApplication : Application(), Configuration.Provider {
             // Before anything else touches the database: earlier builds stored messages
             // this one refuses — credentials, and private messages from people — and
             // they should not survive an update by a minute longer than they have to.
-            runCatching { privacyPurge.run() }.onFailure { failures.record() }
+            // The gate scans once per installed version, not on every launch.
+            runCatching { privacyPurge.runIfDue() }.onFailure { failures.record() }
 
             runCatching { seeder.seed() }.onFailure { failures.record() }
             // Capture health measures silence from here until the first message

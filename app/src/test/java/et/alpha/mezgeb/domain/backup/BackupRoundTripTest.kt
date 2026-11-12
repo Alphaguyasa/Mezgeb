@@ -103,6 +103,37 @@ class BackupRoundTripTest : DatabaseTest() {
     }
 
     @Test
+    fun `a restore removes messages this build refuses, keeping their payments`() = runTest {
+        // What a backup from an older build can hold: a PIN from an allowed sender and
+        // a text from a person, which earlier builds stored before the purge existed.
+        db.rawMessageDao().insertIgnoringDuplicates(
+            rawMessage(
+                "m_pin",
+                sender = "HIBRETBANK",
+                body = "Your Hibir Mobile TPIN has been reset successfully. New TPIN is 0000",
+                contentHash = "h_pin",
+            ),
+        )
+        db.rawMessageDao().insertIgnoringDuplicates(
+            rawMessage("m_person", sender = "+251900000009", body = "see you at 5", contentHash = "h_person"),
+        )
+        db.rawMessageDao().insertIgnoringDuplicates(
+            rawMessage("m_kept", sender = "CBE", body = "credited with ETB 450.00", contentHash = "h_kept"),
+        )
+        db.transactionDao().insert(transaction("t_pin", rawMessageId = "m_pin", occurredAt = T0))
+        val file = ByteArrayOutputStream()
+        repository.writeBackup(passphrase, file)
+        wipe()
+
+        repository.restore(ByteArrayInputStream(file.toByteArray()), passphrase).getOrThrow()
+
+        assertEquals(listOf("m_kept"), db.rawMessageDao().getAll().map { it.id })
+        // The payment stays; only its link to the refused text is gone.
+        assertNull(db.transactionDao().getById("t_pin")?.rawMessageId)
+        assertNotNull(db.transactionDao().getById("t_pin"))
+    }
+
+    @Test
     fun `a deleted transaction is backed up and comes back still deleted`() = runTest {
         seed()
         val file = ByteArrayOutputStream()
