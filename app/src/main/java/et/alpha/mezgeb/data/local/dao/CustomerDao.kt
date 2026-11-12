@@ -103,6 +103,11 @@ interface CustomerDao {
     )
     fun observeWithBalance(customerId: String): Flow<CustomerWithBalance?>
 
+    /**
+     * Customers whose name or phone contains [query], as a literal substring (the same
+     * `instr` match as the ledger search, so `%` and `_` are not wildcards). An empty
+     * [query] lists everyone.
+     */
     @Query(
         """
         SELECT c.id AS id,
@@ -121,7 +126,7 @@ interface CustomerDao {
         FROM customers c
         LEFT JOIN credit_entries e ON e.customerId = c.id
         WHERE c.isArchived = 0
-          AND (c.name LIKE '%' || :query || '%' OR c.phone LIKE '%' || :query || '%')
+          AND (instr(lower(c.name), lower(:query)) > 0 OR instr(lower(c.phone), lower(:query)) > 0)
         GROUP BY c.id
         ORDER BY balanceMinor DESC, c.name ASC
         """,

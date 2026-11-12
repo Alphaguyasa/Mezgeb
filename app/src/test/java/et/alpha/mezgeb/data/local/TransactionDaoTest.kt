@@ -142,6 +142,35 @@ class TransactionDaoTest : DatabaseTest() {
     }
 
     @Test
+    fun `search ignores ASCII case, as the old LIKE search did`() = runTest {
+        assertEquals(listOf("t1"), ids(query = "abebe"))
+        assertEquals(listOf("t4"), ids(query = "WALK-IN"))
+    }
+
+    @Test
+    fun `percent, underscore and backslash are searched literally, not as wildcards`() = runTest {
+        // No seeded row contains `%` or a backslash, so a wildcard reading would show
+        // up as every row coming back. "N_ME" would match the default "NAME_01" if `_`
+        // stood for any character.
+        assertTrue(ids(query = "%").isEmpty())
+        assertTrue(ids(query = "N_ME").isEmpty())
+        assertTrue(ids(query = "\\").isEmpty())
+
+        dao.insertAll(
+            listOf(
+                transaction("t8", direction = Direction.IN, amountMinor = 2_000, channel = Channel.CASH, occurredAt = T0 + 7 * DAY, note = "50% now, ref A_1 \\ rest later"),
+            ),
+        )
+
+        assertEquals(listOf("t8"), ids(query = "%"))
+        assertEquals(listOf("t8"), ids(query = "50%"))
+        assertEquals(listOf("t8"), ids(query = "A_1"))
+        assertEquals(listOf("t8"), ids(query = "\\"))
+        // "A_1" must not match "AAA1BBB2CC" (t1) through `_` standing for any character.
+        assertTrue(ids(query = "AA_1").isEmpty())
+    }
+
+    @Test
     fun `filters combine conjunctively`() = runTest {
         // IN + telebirr + within the first two days => t1 only.
         assertEquals(

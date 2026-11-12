@@ -129,6 +129,18 @@ class CustomerCreditDaoTest : DatabaseTest() {
         assertTrue(customers.searchWithBalance("zzz").first().isEmpty())
     }
 
+    @Test
+    fun `customer search treats percent and underscore literally`() = runTest {
+        customers.insert(customer("c1", name = "Abebe", phone = "+251900000001"))
+        customers.insert(customer("c2", name = "Shop_2", phone = null))
+
+        assertTrue(customers.searchWithBalance("%").first().isEmpty())
+        assertEquals(listOf("c2"), customers.searchWithBalance("_").first().map { it.id })
+        assertEquals(listOf("c1"), customers.searchWithBalance("abebe").first().map { it.id })
+        // An empty search still lists everyone, as the screen expects before typing.
+        assertEquals(2, customers.searchWithBalance("").first().size)
+    }
+
     // --- Running statement ---------------------------------------------------------
 
     @Test

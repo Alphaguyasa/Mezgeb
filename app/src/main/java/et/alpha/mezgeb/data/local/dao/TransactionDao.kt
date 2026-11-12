@@ -129,7 +129,11 @@ interface TransactionDao {
      * is "only rows that may be counted twice". A dismissed flag is cleared to null,
      * which is why a dismissed row drops out of that view.
      *
-     * [query] searches counterparty name, phone, provider reference and note.
+     * [query] searches counterparty name, phone, provider reference and note. It is a
+     * plain substring match, `instr(lower(column), lower(query)) > 0`, rather than
+     * `LIKE '%' || query || '%'`: with LIKE, a typed `%` or `_` acts as a wildcard and
+     * a search for `%` lists every row. `lower()` folds ASCII case only, which is
+     * exactly what LIKE did, so searches that worked before still match the same rows.
      */
     @Query(
         """
@@ -144,10 +148,10 @@ interface TransactionDao {
           AND (:isPossibleDuplicate IS NULL OR (possibleDuplicateOfId IS NOT NULL) = :isPossibleDuplicate)
           AND (
                 :query IS NULL
-                OR counterpartyName LIKE '%' || :query || '%'
-                OR counterpartyPhone LIKE '%' || :query || '%'
-                OR providerTxnId LIKE '%' || :query || '%'
-                OR note LIKE '%' || :query || '%'
+                OR instr(lower(counterpartyName), lower(:query)) > 0
+                OR instr(lower(counterpartyPhone), lower(:query)) > 0
+                OR instr(lower(providerTxnId), lower(:query)) > 0
+                OR instr(lower(note), lower(:query)) > 0
               )
         ORDER BY occurredAt DESC, id DESC
         """,
@@ -177,10 +181,10 @@ interface TransactionDao {
           AND (:isPossibleDuplicate IS NULL OR (possibleDuplicateOfId IS NOT NULL) = :isPossibleDuplicate)
           AND (
                 :query IS NULL
-                OR counterpartyName LIKE '%' || :query || '%'
-                OR counterpartyPhone LIKE '%' || :query || '%'
-                OR providerTxnId LIKE '%' || :query || '%'
-                OR note LIKE '%' || :query || '%'
+                OR instr(lower(counterpartyName), lower(:query)) > 0
+                OR instr(lower(counterpartyPhone), lower(:query)) > 0
+                OR instr(lower(providerTxnId), lower(:query)) > 0
+                OR instr(lower(note), lower(:query)) > 0
               )
         ORDER BY occurredAt DESC, id DESC
         """,
@@ -270,10 +274,10 @@ interface TransactionDao {
           AND (:isPossibleDuplicate IS NULL OR (possibleDuplicateOfId IS NOT NULL) = :isPossibleDuplicate)
           AND (
                 :query IS NULL
-                OR counterpartyName LIKE '%' || :query || '%'
-                OR counterpartyPhone LIKE '%' || :query || '%'
-                OR providerTxnId LIKE '%' || :query || '%'
-                OR note LIKE '%' || :query || '%'
+                OR instr(lower(counterpartyName), lower(:query)) > 0
+                OR instr(lower(counterpartyPhone), lower(:query)) > 0
+                OR instr(lower(providerTxnId), lower(:query)) > 0
+                OR instr(lower(note), lower(:query)) > 0
               )
         GROUP BY dayEpochMillis
         ORDER BY dayEpochMillis DESC
