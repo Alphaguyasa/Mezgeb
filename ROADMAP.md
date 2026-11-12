@@ -23,7 +23,7 @@ and R38 and R39 were checked by hand against the code. R38 and R39 part 1 were d
 the list then fell to 4 (all blocked), so the same run replanned: R45 to R53 come from a
 fresh code audit. R45 was done the same run. R45, R46 and R47 were checked by hand against the code; the others
 carry the audit's file and line evidence and are re-checked when picked up. R46 and R47 were done on
-2026-11-05. R48 and R49 were done on 2026-11-06. On 2026-11-12 the "Make Mezgeb sellable" milestone was added at the top, and R53 and R51 were done.
+2026-11-05. R48 and R49 were done on 2026-11-06. On 2026-11-12 the "Make Mezgeb sellable" milestone was added at the top, and R53, R51 and R52 were done.
 
 ## M-next: Make Mezgeb sellable
 
@@ -33,7 +33,7 @@ The next milestone. Its items come before the rest of the open list.
 - [x] R53: ledger and customer search treat `%` and `_` literally, with DAO tests (2026-11-12)
 - [x] R51: the privacy purge runs once per app version and after a restore (2026-11-12)
 - [ ] R50: built-in category names shown in the app's language
-- [ ] R52: "Not a payment" dismisses a message in the review queue
+- [x] R52: "Not a payment" dismisses a message in the review queue (2026-11-12)
 - [ ] Decide who holds the release keystore, then add a signed release workflow
 - [ ] A weekly "money you may have missed" card built from the reconcile results
 - [ ] A guided demo tour over demo mode, Amharic first
@@ -67,13 +67,6 @@ every screen and the report show `category.name` as stored. Fix: map the system 
 (`cat_*`) to string resources at display time. Names the shop typed stay. No migration.
 Tests: the resolver in the `am` locale.
 
-### R52 · P3 · S: A message in the review queue can never be dismissed
-`ReviewEvent` has only `Reprocess`. Promotions from an allowed sender stay forever and
-reconcile counts their sniffed amounts as possible explanations
-(`ReconcilePeriodUseCase.kt:183-191`). Fix: "Not a payment" marks an `UNMATCHED` row
-`IGNORED`. Strings in both languages. Tests: the event, reconcile no longer counts it,
-a parsed row is refused.
-
 ### R10 · P1 · L: Encrypt the database at rest
 **Blocked: see the decision log A1.** This needs a new native dependency
 (SQLCipher), a one-time migration of the plaintext database, and a decision on
@@ -94,7 +87,11 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 
 ## Done
 
-- 2026-11-12 · R53: Ledger and customer search treat `%`, `_` and `\\` literally. Both
+- 2026-11-12 · R52: A waiting message can be dismissed as "Not a payment" from the rule
+  screen, in English and Amharic. It is marked `IGNORED`, leaves the review queue and is
+  no longer counted by reconcile. One message at a time, not the whole sender; a message
+  parsed or recorded by hand meanwhile is left alone. DAO and view model tests.
+- 2026-11-12 · R53: Ledger and customer search treat `%`, `_` and `\` literally. Both
   searches use `instr(lower(column), lower(query)) > 0` instead of `LIKE`, which keeps
   the same ASCII case folding. DAO tests for each character and for case.
 - 2026-11-12 · R51: The privacy purge no longer scans every stored message on every
