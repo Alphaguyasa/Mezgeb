@@ -23,7 +23,7 @@ and R38 and R39 were checked by hand against the code. R38 and R39 part 1 were d
 the list then fell to 4 (all blocked), so the same run replanned: R45 to R53 come from a
 fresh code audit. R45 was done the same run. R45, R46 and R47 were checked by hand against the code; the others
 carry the audit's file and line evidence and are re-checked when picked up. R46 and R47 were done on
-2026-11-05. R48 and R49 were done on 2026-11-06. On 2026-11-12 the "Make Mezgeb sellable" milestone was added at the top, and R53, R51 and R52 were done.
+2026-11-05. R48 and R49 were done on 2026-11-06. On 2026-11-12 the "Make Mezgeb sellable" milestone was added at the top, and R53, R51 and R52 were done. On 2026-11-18 R50, the weekly card and the demo tour were done, and the "Daily habit" milestone was added after it.
 
 ## M-next: Make Mezgeb sellable
 
@@ -32,12 +32,21 @@ The next milestone. Its items come before the rest of the open list.
 - [ ] Decide what capture does during a demo (decision log A9), then finish R39 part 2 with tests
 - [x] R53: ledger and customer search treat `%` and `_` literally, with DAO tests (2026-11-12)
 - [x] R51: the privacy purge runs once per app version and after a restore (2026-11-12)
-- [ ] R50: built-in category names shown in the app's language
+- [x] R50: built-in category names shown in the app's language (2026-11-18)
 - [x] R52: "Not a payment" dismisses a message in the review queue (2026-11-12)
 - [ ] Decide who holds the release keystore, then add a signed release workflow
-- [ ] A weekly "money you may have missed" card built from the reconcile results
-- [ ] A guided demo tour over demo mode, Amharic first
-- [ ] A one-page sales sheet (problem, promise, price), for approval
+- [x] A weekly "money you may have missed" card built from the reconcile results (2026-11-18)
+- [x] A guided demo tour over demo mode, Amharic first (2026-11-18)
+- [ ] A one-page sales sheet (problem, promise, price), for approval: drafted, waiting on the decision log A10
+
+## M-after: Daily habit
+
+After "Make Mezgeb sellable". Small features that make the app something a shop opens every evening.
+
+- [x] Share a credit reminder through the share sheet (Telegram or any app), no phone number needed (2026-11-18)
+- [ ] A nightly check at closing time: "messages say +3,200; you recorded 3,000; 200 birr unexplained", built on the weekly card
+- [ ] Print a receipt or a customer statement through the share sheet, to the cheap thermal printers shops already have
+- [ ] A short voice note on a ledger entry (needs the microphone permission: decision log first)
 
 ### Later
 
@@ -61,12 +70,6 @@ mode is on, with a message. Part 2 waits on **the decision log A9** (what captur
 does during a demo). Tests: restore in demo mode is refused and nothing is written;
 part 2 per the decision.
 
-### R50 · P2 · S: Built-in category names show in English in the Amharic UI
-`DatabaseSeeder.SYSTEM_CATEGORIES` stores "Sales", "Rent" and the rest as literals, and
-every screen and the report show `category.name` as stored. Fix: map the system ids
-(`cat_*`) to string resources at display time. Names the shop typed stay. No migration.
-Tests: the resolver in the `am` locale.
-
 ### R10 · P1 · L: Encrypt the database at rest
 **Blocked: see the decision log A1.** This needs a new native dependency
 (SQLCipher), a one-time migration of the plaintext database, and a decision on
@@ -87,6 +90,18 @@ versioned as `<kotlin>-<ksp>`. The comment in `libs.versions.toml` and the
 
 ## Done
 
+- 2026-11-18 · Share the reminder: the customer screen can share the filled-in credit
+  reminder through the share sheet (Telegram or any app), without a phone number, only
+  when money is owed. A person still picks the app and presses send. Tests.
+- 2026-11-18 · Demo tour: demo mode opens a five-stop guided tour (Today, ledger, credit
+  book, Reconcile, Reports), Amharic first. Each stop moves the app to its screen; Back,
+  Next, Finish and Close. Tests for the order and the card in Amharic.
+- 2026-11-18 · Weekly "money you may have missed" card on Today, from the reconcile
+  explanations for the last seven days: balance jumps and unread amounts lead, a possible
+  double count is its own line and never added. Hidden on a clean week. Tests.
+- 2026-11-18 · R50: built-in category names follow the app's language on every screen,
+  in the report and in the PDF. Renamed and custom categories show as typed; CSV keeps
+  stored names. Tests in the Amharic configuration.
 - 2026-11-12 · R52: A waiting message can be dismissed as "Not a payment" from the rule
   screen, in English and Amharic. It is marked `IGNORED`, leaves the review queue and is
   no longer counted by reconcile. One message at a time, not the whole sender; a message
