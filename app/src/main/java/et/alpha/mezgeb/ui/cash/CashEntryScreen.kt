@@ -42,6 +42,7 @@ import et.alpha.mezgeb.designsystem.component.AmountKeypad
 import et.alpha.mezgeb.designsystem.component.BackButton
 import et.alpha.mezgeb.designsystem.component.MezgebScaffold
 import et.alpha.mezgeb.domain.model.Direction
+import et.alpha.mezgeb.ui.common.categoryLabel
 import et.alpha.mezgeb.ui.common.rememberDayLabel
 import et.alpha.mezgeb.util.MezgebDates
 import et.alpha.mezgeb.util.MoneyFormatter
@@ -147,7 +148,8 @@ fun CashEntryScreen(
                         onClick = { categoryExpanded = true },
                         label = {
                             Text(
-                                state.categories.firstOrNull { it.id == state.categoryId }?.name
+                                state.categories.firstOrNull { it.id == state.categoryId }
+                                    ?.let { categoryLabel(it.id, it.name) }
                                     ?: stringResource(R.string.detail_category_none),
                             )
                         },
@@ -165,7 +167,7 @@ fun CashEntryScreen(
                         )
                         state.categories.forEach { category ->
                             DropdownMenuItem(
-                                text = { Text(category.name) },
+                                text = { Text(categoryLabel(category.id, category.name)) },
                                 onClick = {
                                     onEvent(CashEntryEvent.CategoryPicked(category.id))
                                     categoryExpanded = false

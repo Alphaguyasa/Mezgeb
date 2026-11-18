@@ -65,6 +65,7 @@ import et.alpha.mezgeb.designsystem.component.label
 import et.alpha.mezgeb.domain.model.Channel
 import et.alpha.mezgeb.domain.model.Direction
 import et.alpha.mezgeb.domain.model.Transaction
+import et.alpha.mezgeb.ui.common.categoryLabel
 import et.alpha.mezgeb.ui.common.rememberDayLabel
 import et.alpha.mezgeb.ui.common.rememberTimeLabel
 import et.alpha.mezgeb.util.MezgebDates
@@ -313,7 +314,10 @@ private fun CategorySection(
                 selected = state.categoryName != null,
                 onClick = { expanded = true },
                 label = {
-                    Text(state.categoryName ?: stringResource(R.string.detail_category_none))
+                    Text(
+                        state.categoryName?.let { categoryLabel(state.transaction?.categoryId, it) }
+                            ?: stringResource(R.string.detail_category_none),
+                    )
                 },
             )
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -326,7 +330,7 @@ private fun CategorySection(
                 )
                 state.categories.forEach { category ->
                     DropdownMenuItem(
-                        text = { Text(category.name) },
+                        text = { Text(categoryLabel(category.id, category.name)) },
                         onClick = {
                             onEvent(
                                 TransactionDetailEvent.CategoryPicked(category.id, alwaysApply),

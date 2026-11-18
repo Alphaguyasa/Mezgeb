@@ -48,6 +48,8 @@ data class TransactionUiModel(
     val counterparty: String?,
     val occurredAt: Long,
     val categoryName: String?,
+    /** Kept beside the name so a built-in category can be shown in the app's language. */
+    val categoryId: String? = null,
     val isEdited: Boolean,
     val isReconciled: Boolean,
     val isPossibleDuplicate: Boolean = false,
@@ -61,6 +63,7 @@ fun Transaction.toUiModel(categoryName: String?): TransactionUiModel = Transacti
     counterparty = counterpartyName ?: counterpartyPhone,
     occurredAt = occurredAt,
     categoryName = categoryName,
+    categoryId = categoryId,
     isEdited = isEdited,
     isReconciled = isReconciled,
     isPossibleDuplicate = isPossibleDuplicate,
@@ -119,7 +122,7 @@ fun TransactionRow(
                 )
                 if (transaction.categoryName != null) {
                     Text(
-                        text = transaction.categoryName,
+                        text = categoryLabel(transaction.categoryId, transaction.categoryName),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,

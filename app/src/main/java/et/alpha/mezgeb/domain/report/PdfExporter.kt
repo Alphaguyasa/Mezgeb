@@ -7,6 +7,7 @@ import android.graphics.pdf.PdfDocument
 import androidx.core.content.res.ResourcesCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import et.alpha.mezgeb.R
+import et.alpha.mezgeb.ui.common.CategoryLabels
 import et.alpha.mezgeb.util.MezgebDates
 import et.alpha.mezgeb.util.MoneyFormatter
 import java.io.OutputStream
@@ -84,7 +85,8 @@ class PdfExporter @Inject constructor(
         canvas.drawText(context.getString(R.string.report_by_category), MARGIN, y, heading)
         y += 18f
         report.byCategory.forEach { slice ->
-            canvas.drawText(slice.label, MARGIN, y, body)
+            val label = CategoryLabels.label(context, slice.categoryId, slice.label)
+            canvas.drawText(label, MARGIN, y, body)
             canvas.drawText(
                 MoneyFormatter.format(slice.amountMinor) + "   " + percent(slice.share),
                 VALUE_COLUMN,

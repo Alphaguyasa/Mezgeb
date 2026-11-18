@@ -60,6 +60,7 @@ import et.alpha.mezgeb.domain.report.BreakdownSlice
 import et.alpha.mezgeb.domain.report.DailyNet
 import et.alpha.mezgeb.domain.report.Report
 import et.alpha.mezgeb.domain.report.ReportPeriod
+import et.alpha.mezgeb.ui.common.categoryLabel
 import et.alpha.mezgeb.ui.common.rememberDayLabel
 import et.alpha.mezgeb.ui.common.spokenDailyNet
 import et.alpha.mezgeb.ui.common.spokenNet
@@ -288,7 +289,7 @@ private fun LazyListScope.breakdown(
     items(slices.size) { index ->
         val slice = slices[index]
         LabelledAmountRow(
-            label = slice.label,
+            label = slice.categoryId?.let { categoryLabel(it, slice.label) } ?: slice.label,
             amountMinor = slice.amountMinor,
             trailing = "%.0f%%".format(slice.share * 100),
         )

@@ -522,4 +522,11 @@
         <item quantity="other">This happened %1$d times, last on %2$s. It usually means the phone\'s storage is full, so free up some space. A payment that arrived then may be missing: compare your telebirr and bank messages with the ledger.</item>
     </plurals>
     <string name="today_failures_dismiss">OK</string>
+    <string name="category_sales">Sales</string>
+    <string name="category_supplier">Supplier payment</string>
+    <string name="category_rent">Rent</string>
+    <string name="category_utilities">Utilities</string>
+    <string name="category_salary">Salary</string>
+    <string name="category_transfer">Transfer</string>
+    <string name="category_other">Other</string>
 </resources>

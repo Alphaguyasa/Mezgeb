@@ -469,4 +469,11 @@
         <item quantity="other">ይህ %1$d ጊዜ ተከስቷል፤ የመጨረሻው %2$s ላይ ነበር። ብዙውን ጊዜ የስልኩ ማከማቻ ሲሞላ ይከሰታል፤ ስለዚህ ቦታ ያስለቅቁ። በዚያ ጊዜ የደረሰ ክፍያ ከመዝገቡ ሊጎድል ይችላል፤ የቴሌብር እና የባንክ መልእክቶችዎን ከመዝገቡ ጋር ያወዳድሩ።</item>
     </plurals>
     <string name="today_failures_dismiss">እሺ</string>
+    <string name="category_sales">ሽያጭ</string>
+    <string name="category_supplier">ለአቅራቢ ክፍያ</string>
+    <string name="category_rent">ኪራይ</string>
+    <string name="category_utilities">መብራት፣ ውሃና ስልክ</string>
+    <string name="category_salary">ደመወዝ</string>
+    <string name="category_transfer">ዝውውር</string>
+    <string name="category_other">ሌላ</string>
 </resources>

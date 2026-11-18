@@ -35,6 +35,7 @@ import et.alpha.mezgeb.designsystem.component.label
 import et.alpha.mezgeb.domain.model.Category
 import et.alpha.mezgeb.domain.model.Channel
 import et.alpha.mezgeb.domain.model.Direction
+import et.alpha.mezgeb.ui.common.categoryLabel
 
 /**
  * Search and filters, pinned above the list.
@@ -190,7 +191,7 @@ private fun CategoryChip(
     onEvent: (LedgerEvent) -> Unit,
 ) {
     val selected = categories.firstOrNull { it.id == filter.categoryId }
-    val label = selected?.name ?: stringResource(R.string.ledger_filter_category_any)
+    val label = selected?.let { categoryLabel(it.id, it.name) } ?: stringResource(R.string.ledger_filter_category_any)
     MenuChip(selected = filter.categoryId != null, label = label) { dismiss ->
         DropdownMenuItem(
             text = { Text(stringResource(R.string.ledger_filter_category_any)) },
@@ -201,7 +202,7 @@ private fun CategoryChip(
         )
         categories.forEach { category ->
             DropdownMenuItem(
-                text = { Text(category.name) },
+                text = { Text(categoryLabel(category.id, category.name)) },
                 onClick = {
                     onEvent(LedgerEvent.FilterChanged(filter.copy(categoryId = category.id)))
                     dismiss()

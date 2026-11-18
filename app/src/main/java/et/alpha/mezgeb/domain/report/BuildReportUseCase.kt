@@ -31,6 +31,11 @@ data class BreakdownSlice(
     val amountMinor: Long,
     val share: Float,
     val transactionCount: Int,
+    /**
+     * Set on a category slice, so the screen and the PDF can show a built-in
+     * category in the app's language. Null on channel slices and on "no category".
+     */
+    val categoryId: String? = null,
 )
 
 /** Net for one day, for the chart. Days with no activity are present and zero. */
@@ -127,6 +132,7 @@ class BuildReportUseCase @Inject constructor(
                 amountMinor = row.totalMinor,
                 share = share(row.totalMinor, total),
                 transactionCount = row.transactionCount,
+                categoryId = row.categoryId?.takeIf { it in names },
             )
         }
     }
