@@ -71,4 +71,18 @@ class ReminderMessageTest {
         assertTrue(intent.action != Intent.ACTION_SEND)
         assertTrue(intent.action != "android.intent.action.SENDTO_SMS")
     }
+
+    @Test
+    fun `the shared reminder opens a chooser with the text and no recipient`() {
+        val chooser = ReminderMessage.shareIntent("ሰላም አበበ", "Share")
+
+        // A chooser, so a person picks the app every time; nothing is sent by itself.
+        assertEquals(Intent.ACTION_CHOOSER, chooser.action)
+        @Suppress("DEPRECATION")
+        val send = chooser.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)!!
+        assertEquals(Intent.ACTION_SEND, send.action)
+        assertEquals("text/plain", send.type)
+        assertEquals("ሰላም አበበ", send.getStringExtra(Intent.EXTRA_TEXT))
+        assertEquals(null, send.data)
+    }
 }

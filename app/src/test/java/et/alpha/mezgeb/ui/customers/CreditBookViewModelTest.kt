@@ -204,6 +204,21 @@ class CreditBookViewModelTest : DatabaseTest() {
     }
 
     @Test
+    fun `the reminder can be shared without a phone, but only when money is owed`() = runTest {
+        seedCustomer("c1", "Abebe", givenMinor = 50_000, phone = null)
+        seedCustomer("c2", "Chaltu", givenMinor = 0, phone = null)
+
+        detailViewModel("c1").state.test {
+            assertTrue(awaitItemWhere { it.credit != null }.canShareReminder)
+            cancelAndIgnoreRemainingEvents()
+        }
+        detailViewModel("c2").state.test {
+            assertFalse(awaitItemWhere { it.credit != null }.canShareReminder)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `the reminder uses the shop's own wording when it has set one`() = runTest {
         seedCustomer("c1", "Abebe", givenMinor = 45_000, phone = "+251911000001")
         settingsHarness.repository.setReminderTemplate("Ato {name}, {amount} qq.")

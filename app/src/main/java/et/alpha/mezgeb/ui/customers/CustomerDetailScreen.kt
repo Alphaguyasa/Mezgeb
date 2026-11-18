@@ -71,6 +71,7 @@ fun CustomerDetailRoute(
     val defaultTemplate = stringResource(R.string.credit_reminder_default_template)
     val statementLabels = shareLabels()
     val shareChooserTitle = stringResource(R.string.credit_share_statement)
+    val shareReminderTitle = stringResource(R.string.credit_share_reminder)
     val locale = LocalConfiguration.current.locales[0]
 
     // Archiving takes the customer off this list; there is nothing left to look at.
@@ -90,6 +91,11 @@ fun CustomerDetailRoute(
             val message = viewModel.reminderMessage(defaultTemplate)
             if (phone != null && message != null) {
                 context.startSafely(ReminderMessage.intent(phone, message))
+            }
+        },
+        onShareReminder = {
+            viewModel.reminderMessage(defaultTemplate)?.let { message ->
+                context.startSafely(ReminderMessage.shareIntent(message, shareReminderTitle))
             }
         },
         onShareStatement = {
@@ -130,6 +136,7 @@ fun CustomerDetailScreen(
     modifier: Modifier = Modifier,
     onOpenEntry: (entryId: String) -> Unit = {},
     onShareStatement: () -> Unit = {},
+    onShareReminder: () -> Unit = {},
 ) {
     val spacing = MezgebTheme.spacing
     val credit = state.credit
@@ -212,6 +219,22 @@ fun CustomerDetailScreen(
                             .heightIn(min = spacing.touchTarget),
                     ) {
                         Text(stringResource(R.string.credit_send_reminder))
+                    }
+                }
+            }
+
+            if (state.canShareReminder) {
+                item("share_reminder") {
+                    OutlinedButton(
+                        onClick = onShareReminder,
+                        modifier = Modifier
+                            .padding(
+                                horizontal = spacing.screenGutter,
+                                vertical = spacing.sm,
+                            )
+                            .heightIn(min = spacing.touchTarget),
+                    ) {
+                        Text(stringResource(R.string.credit_share_reminder))
                     }
                 }
             }

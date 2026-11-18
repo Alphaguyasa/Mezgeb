@@ -40,6 +40,19 @@ object ReminderMessage {
             .putExtra(Intent.EXTRA_TEXT, message)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
+    /**
+     * The same reminder through the share sheet, for a customer the shop reaches on
+     * Telegram or another app rather than by SMS, or one with no phone saved. Still a
+     * person picks the app and presses send; this only fills in the text.
+     */
+    fun shareIntent(message: String, chooserTitle: String): Intent {
+        val send = Intent(Intent.ACTION_SEND)
+            .setType("text/plain")
+            .putExtra(Intent.EXTRA_TEXT, message)
+        return Intent.createChooser(send, chooserTitle)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+
     const val PLACEHOLDER_NAME = "{name}"
     const val PLACEHOLDER_AMOUNT = "{amount}"
 }

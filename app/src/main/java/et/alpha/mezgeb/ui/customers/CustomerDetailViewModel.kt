@@ -35,6 +35,12 @@ data class CustomerDetailUiState(
     val canRemind: Boolean
         get() = credit?.owesMoney == true && !credit.customer.phone.isNullOrBlank()
 
+    /**
+     * Sharing the reminder needs no phone number: the share sheet can go to Telegram,
+     * where many shops talk to their customers, or to any other app.
+     */
+    val canShareReminder: Boolean get() = credit?.owesMoney == true
+
     val isEmpty: Boolean get() = statement.isEmpty()
 
     /** No phone needed: the share sheet can go to any app, or to a printer. */

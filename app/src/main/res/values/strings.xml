@@ -235,6 +235,7 @@
     <string name="credit_record_repayment">Record payment</string>
     <string name="credit_send_reminder">Send a reminder</string>
     <string name="credit_share_statement">Share statement</string>
+    <string name="credit_share_reminder">Share the reminder (Telegram, other apps)</string>
     <!-- The shared statement text. Sent by an app the shop owner picks, never by Mezgeb. -->
     <string name="credit_share_title">Statement for {name}</string>
     <!-- Placeholders: {name}; {day} {kind} {amount} {balance}. Keep the braces. -->
