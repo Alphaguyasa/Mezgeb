@@ -529,4 +529,23 @@
     <string name="category_salary">Salary</string>
     <string name="category_transfer">Transfer</string>
     <string name="category_other">Other</string>
+    <string name="today_missed_title">Money to check this week</string>
+    <string name="today_missed_headline">Up to %1$s may be missing from your ledger</string>
+    <plurals name="today_missed_balance_jumps">
+        <item quantity="one">%1$s in %2$d balance change no message explains</item>
+        <item quantity="other">%1$s in %2$d balance changes no message explains</item>
+    </plurals>
+    <plurals name="today_missed_unread_with_amount">
+        <item quantity="one">%1$s in %2$d message Mezgeb could not read</item>
+        <item quantity="other">%1$s in %2$d messages Mezgeb could not read</item>
+    </plurals>
+    <plurals name="today_missed_unread">
+        <item quantity="one">%1$d message Mezgeb could not read</item>
+        <item quantity="other">%1$d messages Mezgeb could not read</item>
+    </plurals>
+    <plurals name="today_missed_duplicates">
+        <item quantity="one">%1$s may be counted twice (%2$d payment)</item>
+        <item quantity="other">%1$s may be counted twice (%2$d payments)</item>
+    </plurals>
+    <string name="today_missed_action">Check in Reconcile</string>
 </resources>

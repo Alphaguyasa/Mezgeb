@@ -59,6 +59,7 @@ import et.alpha.mezgeb.designsystem.component.MoneyText
 import et.alpha.mezgeb.domain.backup.BackupReminder
 import et.alpha.mezgeb.domain.model.Channel
 import et.alpha.mezgeb.domain.model.Direction
+import et.alpha.mezgeb.domain.reconcile.MissedMoney
 import et.alpha.mezgeb.ui.common.TransactionRow
 import et.alpha.mezgeb.ui.common.TransactionUiModel
 import et.alpha.mezgeb.ui.common.spokenNet
@@ -201,6 +202,20 @@ fun TodayScreen(
                     BackgroundFailuresCard(
                         failures = failures,
                         onDismiss = { onEvent(TodayEvent.BackgroundFailuresDismissed) },
+                        modifier = Modifier.padding(
+                            start = spacing.screenGutter,
+                            end = spacing.screenGutter,
+                            bottom = spacing.lg,
+                        ),
+                    )
+                }
+            }
+
+            state.missedThisWeek?.let { missed ->
+                item("missed") {
+                    MissedMoneyCard(
+                        missed = missed,
+                        onCheck = onOpenReconcile,
                         modifier = Modifier.padding(
                             start = spacing.screenGutter,
                             end = spacing.screenGutter,
@@ -506,6 +521,93 @@ private fun BackupReminderCard(
                 ) {
                     Text(stringResource(R.string.today_backup_reminder_dismiss))
                 }
+            }
+        }
+    }
+}
+
+/**
+ * The week's money to check, in one card. It leads with what may be missing, because
+ * that is what costs the shop; a possible double count gets its own line, never added
+ * to the missing figure. The button opens Reconcile, which lists each item.
+ */
+@Composable
+internal fun MissedMoneyCard(
+    missed: MissedMoney,
+    onCheck: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val spacing = MezgebTheme.spacing
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(spacing.xs),
+        ) {
+            Text(
+                text = stringResource(R.string.today_missed_title),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            if (missed.possiblyMissingMinor > 0) {
+                Text(
+                    text = stringResource(
+                        R.string.today_missed_headline,
+                        MoneyFormatter.format(missed.possiblyMissingMinor),
+                    ),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+            if (missed.balanceJumpCount > 0) {
+                Text(
+                    text = pluralStringResource(
+                        R.plurals.today_missed_balance_jumps,
+                        missed.balanceJumpCount,
+                        MoneyFormatter.format(missed.balanceJumpMinor),
+                        missed.balanceJumpCount,
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+            if (missed.unreadMessageCount > 0) {
+                Text(
+                    text = if (missed.unreadMinor > 0) {
+                        pluralStringResource(
+                            R.plurals.today_missed_unread_with_amount,
+                            missed.unreadMessageCount,
+                            MoneyFormatter.format(missed.unreadMinor),
+                            missed.unreadMessageCount,
+                        )
+                    } else {
+                        pluralStringResource(
+                            R.plurals.today_missed_unread,
+                            missed.unreadMessageCount,
+                            missed.unreadMessageCount,
+                        )
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+            if (missed.possibleDuplicateCount > 0) {
+                Text(
+                    text = pluralStringResource(
+                        R.plurals.today_missed_duplicates,
+                        missed.possibleDuplicateCount,
+                        MoneyFormatter.format(missed.possibleDuplicatesMinor),
+                        missed.possibleDuplicateCount,
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+            TextButton(
+                onClick = onCheck,
+                modifier = Modifier.heightIn(min = spacing.touchTarget),
+            ) {
+                Text(stringResource(R.string.today_missed_action))
             }
         }
     }

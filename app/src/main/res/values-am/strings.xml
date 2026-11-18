@@ -476,4 +476,23 @@
     <string name="category_salary">ደመወዝ</string>
     <string name="category_transfer">ዝውውር</string>
     <string name="category_other">ሌላ</string>
+    <string name="today_missed_title">በዚህ ሳምንት የሚታይ ገንዘብ</string>
+    <string name="today_missed_headline">እስከ %1$s ከመዝገብዎ ሊጎድል ይችላል</string>
+    <plurals name="today_missed_balance_jumps">
+        <item quantity="one">%1$s በ%2$d የቀሪ ሂሳብ ለውጥ፣ የትኛውም መልእክት ያላብራራው</item>
+        <item quantity="other">%1$s በ%2$d የቀሪ ሂሳብ ለውጦች፣ የትኛውም መልእክት ያላብራራቸው</item>
+    </plurals>
+    <plurals name="today_missed_unread_with_amount">
+        <item quantity="one">%1$s መዝገብ ማንበብ ባልቻለው %2$d መልእክት</item>
+        <item quantity="other">%1$s መዝገብ ማንበብ ባልቻላቸው %2$d መልእክቶች</item>
+    </plurals>
+    <plurals name="today_missed_unread">
+        <item quantity="one">መዝገብ ማንበብ ያልቻለው %1$d መልእክት</item>
+        <item quantity="other">መዝገብ ማንበብ ያልቻላቸው %1$d መልእክቶች</item>
+    </plurals>
+    <plurals name="today_missed_duplicates">
+        <item quantity="one">%1$s ሁለት ጊዜ ተቆጥሮ ሊሆን ይችላል (%2$d ክፍያ)</item>
+        <item quantity="other">%1$s ሁለት ጊዜ ተቆጥሮ ሊሆን ይችላል (%2$d ክፍያዎች)</item>
+    </plurals>
+    <string name="today_missed_action">በማስታረቅ ይመልከቱ</string>
 </resources>

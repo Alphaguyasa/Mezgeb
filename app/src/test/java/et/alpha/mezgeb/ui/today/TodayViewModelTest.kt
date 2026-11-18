@@ -13,6 +13,7 @@ import et.alpha.mezgeb.data.local.DatabaseTest
 import et.alpha.mezgeb.data.local.category
 import et.alpha.mezgeb.data.local.rawMessage
 import et.alpha.mezgeb.data.local.transaction
+import et.alpha.mezgeb.data.repo.CustomerRepository
 import et.alpha.mezgeb.data.repo.RuleRepository
 import et.alpha.mezgeb.data.repo.TransactionRepository
 import et.alpha.mezgeb.data.settings.SettingsHarness
@@ -21,6 +22,8 @@ import et.alpha.mezgeb.domain.backup.BackupReminderPolicy
 import et.alpha.mezgeb.domain.model.Channel
 import et.alpha.mezgeb.domain.model.Direction
 import et.alpha.mezgeb.domain.model.ParseState
+import et.alpha.mezgeb.domain.reconcile.ExpectedSalesProvider
+import et.alpha.mezgeb.domain.reconcile.ReconcilePeriodUseCase
 import et.alpha.mezgeb.util.LocalDays
 import et.alpha.mezgeb.util.MezgebDates
 import kotlinx.coroutines.Dispatchers
@@ -44,6 +47,8 @@ import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
+
+private const val HOUR_MILLIS = 60 * 60 * 1000L
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TodayViewModelTest : DatabaseTest() {
@@ -331,7 +336,53 @@ class TodayViewModelTest : DatabaseTest() {
         settings = settingsHarness.repository,
         clock = clock,
         days = LocalDays { day },
+        reconcile = ReconcilePeriodUseCase(
+            transactions = transactions,
+            customers = CustomerRepository(db.customerDao(), db.creditEntryDao()),
+            expectedSales = object : ExpectedSalesProvider {
+                override suspend fun expectedTotalMinor(periodStart: Long, periodEnd: Long): Long? = null
+            },
+        ),
     )
+
+    @Test
+    fun `a clean week shows no missed-money card`() = runTest {
+        val today = MezgebDates.dayBounds(now, zone)
+        db.transactionDao().insertAll(
+            listOf(transaction("t1", amountMinor = 45_000, occurredAt = today.first + 1)),
+        )
+
+        viewModel().state.test {
+            val state = awaitItemWhere { !it.isLoading && it.recent.isNotEmpty() }
+            assertNull(state.missedThisWeek)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a possible double count this week is shown apart from missing money`() = runTest {
+        val today = MezgebDates.dayBounds(now, zone)
+        // Three days ago is inside the seven-day window; ten days ago is not.
+        val threeDaysAgo = today.first - 3 * MezgebDates.DAY_MILLIS + HOUR_MILLIS
+        val tenDaysAgo = today.first - 10 * MezgebDates.DAY_MILLIS + HOUR_MILLIS
+        db.transactionDao().insertAll(
+            listOf(
+                transaction("a", amountMinor = 45_000, occurredAt = threeDaysAgo),
+                transaction("b", amountMinor = 45_000, occurredAt = threeDaysAgo + 30_000, possibleDuplicateOfId = "a"),
+                transaction("old", amountMinor = 9_000, occurredAt = tenDaysAgo),
+                transaction("old2", amountMinor = 9_000, occurredAt = tenDaysAgo + 30_000, possibleDuplicateOfId = "old"),
+            ),
+        )
+
+        viewModel().state.test {
+            val missed = awaitItemWhere { !it.isLoading && it.missedThisWeek != null }.missedThisWeek!!
+            assertEquals(1, missed.possibleDuplicateCount)
+            assertEquals(45_000L, missed.possibleDuplicatesMinor)
+            // A double count is money that may be there twice, not money that is missing.
+            assertEquals(0L, missed.possiblyMissingMinor)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 
     private suspend fun ReceiveTurbine<TodayUiState>.awaitLoaded(): TodayUiState =
         awaitItemWhere { !it.isLoading }

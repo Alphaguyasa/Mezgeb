@@ -15,9 +15,12 @@ import et.alpha.mezgeb.data.settings.SettingsRepository
 import et.alpha.mezgeb.domain.backup.BackupReminder
 import et.alpha.mezgeb.domain.backup.BackupReminderPolicy
 import et.alpha.mezgeb.domain.model.Direction
+import et.alpha.mezgeb.domain.reconcile.MissedMoney
+import et.alpha.mezgeb.domain.reconcile.ReconcilePeriodUseCase
 import et.alpha.mezgeb.ui.common.TransactionUiModel
 import et.alpha.mezgeb.ui.common.toUiModel
 import et.alpha.mezgeb.util.LocalDays
+import et.alpha.mezgeb.util.MezgebDates
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,6 +28,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -50,6 +54,11 @@ data class TodayUiState(
     val backupReminder: BackupReminder? = null,
     /** Background work that failed since the owner last said "OK" (ROADMAP R48). */
     val backgroundFailures: BackgroundFailures? = null,
+    /**
+     * The last seven days' "money you may have missed" (ROADMAP M-next). Null when
+     * there is nothing to show, so a clean week shows no card at all.
+     */
+    val missedThisWeek: MissedMoney? = null,
     val errorMessage: ErrorKind? = null,
 ) {
     val netMinor: Long get() = totalInMinor - totalOutMinor
@@ -79,6 +88,7 @@ class TodayViewModel @Inject constructor(
     private val settings: SettingsRepository,
     private val clock: Clock,
     private val days: LocalDays,
+    private val reconcile: ReconcilePeriodUseCase,
 ) : ViewModel() {
 
     private val refreshes = MutableStateFlow(0)
@@ -98,6 +108,7 @@ class TodayViewModel @Inject constructor(
             initialValue = TodayUiState(),
         )
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun todayFlow(rules: RuleRepository, bounds: LongRange) = run {
         val totals = combine(
             transactions.observeSum(Direction.IN, bounds.first, bounds.last),
@@ -112,13 +123,28 @@ class TodayViewModel @Inject constructor(
             list.map { it.toUiModel(categoryName = namesById[it.categoryId]) }
         }
 
+        // The same arithmetic as the reconcile screen, over the last seven days up to
+        // the end of today. It is worked out again whenever the latest rows or the
+        // review queue change, which is when its answer can change; the refresh on
+        // every return to the screen covers the rest (a dismissed duplicate, say).
+        val missed = combine(
+            transactions.observeRecent(RECENT_LIMIT),
+            transactions.observeUnmatchedCount(),
+        ) { _, _ -> }
+            .mapLatest {
+                val weekStart = bounds.first - (WEEK_DAYS - 1) * MezgebDates.DAY_MILLIS
+                val week = reconcile(weekStart, bounds.last, openedAt = clock.millis())
+                MissedMoney.from(week.explanations).takeUnless { it.isEmpty }
+            }
+
         val stamps = combine(
             settings.observeLastBackupAt(),
             settings.observeFirstRunAt(),
             settings.observeBackupReminderDismissedAt(),
             settings.observeBackgroundFailures(),
-        ) { lastBackupAt, firstRunAt, dismissedAt, failures ->
-            Stamps(lastBackupAt, firstRunAt, dismissedAt, failures)
+            missed,
+        ) { lastBackupAt, firstRunAt, dismissedAt, failures, missedThisWeek ->
+            Stamps(lastBackupAt, firstRunAt, dismissedAt, failures, missedThisWeek)
         }
 
         combine(
@@ -148,6 +174,7 @@ class TodayViewModel @Inject constructor(
                     hasTransactions = rows.isNotEmpty(),
                 ),
                 backgroundFailures = stamps.backgroundFailures,
+                missedThisWeek = stamps.missedThisWeek,
             )
         }
     }
@@ -183,10 +210,12 @@ class TodayViewModel @Inject constructor(
         val firstRunAt: Long?,
         val dismissedAt: Long?,
         val backgroundFailures: BackgroundFailures?,
+        val missedThisWeek: MissedMoney?,
     )
 
     private companion object {
         const val RECENT_LIMIT = 10
+        const val WEEK_DAYS = 7
         const val STOP_TIMEOUT_MILLIS = 5_000L
     }
 }
