@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -13,6 +16,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import et.alpha.mezgeb.designsystem.component.LocalDemoMode
 import et.alpha.mezgeb.ui.cash.CashEntryRoute
 import et.alpha.mezgeb.ui.customers.CreditEntryRoute
 import et.alpha.mezgeb.ui.customers.CustomerDetailRoute
@@ -26,6 +30,8 @@ import et.alpha.mezgeb.ui.review.ReviewRoute
 import et.alpha.mezgeb.ui.rule.RuleBuilderRoute
 import et.alpha.mezgeb.ui.settings.SettingsRoute
 import et.alpha.mezgeb.ui.today.TodayRoute
+import et.alpha.mezgeb.ui.tour.DemoTourCard
+import et.alpha.mezgeb.ui.tour.DemoTourState
 
 /**
  * The app's single navigation graph.
@@ -157,12 +163,47 @@ fun MezgebNavHost(
             onLaunchRequestHandled()
         }
 
+        // The demo tour opens by itself on every launch in demo mode, because the
+        // person giving a demo should not have to find it, and closes for the rest of
+        // that launch. Never shown outside demo mode or over onboarding.
+        if (LocalDemoMode.current) {
+            var tourIndex by rememberSaveable { mutableStateOf<Int?>(0) }
+            val tour = DemoTourState(tourIndex)
+            val step = tour.step
+            val onOnboarding = currentDestination?.hasRoute<MezgebDestination.Onboarding>() == true
+            if (step != null && currentEntry != null && !onOnboarding) {
+                LaunchedEffect(step) { navController.showTourStop(step.destination) }
+                DemoTourCard(
+                    step = step,
+                    isFirst = tour.isFirst,
+                    isLast = tour.isLast,
+                    onBack = { tourIndex = tour.back().stepIndex },
+                    onNext = { tourIndex = tour.next().stepIndex },
+                    onClose = { tourIndex = tour.close().stepIndex },
+                )
+            }
+        }
+
         if (currentDestination.isTopLevel()) {
             MezgebBottomBar(
                 currentDestination = currentDestination,
                 onSelect = navController::navigateToTopLevel,
             )
         }
+    }
+}
+
+/**
+ * Moves to the screen a tour stop explains. Tabs switch the way the bottom bar does;
+ * Reconcile, which is not a tab, opens over Today so back still leads somewhere sensible.
+ */
+private fun NavHostController.showTourStop(destination: MezgebDestination) {
+    val tab = TopLevelDestination.entries.firstOrNull { it.route == destination }
+    if (tab != null) {
+        navigateToTopLevel(tab)
+    } else {
+        navigateToTopLevel(TopLevelDestination.TODAY)
+        navigate(destination) { launchSingleTop = true }
     }
 }
 

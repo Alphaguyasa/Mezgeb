@@ -495,4 +495,19 @@
         <item quantity="other">%1$s ሁለት ጊዜ ተቆጥሮ ሊሆን ይችላል (%2$d ክፍያዎች)</item>
     </plurals>
     <string name="today_missed_action">በማስታረቅ ይመልከቱ</string>
+    <string name="tour_progress">ጉብኝት፦ %1$d ከ%2$d</string>
+    <string name="tour_today_title">የዛሬው ገቢ፣ በእጅ ሳይቆጥሩ</string>
+    <string name="tour_today_body">ስልኩ የሚቀበለው እያንዳንዱ የቴሌብር፣ የሲቢኢ ብር እና የባንክ ክፍያ እንደደረሰ ይነበባል፣ እዚህም ይደመራል። ከድምሩ በታች ያለው ካርድ በዚህ ሳምንት ምን ያህል ገንዘብ ሊጎድል እንደሚችል ይነግርዎታል።</string>
+    <string name="tour_ledger_title">ሁሉም ክፍያ በአንድ ቦታ</string>
+    <string name="tour_ledger_body">መዝገቡ እያንዳንዱን ክፍያ ማን እንደከፈለ፣ በየትኛው መንገድ እና መቼ እንደሆነ ይዘረዝራል። በስም ወይም በስልክ ቁጥር ይፈልጉ፣ ወይም በቀን፣ በመንገድ ወይም በምድብ ይለዩ።</string>
+    <string name="tour_customers_title">የዱቤ መዝገብ</string>
+    <string name="tour_customers_body">ደንበኛ በዱቤ የወሰደውን ይመዝግቡ። በቴሌብር ሲከፍል መዝገብ የሚዛመደውን ክፍያ ያሳይዎታል፤ ዕዳውን ይዘጋ እንደሆነ የሚወስኑት እርስዎ ነዎት።</string>
+    <string name="tour_reconcile_title">ቀኑን በአንድ ደቂቃ ይዝጉ</string>
+    <string name="tour_reconcile_body">የጠበቁትን ገቢ ያስገቡ። መዝገብ ከመዘገበው ጋር ያወዳድራል፣ ልዩነቱን ሊያብራሩ የሚችሉ ነገሮችንም ከትልቁ ጀምሮ ይዘረዝራል፦ ያልተነበበ መልእክት፣ ያልተብራራ የቀሪ ሂሳብ ለውጥ፣ ሁለት ጊዜ የተቆጠረ ሊሆን የሚችል ክፍያ።</string>
+    <string name="tour_reports_title">ሳምንቱ እንዴት እንዳለፈ ይወቁ</string>
+    <string name="tour_reports_body">ገቢና ወጪ በቀን፣ በመንገድ እና በምድብ፣ እንደ PDF ወይም CSV ለማስቀመጥ ዝግጁ። ሁሉም መረጃ በዚህ ስልክ ላይ ይቀራል፦ መዝገብ የኢንተርኔት ፈቃድ ፈጽሞ የለውም።</string>
+    <string name="tour_next">ቀጣይ</string>
+    <string name="tour_back">ተመለስ</string>
+    <string name="tour_finish">ጨርስ</string>
+    <string name="tour_close">ጉብኝቱን ዝጋ</string>
 </resources>

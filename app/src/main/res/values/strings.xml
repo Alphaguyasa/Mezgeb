@@ -548,4 +548,19 @@
         <item quantity="other">%1$s may be counted twice (%2$d payments)</item>
     </plurals>
     <string name="today_missed_action">Check in Reconcile</string>
+    <string name="tour_progress">Tour: %1$d of %2$d</string>
+    <string name="tour_today_title">Today, without counting by hand</string>
+    <string name="tour_today_body">Every telebirr, CBE Birr and bank payment the phone receives is read and added up here, the moment it arrives. The card below the totals says how much money this week may be missing.</string>
+    <string name="tour_ledger_title">Every payment, in one place</string>
+    <string name="tour_ledger_body">The ledger lists each payment with who paid, through which channel and when. Search by name or phone number, or filter by day, channel or category.</string>
+    <string name="tour_customers_title">The credit book (ዱቤ)</string>
+    <string name="tour_customers_body">Write down what a customer takes on credit. When they pay by telebirr, Mezgeb suggests the matching payment, and you decide whether it settles the debt.</string>
+    <string name="tour_reconcile_title">Close the day in a minute</string>
+    <string name="tour_reconcile_body">Enter what you expected to take. Mezgeb compares it with what it recorded and lists what could explain a difference, largest first: an unread message, a balance jump, a possible double count.</string>
+    <string name="tour_reports_title">Know how the week went</string>
+    <string name="tour_reports_body">Money in and out by day, channel and category, ready to save as a PDF or CSV. Everything stays on this phone: Mezgeb has no internet permission at all.</string>
+    <string name="tour_next">Next</string>
+    <string name="tour_back">Back</string>
+    <string name="tour_finish">Finish</string>
+    <string name="tour_close">Close the tour</string>
 </resources>
