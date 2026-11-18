@@ -50,7 +50,7 @@ object CategoryLabels {
 
     /** For code outside Compose, such as the PDF report. */
     fun label(context: Context, id: String?, storedName: String): String =
-        resourceFor(id, storedName)?.let(context::getString) ?: storedName
+        resourceFor(id, storedName)?.let { context.getString(it) } ?: storedName
 }
 
 /**
