@@ -23,7 +23,7 @@ and R38 and R39 were checked by hand against the code. R38 and R39 part 1 were d
 the list then fell to 4 (all blocked), so the same run replanned: R45 to R53 come from a
 fresh code audit. R45 was done the same run. R45, R46 and R47 were checked by hand against the code; the others
 carry the audit's file and line evidence and are re-checked when picked up. R46 and R47 were done on
-2026-11-05. R48 and R49 were done on 2026-11-06. On 2026-11-12 the "Make Mezgeb sellable" milestone was added at the top, and R53, R51 and R52 were done. On 2026-11-18 R50, the weekly card and the demo tour were done, and the "Daily habit" milestone was added after it. On 2026-11-23 the nightly closing check and the printable receipt were done.
+2026-11-05. R48 and R49 were done on 2026-11-06. On 2026-11-12 the "Make Mezgeb sellable" milestone was added at the top, and R53, R51 and R52 were done. On 2026-11-18 R50, the weekly card and the demo tour were done, and the "Daily habit" milestone was added after it. On 2026-11-23 the nightly closing check, the printable receipt and the one-month customer statement (from the Later list) were done.
 
 ## M-next: Make Mezgeb sellable
 
@@ -51,7 +51,7 @@ After "Make Mezgeb sellable". Small features that make the app something a shop 
 ### Later
 
 Encryption at rest (R10, decision log A1) · corpus growth as real samples arrive (R11) ·
-a monthly statement export per customer · a nudge to send the encrypted backup to
+a nudge to send the encrypted backup to
 Telegram Saved Messages · rule packs exported and imported as a file · the SMS parser
 as a library other apps can embed.
 
