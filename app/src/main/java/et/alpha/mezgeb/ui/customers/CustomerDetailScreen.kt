@@ -72,6 +72,7 @@ fun CustomerDetailRoute(
     val statementLabels = shareLabels()
     val shareChooserTitle = stringResource(R.string.credit_share_statement)
     val shareReminderTitle = stringResource(R.string.credit_share_reminder)
+    val broughtForwardLabel = stringResource(R.string.credit_share_brought_forward)
     val locale = LocalConfiguration.current.locales[0]
 
     // Archiving takes the customer off this list; there is nothing left to look at.
@@ -101,6 +102,15 @@ fun CustomerDetailRoute(
         onShareStatement = {
             val zone = ZoneId.systemDefault()
             val text = viewModel.statementText(statementLabels) { at ->
+                MezgebDates.formatFullDate(at, zone, locale)
+            }
+            if (text != null) {
+                context.startSafely(StatementText.intent(text, shareChooserTitle))
+            }
+        },
+        onShareMonthStatement = {
+            val zone = ZoneId.systemDefault()
+            val text = viewModel.monthStatementText(statementLabels, broughtForwardLabel, zone) { at ->
                 MezgebDates.formatFullDate(at, zone, locale)
             }
             if (text != null) {
@@ -137,6 +147,7 @@ fun CustomerDetailScreen(
     onOpenEntry: (entryId: String) -> Unit = {},
     onShareStatement: () -> Unit = {},
     onShareReminder: () -> Unit = {},
+    onShareMonthStatement: () -> Unit = {},
 ) {
     val spacing = MezgebTheme.spacing
     val credit = state.credit
@@ -252,6 +263,21 @@ fun CustomerDetailScreen(
                             .heightIn(min = spacing.touchTarget),
                     ) {
                         Text(stringResource(R.string.credit_share_statement))
+                    }
+                }
+                // A year of entries is more than a customer will read; this month is
+                // usually what is being asked about.
+                item("share_month") {
+                    OutlinedButton(
+                        onClick = onShareMonthStatement,
+                        modifier = Modifier
+                            .padding(
+                                horizontal = spacing.screenGutter,
+                                vertical = spacing.sm,
+                            )
+                            .heightIn(min = spacing.touchTarget),
+                    ) {
+                        Text(stringResource(R.string.credit_share_statement_month))
                     }
                 }
             }

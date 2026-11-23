@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Clock
+import java.time.ZoneId
 import javax.inject.Inject
 
 data class CustomerDetailUiState(
@@ -173,6 +174,32 @@ class CustomerDetailViewModel @Inject constructor(
             balanceMinor = credit.balanceMinor,
             labels = labels,
             formatDay = formatDay,
+        )
+    }
+
+    /**
+     * Only the current calendar month, opening with the balance brought forward, or
+     * null when there is no statement at all.
+     *
+     * @param broughtForwardLabel `{balance}` is the balance before the month began.
+     */
+    fun monthStatementText(
+        labels: StatementText.Labels,
+        broughtForwardLabel: String,
+        zone: ZoneId,
+        formatDay: (Long) -> String,
+    ): String? {
+        val current = state.value
+        val credit = current.credit ?: return null
+        if (!current.canShareStatement) return null
+        val month = StatementText.monthOf(current.statement, clock.millis(), zone)
+        return StatementText.build(
+            customerName = credit.customer.name,
+            lines = month.lines,
+            balanceMinor = credit.balanceMinor,
+            labels = labels,
+            formatDay = formatDay,
+            broughtForward = StatementText.BroughtForward(broughtForwardLabel, month.openingMinor),
         )
     }
 

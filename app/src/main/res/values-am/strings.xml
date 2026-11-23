@@ -220,6 +220,8 @@
     <string name="credit_record_repayment">ክፍያ መዝግብ</string>
     <string name="credit_send_reminder">ማስታወሻ ላክ</string>
     <string name="credit_share_statement">ማብራሪያውን አጋራ</string>
+    <string name="credit_share_statement_month">የዚህን ወር ብቻ አጋራ</string>
+    <string name="credit_share_brought_forward">ከባለፈው የዞረ ቀሪ፦ {balance}</string>
     <string name="credit_share_reminder">ማስታወሻውን አጋራ (ቴሌግራም፣ ሌሎች መተግበሪያዎች)</string>
     <string name="credit_share_title">የ{name} የሒሳብ ማብራሪያ</string>
     <string name="credit_share_line">{day} · {kind} · {amount} · ቀሪ {balance}</string>

@@ -4,6 +4,8 @@ import android.content.Intent
 import et.alpha.mezgeb.domain.model.CreditKind
 import et.alpha.mezgeb.domain.model.CreditStatementLine
 import et.alpha.mezgeb.util.MoneyFormatter
+import java.time.Instant
+import java.time.ZoneId
 
 /**
  * A customer's statement as plain text, for the share sheet (ROADMAP R44).
@@ -51,6 +53,39 @@ object StatementText {
     )
 
     /**
+     * The balance a shorter statement starts from, written as its first line so the
+     * running balances below it still add up for the customer reading it.
+     *
+     * @param label `{balance}` is the balance before the first line shown.
+     */
+    data class BroughtForward(val label: String, val balanceMinor: Long)
+
+    /** One calendar month of a statement: its lines and what was owed before them. */
+    data class MonthSlice(val lines: List<CreditStatementLine>, val openingMinor: Long)
+
+    /**
+     * The lines of the local calendar month that contains [now], with the running
+     * balance just before the month began.
+     *
+     * A whole statement grows long enough over a year that a customer stops reading
+     * it; "this month" is what is usually being asked about. The opening figure is
+     * taken from the running balance already on the line before the month, so it is
+     * the same number the full statement shows on that line, never a second sum.
+     */
+    fun monthOf(lines: List<CreditStatementLine>, now: Long, zone: ZoneId): MonthSlice {
+        val monthStart = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
+            .withDayOfMonth(1)
+            .atStartOfDay(zone)
+            .toInstant()
+            .toEpochMilli()
+        val before = lines.takeWhile { it.entry.occurredAt < monthStart }
+        return MonthSlice(
+            lines = lines.drop(before.size),
+            openingMinor = before.lastOrNull()?.runningBalanceMinor ?: 0L,
+        )
+    }
+
+    /**
      * @param lines the statement, oldest first, as the repository returns it.
      * @param balanceMinor the customer's balance now. Positive means they owe the shop.
      * @param formatDay turns an entry's instant into a date. A full date with the year,
@@ -62,9 +97,13 @@ object StatementText {
         balanceMinor: Long,
         labels: Labels,
         formatDay: (Long) -> String,
+        broughtForward: BroughtForward? = null,
     ): String = buildString {
         appendLine(labels.title.fill(NAME to customerName))
         appendLine()
+        broughtForward?.let {
+            appendLine(it.label.fill(BALANCE to MoneyFormatter.format(it.balanceMinor)))
+        }
 
         if (lines.isEmpty()) {
             appendLine(labels.empty)

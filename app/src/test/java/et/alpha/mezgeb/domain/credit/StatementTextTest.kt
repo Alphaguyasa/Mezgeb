@@ -15,6 +15,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.time.Instant
+import java.time.ZoneOffset
 
 /**
  * The shared statement (ROADMAP R44). The text is what a customer reads in a dispute,
@@ -194,6 +196,57 @@ class StatementTextTest {
         // The instant is the test's day number, so the expected text stays readable.
         formatDay = { "DAY$it" },
     )
+
+    @Test
+    fun `this month's statement opens with the balance brought forward`() {
+        val zone = ZoneOffset.UTC
+        val oct20 = Instant.parse("2026-10-20T10:00:00Z").toEpochMilli()
+        val nov3 = Instant.parse("2026-11-03T10:00:00Z").toEpochMilli()
+        val now = Instant.parse("2026-11-23T10:00:00Z").toEpochMilli()
+        val lines = listOf(
+            line("e1", CreditKind.CREDIT_GIVEN, 50_000, running = 50_000, day = oct20),
+            line("e2", CreditKind.REPAYMENT, 20_000, running = 30_000, day = nov3),
+        )
+
+        val month = StatementText.monthOf(lines, now, zone)
+        assertEquals(listOf("e2"), month.lines.map { it.entry.id })
+        assertEquals(50_000L, month.openingMinor)
+
+        val text = StatementText.build(
+            customerName = "ABEBE",
+            lines = month.lines,
+            balanceMinor = 30_000,
+            labels = LABELS,
+            formatDay = { "NOV3" },
+            broughtForward = StatementText.BroughtForward("Brought forward: {balance}", month.openingMinor),
+        )
+        assertEquals(
+            """
+            Statement for ABEBE
+
+            Brought forward: 500.00 ETB
+            NOV3 · Payment received · −200.00 ETB · balance 300.00 ETB
+
+            Owed to the shop: 300.00 ETB
+            """.trimIndent(),
+            text,
+        )
+    }
+
+    @Test
+    fun `a customer whose first entry is this month starts from zero`() {
+        val now = Instant.parse("2026-11-23T10:00:00Z").toEpochMilli()
+        val first = Instant.parse("2026-11-01T00:00:00Z").toEpochMilli()
+        val month = StatementText.monthOf(
+            listOf(line("e1", CreditKind.CREDIT_GIVEN, 100, running = 100, day = first)),
+            now,
+            ZoneOffset.UTC,
+        )
+
+        // Midnight on the first belongs to the new month, not the old one.
+        assertEquals(1, month.lines.size)
+        assertEquals(0L, month.openingMinor)
+    }
 
     private fun line(
         id: String,
