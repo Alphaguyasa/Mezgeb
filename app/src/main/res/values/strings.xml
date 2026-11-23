@@ -433,7 +433,8 @@
     <string name="settings_demo_failed">The demo could not be prepared. Nothing was changed.</string>
     <string name="demo_banner">Demo data — not your ledger</string>
     <string name="demo_banner_content_description">You are looking at demo data. This is not your own ledger.</string>
-    <string name="settings_message_backup_written">Backup saved.</string>
+    <string name="settings_message_backup_written">Backup saved. Keep a copy off this phone too, for example in Telegram Saved Messages.</string>
+    <string name="settings_backup_send_copy">Send a copy</string>
     <string name="settings_message_backup_failed">Could not write the backup.</string>
     <string name="settings_message_backup_passphrase_lost">The backup was not saved: the passphrase was lost while the file was being chosen. The empty file was removed. Please try again.</string>
     <!-- 1: how many records were restored -->

@@ -384,7 +384,8 @@
     <string name="settings_demo_failed">ናሙናውን ማዘጋጀት አልተቻለም። ምንም አልተለወጠም።</string>
     <string name="demo_banner">የናሙና መረጃ — የእርስዎ መዝገብ አይደለም</string>
     <string name="demo_banner_content_description">የናሙና መረጃ እየተመለከቱ ነው። ይህ የእርስዎ መዝገብ አይደለም።</string>
-    <string name="settings_message_backup_written">ምትኬ ተቀምጧል።</string>
+    <string name="settings_message_backup_written">ምትኬ ተቀምጧል። ቅጂውን ከዚህ ስልክ ውጭም ያስቀምጡ፤ ለምሳሌ በቴሌግራም Saved Messages።</string>
+    <string name="settings_backup_send_copy">ቅጂ ላክ</string>
     <string name="settings_message_backup_failed">ምትኬውን መጻፍ አልተቻለም።</string>
     <string name="settings_message_backup_passphrase_lost">ምትኬው አልተቀመጠም፤ ፋይሉ ሲመረጥ የይለፍ ሐረጉ ጠፍቷል። ባዶው ፋይል ተሰርዟል። እባክዎ እንደገና ይሞክሩ።</string>
     <string name="settings_restore_not_a_backup">ይህ ፋይል የመዝገብ ምትኬ አይደለም።</string>

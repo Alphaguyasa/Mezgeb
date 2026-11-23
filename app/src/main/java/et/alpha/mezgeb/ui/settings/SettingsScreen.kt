@@ -1,6 +1,7 @@
 package et.alpha.mezgeb.ui.settings
 
 import android.app.Activity
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -29,7 +30,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -71,6 +74,7 @@ fun SettingsRoute(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val sendCopyTitle = stringResource(R.string.settings_backup_send_copy)
     // The passphrase waits in the ViewModel, not in `remember`, while the file picker is
     // open. A rotation used to reset a remembered one to "" and the backup was then
     // written with an empty passphrase (ROADMAP R38).
@@ -113,6 +117,9 @@ fun SettingsRoute(
                 context.contentResolver.openInputStream(uri.toUri())
             }
         },
+        onSendBackupCopy = { uri ->
+            runCatching { context.startActivity(backupCopyIntent(uri.toUri(), sendCopyTitle)) }
+        },
         onLanguageChosen = { language ->
             viewModel.onEvent(SettingsEvent.LanguageChosen(language))
             // On API 33 and up the platform recreates the Activity itself when the
@@ -136,15 +143,33 @@ fun SettingsScreen(
     onRestoreConfirmed: (uri: String, passphrase: String) -> Unit,
     onLanguageChosen: (AppLanguage) -> Unit,
     modifier: Modifier = Modifier,
+    onSendBackupCopy: (uri: String) -> Unit = {},
 ) {
     val spacing = MezgebTheme.spacing
     val snackbarHostState = remember { SnackbarHostState() }
     val messageText = state.message?.let { messageText(it) }
+    val sendCopyLabel = stringResource(R.string.settings_backup_send_copy)
 
     LaunchedEffect(state.message) {
+        val message = state.message
         if (messageText != null) {
-            snackbarHostState.showSnackbar(messageText)
-            onEvent(SettingsEvent.MessageShown)
+            if (message is SettingsMessage.BackupWritten) {
+                // A backup on the same phone is lost with the phone. The nudge to keep
+                // a copy elsewhere (Telegram Saved Messages, a drive) comes at the one
+                // moment the file exists and the owner is thinking about it, and stays
+                // until it is acted on or dismissed.
+                val result = snackbarHostState.showSnackbar(
+                    message = messageText,
+                    actionLabel = sendCopyLabel,
+                    withDismissAction = true,
+                    duration = SnackbarDuration.Indefinite,
+                )
+                onEvent(SettingsEvent.MessageShown)
+                if (result == SnackbarResult.ActionPerformed) onSendBackupCopy(message.uri)
+            } else {
+                snackbarHostState.showSnackbar(messageText)
+                onEvent(SettingsEvent.MessageShown)
+            }
         }
     }
 
@@ -599,6 +624,21 @@ private fun lastBackupText(lastBackupAt: Long?): String {
         MezgebDates.formatFullDate(lastBackupAt, ZoneId.systemDefault(), locale)
     }
     return stringResource(R.string.settings_last_backup, date)
+}
+
+/**
+ * The share sheet with the backup file attached. The file is already encrypted with
+ * the owner's passphrase, so wherever it goes it cannot be read without it. The read
+ * grant is passed on, through the chooser's clip data, to the one app that is picked.
+ */
+internal fun backupCopyIntent(uri: Uri, chooserTitle: String): Intent {
+    val send = Intent(Intent.ACTION_SEND)
+        .setType("application/octet-stream")
+        .putExtra(Intent.EXTRA_STREAM, uri)
+        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    send.clipData = ClipData.newRawUri(null, uri)
+    return Intent.createChooser(send, chooserTitle)
+        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
 }
 
 /** `ACTION_CREATE_DOCUMENT` with a fixed type; the backup is only ever one thing. */
