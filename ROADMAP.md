@@ -23,7 +23,7 @@ and R38 and R39 were checked by hand against the code. R38 and R39 part 1 were d
 the list then fell to 4 (all blocked), so the same run replanned: R45 to R53 come from a
 fresh code audit. R45 was done the same run. R45, R46 and R47 were checked by hand against the code; the others
 carry the audit's file and line evidence and are re-checked when picked up. R46 and R47 were done on
-2026-11-05. R48 and R49 were done on 2026-11-06. On 2026-11-12 the "Make Mezgeb sellable" milestone was added at the top, and R53, R51 and R52 were done. On 2026-11-18 R50, the weekly card and the demo tour were done, and the "Daily habit" milestone was added after it.
+2026-11-05. R48 and R49 were done on 2026-11-06. On 2026-11-12 the "Make Mezgeb sellable" milestone was added at the top, and R53, R51 and R52 were done. On 2026-11-18 R50, the weekly card and the demo tour were done, and the "Daily habit" milestone was added after it. On 2026-11-23 the nightly closing check and the printable receipt were done.
 
 ## M-next: Make Mezgeb sellable
 
@@ -44,8 +44,8 @@ The next milestone. Its items come before the rest of the open list.
 After "Make Mezgeb sellable". Small features that make the app something a shop opens every evening.
 
 - [x] Share a credit reminder through the share sheet (Telegram or any app), no phone number needed (2026-11-18)
-- [ ] A nightly check at closing time: "messages say +3,200; you recorded 3,000; 200 birr unexplained", built on the weekly card
-- [ ] Print a receipt or a customer statement through the share sheet, to the cheap thermal printers shops already have
+- [x] A nightly check at closing time: "messages say +3,200; you recorded 3,000; 200 birr unexplained", built on the weekly card (2026-11-23)
+- [x] Print a receipt or a customer statement through the share sheet, to the cheap thermal printers shops already have (2026-11-23; the statement already shared as text)
 - [ ] A short voice note on a ledger entry (needs the microphone permission: decision log first)
 
 ### Later
