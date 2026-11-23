@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
@@ -44,9 +45,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
@@ -65,10 +69,12 @@ import et.alpha.mezgeb.designsystem.component.label
 import et.alpha.mezgeb.domain.model.Channel
 import et.alpha.mezgeb.domain.model.Direction
 import et.alpha.mezgeb.domain.model.Transaction
+import et.alpha.mezgeb.domain.receipt.ReceiptText
 import et.alpha.mezgeb.ui.common.categoryLabel
 import et.alpha.mezgeb.ui.common.rememberDayLabel
 import et.alpha.mezgeb.ui.common.rememberTimeLabel
 import et.alpha.mezgeb.util.MezgebDates
+import kotlinx.coroutines.launch
 import java.time.ZoneId
 
 @Composable
@@ -78,6 +84,12 @@ fun TransactionDetailRoute(
     viewModel: TransactionDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val locale = LocalConfiguration.current.locales[0]
+    val receiptLabels = receiptLabels()
+    val receiptChooserTitle = stringResource(R.string.detail_share_receipt)
+    val channelLabel = state.transaction?.channel?.label()
+    val scope = rememberCoroutineScope()
 
     // Deleting the row leaves nothing to look at.
     LaunchedEffect(state.isDeleted) {
@@ -88,15 +100,41 @@ fun TransactionDetailRoute(
         state = state,
         onEvent = viewModel::onEvent,
         onBack = onBack,
+        onShareReceipt = {
+            val channel = channelLabel
+            if (channel != null) scope.launch {
+                val zone = ZoneId.systemDefault()
+                val text = runCatching {
+                    viewModel.receiptText(receiptLabels, channel) { at ->
+                        MezgebDates.formatFullDate(at, zone, locale) + " " +
+                            MezgebDates.formatTime(at, zone, locale)
+                    }
+                }.getOrNull() ?: return@launch
+                runCatching { context.startActivity(ReceiptText.intent(text, receiptChooserTitle)) }
+            }
+        },
         modifier = modifier,
     )
 }
+
+@Composable
+private fun receiptLabels() = ReceiptText.Labels(
+    title = stringResource(R.string.receipt_title),
+    received = stringResource(R.string.receipt_received),
+    paid = stringResource(R.string.receipt_paid),
+    via = stringResource(R.string.receipt_via),
+    from = stringResource(R.string.receipt_from),
+    to = stringResource(R.string.receipt_to),
+    reference = stringResource(R.string.receipt_reference),
+    thanks = stringResource(R.string.receipt_thanks),
+)
 
 @Composable
 fun TransactionDetailScreen(
     state: TransactionDetailUiState,
     onEvent: (TransactionDetailEvent) -> Unit,
     onBack: () -> Unit,
+    onShareReceipt: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val spacing = MezgebTheme.spacing
@@ -146,7 +184,12 @@ fun TransactionDetailScreen(
 
             val editor = state.editor
             if (editor == null) {
-                ViewMode(state = state, transaction = transaction, onEvent = onEvent)
+                ViewMode(
+                    state = state,
+                    transaction = transaction,
+                    onEvent = onEvent,
+                    onShareReceipt = onShareReceipt,
+                )
             } else {
                 EditMode(editor = editor, onEvent = onEvent)
             }
@@ -177,6 +220,7 @@ private fun ViewMode(
     state: TransactionDetailUiState,
     transaction: Transaction,
     onEvent: (TransactionDetailEvent) -> Unit,
+    onShareReceipt: () -> Unit,
 ) {
     val spacing = MezgebTheme.spacing
 
@@ -278,6 +322,22 @@ private fun ViewMode(
     }
 
     OriginalMessageSection(state = state, onEvent = onEvent)
+
+    // Plain text through the share sheet: the printer apps that drive cheap
+    // Bluetooth thermal printers take it as it is, and so does Telegram.
+    OutlinedButton(
+        onClick = onShareReceipt,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = spacing.touchTarget),
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Share,
+            contentDescription = null,
+            modifier = Modifier.padding(end = spacing.sm),
+        )
+        Text(stringResource(R.string.detail_share_receipt))
+    }
 
     OutlinedButton(
         onClick = { onEvent(TransactionDetailEvent.RequestDelete) },
@@ -653,6 +713,7 @@ private fun TransactionDetailPreview() {
             ),
             onEvent = {},
             onBack = {},
+            onShareReceipt = {},
         )
     }
 }

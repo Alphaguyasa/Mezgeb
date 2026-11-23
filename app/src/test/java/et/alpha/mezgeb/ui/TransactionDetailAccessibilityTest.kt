@@ -132,7 +132,7 @@ class TransactionDetailAccessibilityTest {
 
 @Composable
 internal fun DetailScreen(state: TransactionDetailUiState) {
-    TransactionDetailScreen(state = state, onEvent = {}, onBack = {})
+    TransactionDetailScreen(state = state, onEvent = {}, onBack = {}, onShareReceipt = {})
 }
 
 internal const val DETAIL_AMOUNT_MINOR = 1_245_000L

@@ -159,6 +159,15 @@
     <string name="detail_original_message_hide">Hide the message</string>
     <string name="detail_amount_invalid">Enter an amount greater than zero</string>
     <string name="detail_delete">Delete</string>
+    <string name="detail_share_receipt">Print or share a receipt</string>
+    <string name="receipt_title">RECEIPT</string>
+    <string name="receipt_received">Received</string>
+    <string name="receipt_paid">Paid</string>
+    <string name="receipt_via">Via</string>
+    <string name="receipt_from">From</string>
+    <string name="receipt_to">To</string>
+    <string name="receipt_reference">Ref.</string>
+    <string name="receipt_thanks">Thank you</string>
     <string name="detail_delete_title">Delete this transaction?</string>
     <string name="detail_delete_body">It will be removed from your ledger and your totals. Nothing is erased permanently.</string>
     <string name="detail_delete_confirm">Delete</string>

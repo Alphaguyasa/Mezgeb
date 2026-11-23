@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import et.alpha.mezgeb.data.repo.CustomerRepository
 import et.alpha.mezgeb.data.repo.RuleRepository
 import et.alpha.mezgeb.data.repo.TransactionRepository
+import et.alpha.mezgeb.data.settings.SettingsRepository
 import et.alpha.mezgeb.domain.model.Category
 import et.alpha.mezgeb.domain.model.CategoryRule
 import et.alpha.mezgeb.domain.model.Channel
@@ -16,6 +17,7 @@ import et.alpha.mezgeb.domain.model.MatchField
 import et.alpha.mezgeb.domain.model.MatchType
 import et.alpha.mezgeb.domain.model.RawMessage
 import et.alpha.mezgeb.domain.model.Transaction
+import et.alpha.mezgeb.domain.receipt.ReceiptText
 import et.alpha.mezgeb.navigation.MezgebDestination
 import et.alpha.mezgeb.parser.normalize.AmountNormalizer
 import et.alpha.mezgeb.util.IdGenerator
@@ -119,6 +121,7 @@ class TransactionDetailViewModel @Inject constructor(
     private val customers: CustomerRepository,
     private val ids: IdGenerator,
     private val clock: Clock,
+    private val settings: SettingsRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -169,6 +172,27 @@ class TransactionDetailViewModel @Inject constructor(
             }.getOrNull() ?: return@launch
             local.update { it.copy(rawMessage = extras.first, linkedCustomerName = extras.second) }
         }
+    }
+
+    /**
+     * The entry as a printable receipt, or null while nothing is loaded or the row has
+     * been deleted (a deleted payment is not something to hand a customer proof of).
+     */
+    suspend fun receiptText(
+        labels: ReceiptText.Labels,
+        channelLabel: String,
+        formatWhen: (Long) -> String,
+    ): String? {
+        val transaction = state.value.transaction?.takeUnless { it.isDeleted } ?: return null
+        return ReceiptText.build(
+            transaction = transaction,
+            // Read at the moment of sharing, so a name changed in Settings a minute ago
+            // is the one printed.
+            shopName = settings.shopName(),
+            channelLabel = channelLabel,
+            formattedWhen = formatWhen(transaction.occurredAt),
+            labels = labels,
+        )
     }
 
     fun onEvent(event: TransactionDetailEvent) {

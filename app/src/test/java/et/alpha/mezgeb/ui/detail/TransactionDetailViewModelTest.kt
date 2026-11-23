@@ -12,9 +12,11 @@ import et.alpha.mezgeb.data.local.transaction
 import et.alpha.mezgeb.data.repo.CustomerRepository
 import et.alpha.mezgeb.data.repo.RuleRepository
 import et.alpha.mezgeb.data.repo.TransactionRepository
+import et.alpha.mezgeb.data.settings.SettingsHarness
 import et.alpha.mezgeb.domain.model.Direction
 import et.alpha.mezgeb.domain.model.MatchField
 import et.alpha.mezgeb.domain.model.MatchType
+import et.alpha.mezgeb.domain.receipt.ReceiptText
 import et.alpha.mezgeb.util.IdGenerator
 import io.mockk.coEvery
 import io.mockk.spyk
@@ -31,7 +33,9 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -39,19 +43,25 @@ import java.time.ZoneOffset
 @OptIn(ExperimentalCoroutinesApi::class)
 class TransactionDetailViewModelTest : DatabaseTest() {
 
+    @get:Rule
+    val tempFolder = TemporaryFolder()
+
     private val now = Instant.parse("2026-08-02T10:00:00Z").toEpochMilli()
+    private lateinit var settingsHarness: SettingsHarness
     private lateinit var transactions: TransactionRepository
     private lateinit var rules: RuleRepository
 
     @Before
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
+        settingsHarness = SettingsHarness(tempFolder.root)
         transactions = TransactionRepository(db.transactionDao(), db.rawMessageDao())
         rules = RuleRepository(db.categoryDao(), db.categoryRuleDao(), db.parserRuleDao())
     }
 
     @After
     fun tearDown() {
+        settingsHarness.close()
         Dispatchers.resetMain()
     }
 
@@ -298,6 +308,48 @@ class TransactionDetailViewModelTest : DatabaseTest() {
         assertFalse(db.transactionDao().getById("t1")!!.isDeleted)
     }
 
+    @Test
+    fun `the receipt carries the shop's name and the payment, not the phone`() = runTest {
+        settingsHarness.repository.setShopName("SHOP_01")
+        db.transactionDao().insert(
+            transaction("t1", amountMinor = 45_000, providerTxnId = "REF0001", counterpartyPhone = "+251900000001"),
+        )
+        val viewModel = viewModel("t1")
+
+        viewModel.state.test {
+            awaitItemWhere { it.transaction != null }
+            val receipt = viewModel.receiptText(receiptLabels, "telebirr") { "1 Aug 2026 09:30" }!!
+            assertTrue(receipt, receipt.lines().first().trim() == "SHOP_01")
+            assertTrue(receipt, receipt.contains("450.00 ETB"))
+            assertTrue(receipt, receipt.contains("Ref.: REF0001"))
+            assertFalse(receipt, receipt.contains("+251900000001"))
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a deleted entry gives no receipt`() = runTest {
+        db.transactionDao().insert(transaction("t1", isDeleted = true))
+        val viewModel = viewModel("t1")
+
+        viewModel.state.test {
+            awaitItemWhere { !it.isLoading }
+            assertNull(viewModel.receiptText(receiptLabels, "telebirr") { "" })
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    private val receiptLabels = ReceiptText.Labels(
+        title = "RECEIPT",
+        received = "Received",
+        paid = "Paid",
+        via = "Via",
+        from = "From",
+        to = "To",
+        reference = "Ref.",
+        thanks = "Thank you",
+    )
+
     private fun viewModel(
         transactionId: String,
         repository: TransactionRepository = transactions,
@@ -307,6 +359,7 @@ class TransactionDetailViewModelTest : DatabaseTest() {
         customers = CustomerRepository(db.customerDao(), db.creditEntryDao()),
         ids = IdGenerator { "rule_1" },
         clock = Clock.fixed(Instant.ofEpochMilli(now), ZoneOffset.UTC),
+        settings = settingsHarness.repository,
         savedStateHandle = SavedStateHandle(mapOf("transactionId" to transactionId)),
     )
 
