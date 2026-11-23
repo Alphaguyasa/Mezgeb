@@ -281,6 +281,12 @@
     <string name="reconcile_reminder_channel_description">ገቢዎን ከመዝገብዎ ጋር እንዲያመሳክሩ ሳምንታዊ ማስታወሻ።</string>
     <string name="reconcile_reminder_title">ገቢዎን የሚያመሳክሩበት ጊዜ ደርሷል</string>
     <string name="reconcile_reminder_body">ጊዜ ከዘጉ አንድ ሳምንት ሆኗል።</string>
+    <string name="closing_check_channel">የመዝጊያ ፍተሻ</string>
+    <string name="closing_check_channel_description">ያልተብራራ ገንዘብ ባለበት ቀን ብቻ የሚመጣ የምሽት ማስታወሻ።</string>
+    <string name="closing_check_title_amount">የመዝጊያ ፍተሻ፦ ዛሬ %1$s አልተብራራም</string>
+    <string name="closing_check_body_amount">ዛሬ %1$s ገቢ መዝግበዋል። መልዕክቶችና ቀሪ ሒሳቦች መዝገቡ ገና ያላብራራውን ተጨማሪ %2$s ያሳያሉ።</string>
+    <string name="closing_check_title_items">የመዝጊያ ፍተሻ፦ ዛሬ የሚታይ ነገር አለ</string>
+    <string name="closing_check_body_items">ያልተነበቡ መልዕክቶች ወይም ሁለት ጊዜ የተቆጠረ የሚመስል ክፍያ አለ። ለማየት ይንኩ።</string>
 
     <!-- Reports and export -->
     <string name="report_summary">ማጠቃለያ</string>

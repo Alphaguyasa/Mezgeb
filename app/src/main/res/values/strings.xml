@@ -319,6 +319,12 @@
     <string name="reconcile_reminder_channel_description">A weekly nudge to check your takings against your records.</string>
     <string name="reconcile_reminder_title">Time to check your takings</string>
     <string name="reconcile_reminder_body">It has been a week since you last closed a period.</string>
+    <string name="closing_check_channel">Closing check</string>
+    <string name="closing_check_channel_description">An evening note, only on days when some money is not explained.</string>
+    <string name="closing_check_title_amount">Closing check: %1$s not explained today</string>
+    <string name="closing_check_body_amount">You recorded %1$s coming in today. Your messages and balances point to %2$s more that the ledger does not explain yet.</string>
+    <string name="closing_check_title_items">Closing check: something to look at today</string>
+    <string name="closing_check_body_items">Some messages could not be read, or a payment may be counted twice. Tap to check.</string>
 
     <!-- Reports and export -->
     <string name="report_summary">Summary</string>

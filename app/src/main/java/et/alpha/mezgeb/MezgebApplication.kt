@@ -9,6 +9,7 @@ import et.alpha.mezgeb.capture.PrivacyPurgeGate
 import et.alpha.mezgeb.data.local.seed.DatabaseSeeder
 import et.alpha.mezgeb.data.settings.SettingsRepository
 import et.alpha.mezgeb.di.ApplicationScope
+import et.alpha.mezgeb.domain.reconcile.ClosingCheckScheduler
 import et.alpha.mezgeb.domain.reconcile.ReconcileReminderScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -27,6 +28,7 @@ class MezgebApplication : Application(), Configuration.Provider {
     @Inject lateinit var workerFactory: HiltWorkerFactory
 
     @Inject lateinit var reconcileReminders: ReconcileReminderScheduler
+    @Inject lateinit var closingCheck: ClosingCheckScheduler
 
     @Inject lateinit var privacyPurge: PrivacyPurgeGate
 
@@ -69,5 +71,6 @@ class MezgebApplication : Application(), Configuration.Provider {
 
         // Idempotent, and cheap: WorkManager keeps the existing schedule.
         reconcileReminders.schedule()
+        closingCheck.schedule()
     }
 }

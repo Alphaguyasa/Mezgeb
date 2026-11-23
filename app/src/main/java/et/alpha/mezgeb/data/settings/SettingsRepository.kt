@@ -185,6 +185,20 @@ class SettingsRepository @Inject constructor(
 
     suspend fun firstRunAt(): Long? = observeFirstRunAt().first()
 
+    /**
+     * The local day (an epoch day) the closing check last ran to the end, or null.
+     *
+     * WorkManager may run a daily job twice in one evening (a retry, a reschedule after
+     * an update), and a shop told the same thing twice learns to ignore it. Kept here
+     * rather than in Room for the same reason as the backup stamp: it describes the
+     * app's behaviour, not the ledger, and a restore must not bring it back.
+     */
+    suspend fun closingCheckDay(): Long? = dataStore.data.map { it[CLOSING_CHECK_DAY] }.first()
+
+    suspend fun markClosingCheckDone(epochDay: Long) {
+        dataStore.edit { it[CLOSING_CHECK_DAY] = epochDay }
+    }
+
     // --- Backup -----------------------------------------------------------------------
 
     /**
@@ -240,6 +254,7 @@ class SettingsRepository @Inject constructor(
 
         val SHOP_NAME = stringPreferencesKey("shop_name")
         val RECONCILE_REMINDERS = booleanPreferencesKey("reconcile_reminders_enabled")
+        val CLOSING_CHECK_DAY = longPreferencesKey("closing_check_day")
         val OVERDUE_THRESHOLD_DAYS = intPreferencesKey("overdue_threshold_days")
         val REMINDER_TEMPLATE = stringPreferencesKey("reminder_template")
 
